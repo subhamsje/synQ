@@ -121,3 +121,63 @@ def test_frontend_root_endpoint(client):
     assert "synQ" in response.text
     assert "Digital Twin" in response.text
 
+
+def test_daily_report_api(client):
+    res = client.get("/api/v1/reports/daily")
+    assert res.status_code == 200
+    data = res.json()
+    assert "report" in data
+    assert "SYSTEM HEALTH" in data["report"]
+    assert "FLEET PERFORMANCE" in data["report"]
+
+
+def test_whatsapp_api(client):
+    res = client.get("/api/v1/notifications/whatsapp?severity=DAILY_SUMMARY")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["channel"] == "WHATSAPP"
+    assert "*synQ — Daily Operations*" in data["formatted_message"]
+
+
+def test_analytics_and_health_api(client):
+    res_a = client.get("/api/v1/analytics")
+    assert res_a.status_code == 200
+    assert "fleet_health" in res_a.json()
+
+    res_h = client.get("/api/v1/health")
+    assert res_h.status_code == 200
+    assert "fleet_health" in res_h.json()
+    assert len(res_h.json()["fleet_health"]) == 12
+
+
+def test_agent_query_and_what_if_api(client):
+    res_q = client.post("/api/v1/agent/query", json={"query": "Why was productivity lower yesterday?"})
+    assert res_q.status_code == 200
+    data_q = res_q.json()
+    assert data_q["query_type"] == "HISTORICAL_ROOT_CAUSE"
+    assert len(data_q["contributing_factors"]) == 3
+
+    res_w = client.post("/api/v1/agent/what-if", json={"robot_id": "AMR-07", "duration_hours": 2.0})
+    assert res_w.status_code == 200
+    data_w = res_w.json()
+    assert data_w["target_robot"] == "AMR-07"
+    assert data_w["simulated_throughput"] < 147
+
+
+def test_demo_portal_and_scenarios_api(client):
+    res_demo = client.get("/demo")
+    assert res_demo.status_code == 200
+    assert "FLTX Live Facility Demo Portal" in res_demo.text
+
+    res_scenarios = client.get("/api/v1/demo/scenarios")
+    assert res_scenarios.status_code == 200
+    assert len(res_scenarios.json()["scenarios"]) == 6
+
+    res_run = client.post("/api/v1/demo/run-scenario/BLOCK_AISLE_C04")
+    assert res_run.status_code == 200
+    assert res_run.json()["status"] == "EXECUTED"
+
+    res_qr = client.get("/api/v1/demo/qr")
+    assert res_qr.status_code == 200
+    assert "image/svg+xml" in res_qr.headers["content-type"]
+

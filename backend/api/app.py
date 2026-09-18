@@ -1,19 +1,35 @@
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 import asyncio
 import time
+import os
 
 from fms.topology.warehouse_graph import WarehouseGraph
 from fms.traffic.cbs_router import AgentPlan
 from fms.fleet.fleet_manager import FleetManager, RobotAgent, WarehouseOrder
 from fms.vda5050.vda5050_serializer import VDA5050Serializer, VDA5050State, VDA5050Header
 
+# Operational Intelligence Modules
+from backend.persistence.db import db
+from backend.persistence.seed_data import seed_operational_memory
+from backend.events.event_bus import event_bus
+from backend.events.event_types import EventType, EventSeverity
+from backend.analytics.analytics_engine import analytics_engine
+from backend.health.health_engine import health_engine
+from backend.notifications.reporter import reporter
+from backend.agent.operations_agent import operations_agent
+from backend.agent.what_if_simulator import what_if_simulator
+from backend.demo.scenario_runner import scenario_runner
+from backend.demo.qr_generator import qr_generator
+from backend.demo.demo_gatekeeper import demo_gatekeeper
+
 app = FastAPI(
-    title="synQ FMS & Digital Twin API",
-    description="Fleet Management System, VDA 5050 Dispatcher, and Realtime Digital Twin Gateway for synQ-AMR",
-    version="1.0.0"
+    title="FLTX Autonomous Operations Platform API",
+    description="Fleet Management System, Operational Memory, VDA 5050 v3.0 Orchestration & AI Operations Agent",
+    version="2.0.0"
 )
 
 app.add_middleware(
@@ -23,6 +39,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialize Operational Memory Database
+seed_operational_memory(db)
 
 # Global State
 graph = WarehouseGraph.create_standard_warehouse_grid()
@@ -49,12 +68,21 @@ class PayloadActionRequest(BaseModel):
     parameter: float = 0.0
 
 
+class AgentQueryRequest(BaseModel):
+    query: str
+
+
+class WhatIfRequest(BaseModel):
+    robot_id: str = "AMR-07"
+    duration_hours: float = 2.0
+
+
 @app.get("/health")
 def get_health():
     return {
         "status": "HEALTHY",
-        "service": "synq-fms-backend",
-        "version": "1.0.0",
+        "service": "fltx-autonomous-operations-platform",
+        "version": "2.0.0",
         "registered_amrs": len(fms.robots)
     }
 
@@ -82,7 +110,10 @@ def get_warehouse_topology():
 
 
 @app.get("/api/v1/fleet")
-def get_fleet_status():
+def get_fleet_status(full: bool = False):
+    if full:
+        all_db_robots = db.get_all_robots()
+        return {"fleet": all_db_robots}
     res = []
     for rid, bot in fms.robots.items():
         res.append({
@@ -98,7 +129,7 @@ def get_fleet_status():
 
 
 @app.post("/api/v1/orders")
-def create_order(req: OrderCreateRequest):
+async def create_order(req: OrderCreateRequest):
     if req.pick_node not in graph.nodes or req.drop_node not in graph.nodes:
         raise HTTPException(status_code=400, detail="Invalid pick or drop node ID")
 
@@ -130,17 +161,35 @@ def create_order(req: OrderCreateRequest):
         robot.planned_trajectory = routes[assigned_bot]
 
     order_record = {
+        "mission_id": req.order_id,
         "order_id": req.order_id,
         "assigned_amr": assigned_bot,
+        "assigned_robot": assigned_bot,
         "pick_node": req.pick_node,
         "drop_node": req.drop_node,
+        "payload_type": req.required_payload,
         "required_payload": req.required_payload,
         "status": "DISPATCHED",
+        "priority": req.priority,
         "route": routes.get(assigned_bot, []) if routes else [],
         "decision_trace": decision_trace,
-        "cbs_trace": cbs_trace
+        "cbs_trace": cbs_trace,
+        "created_at": time.time()
     }
     active_orders_history.append(order_record)
+
+    # Persist in SQLite Operational Memory
+    db.record_mission(order_record)
+
+    # Broadcast on Event Bus
+    await event_bus.publish(
+        event_type=EventType.MISSION_ASSIGNED,
+        source_entity="FMS-DISPATCH",
+        message=f"Mission {req.order_id} assigned to {assigned_bot} (Cost: {decision_trace.get('candidates', [{}])[0].get('cost_score', 'N/A')}).",
+        severity=EventSeverity.INFO,
+        metadata={"order_id": req.order_id, "assigned_amr": assigned_bot}
+    )
+
     return order_record
 
 
@@ -161,10 +210,6 @@ def preview_order_decision(req: OrderCreateRequest):
 
 @app.post("/api/v1/cbs/simulate-conflict")
 def simulate_cbs_crossing_conflict():
-    """
-    Simulates a crossing conflict scenario between synq-amr-01 and synq-amr-03
-    to demonstrate CBS conflict detection, CT branching, and resolution.
-    """
     plans = [
         AgentPlan(agent_id="synq-amr-01", start_node="N_0_0", goal_node="N_0_2"),
         AgentPlan(agent_id="synq-amr-03", start_node="N_0_3", goal_node="N_0_1")
@@ -185,13 +230,9 @@ class ObstacleInjectionRequest(BaseModel):
 
 @app.post("/api/v1/navigation/inject-obstacle")
 def inject_obstacle_and_replan(req: ObstacleInjectionRequest):
-    """
-    Simulates dynamic obstacle detection, risk assessment, and autonomous replanning.
-    """
     affected_robots = []
     for rid, bot in fms.robots.items():
         if bot.planned_trajectory:
-            # Check if trajectory passes near (req.x, req.y)
             affected_robots.append({
                 "robot_id": rid,
                 "current_node": bot.current_node,
@@ -217,8 +258,9 @@ def inject_obstacle_and_replan(req: ObstacleInjectionRequest):
 
 @app.get("/api/v1/orders")
 def get_orders():
-    return {"orders": active_orders_history}
-
+    # Return from database + recent in-memory
+    db_missions = db.get_missions(limit=50)
+    return {"orders": db_missions or active_orders_history}
 
 
 @app.post("/api/v1/robots/{robot_id}/estop")
@@ -254,12 +296,77 @@ def trigger_payload_action(robot_id: str, req: PayloadActionRequest):
     }
 
 
+# =====================================================================
+# OPERATIONAL PLATFORM ENDPOINTS (REPORTS, HEALTH, AI AGENT, DEMO)
+# =====================================================================
+
+@app.get("/api/v1/reports/daily")
+def get_daily_operations_report():
+    report_text = reporter.generate_daily_operations_report()
+    return {
+        "format": "ASCII_TEXT",
+        "report": report_text,
+        "metrics": analytics_engine.get_summary_metrics()
+    }
+
+
+@app.get("/api/v1/notifications/whatsapp")
+def get_whatsapp_notifications(severity: str = "DAILY_SUMMARY"):
+    return reporter.generate_whatsapp_message(severity=severity)
+
+
+@app.get("/api/v1/notifications/email")
+def get_email_digest():
+    return reporter.generate_email_digest()
+
+
+@app.get("/api/v1/analytics")
+def get_fleet_analytics():
+    return analytics_engine.get_summary_metrics()
+
+
+@app.get("/api/v1/health")
+def get_predictive_health():
+    return {
+        "facility": "Warehouse 01 — Austin Hub",
+        "fleet_health": health_engine.evaluate_fleet_health()
+    }
+
+
+@app.post("/api/v1/agent/query")
+def ask_operations_agent(req: AgentQueryRequest):
+    return operations_agent.ask(req.query)
+
+
+@app.post("/api/v1/agent/what-if")
+def run_what_if_simulation(req: WhatIfRequest):
+    return what_if_simulator.simulate_robot_unavailability(req.robot_id, req.duration_hours)
+
+
+@app.get("/api/v1/demo/scenarios")
+def list_demo_scenarios():
+    return {"scenarios": scenario_runner.get_available_scenarios()}
+
+
+@app.post("/api/v1/demo/run-scenario/{scenario_id}")
+async def run_demo_scenario(scenario_id: str):
+    return await scenario_runner.run_scenario(scenario_id)
+
+
+@app.get("/api/v1/demo/qr")
+def get_demo_qr_svg(request: Request):
+    host = request.headers.get("host", "localhost:8000")
+    url = f"http://{host}/demo"
+    svg = qr_generator.generate_demo_qr_svg(url)
+    return Response(content=svg, media_type="image/svg+xml")
+
+
 @app.websocket("/ws/telemetry")
 async def websocket_telemetry_stream(websocket: WebSocket):
     await websocket.accept()
     try:
         while True:
-            # Emit live fleet telemetry at 5 Hz
+            # Live fleet telemetry from FMS
             telemetry = {
                 "timestamp": time.time(),
                 "fleet": [
@@ -272,6 +379,17 @@ async def websocket_telemetry_stream(websocket: WebSocket):
                         "trajectory": bot.planned_trajectory
                     }
                     for bot in fms.robots.values()
+                ],
+                "recent_events": [
+                    {
+                        "id": e.event_id,
+                        "type": e.event_type.value,
+                        "severity": e.severity.value,
+                        "source": e.source_entity,
+                        "message": e.message,
+                        "time": time.strftime("%H:%M:%S", time.localtime(e.timestamp))
+                    }
+                    for e in event_bus.get_recent_events(limit=5)
                 ]
             }
             await websocket.send_json(telemetry)
@@ -279,11 +397,17 @@ async def websocket_telemetry_stream(websocket: WebSocket):
     except WebSocketDisconnect:
         pass
 
-import os
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 
 frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend'))
+
+@app.get("/demo")
+def serve_demo_portal():
+    demo_file = os.path.join(frontend_path, "demo.html")
+    if os.path.exists(demo_file):
+        return FileResponse(demo_file)
+    return {"message": "Demo Portal not found"}
+
+
 if os.path.exists(frontend_path):
     @app.get("/")
     def serve_frontend_root():

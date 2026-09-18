@@ -61,8 +61,7 @@ class OperationalDatabase:
                 created_at REAL NOT NULL,
                 completed_at REAL,
                 duration_s REAL,
-                decision_trace_json TEXT,
-                FOREIGN KEY (assigned_robot) REFERENCES robots(robot_id)
+                decision_trace_json TEXT
             )
             """)
 
@@ -163,6 +162,13 @@ class OperationalDatabase:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             data = dict(mission_data)
+            data["assigned_robot"] = data.get("assigned_robot") or data.get("assigned_amr")
+            data.setdefault("sla_deadline_s", 300.0)
+            data.setdefault("completed_at", None)
+            data.setdefault("duration_s", None)
+            data.setdefault("priority", 1)
+            data.setdefault("created_at", time.time())
+
             if "decision_trace" in data and isinstance(data["decision_trace"], (dict, list)):
                 data["decision_trace_json"] = json.dumps(data["decision_trace"])
             elif "decision_trace_json" not in data:
