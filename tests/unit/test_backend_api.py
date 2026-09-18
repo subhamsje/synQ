@@ -181,3 +181,38 @@ def test_demo_portal_and_scenarios_api(client):
     assert res_qr.status_code == 200
     assert "image/svg+xml" in res_qr.headers["content-type"]
 
+
+def test_gateway_and_observation_api(client):
+    res_gw = client.get("/api/v1/gateway/status")
+    assert res_gw.status_code == 200
+    assert res_gw.json()["gateway_state"] == "CONNECTED"
+    assert res_gw.json()["connected_robots"] >= 3
+
+    res_obs = client.get("/api/v1/observation/anomalies")
+    assert res_obs.status_code == 200
+    assert "anomalies" in res_obs.json()
+
+
+def test_tasks_api(client):
+    res_tasks = client.get("/api/v1/tasks")
+    assert res_tasks.status_code == 200
+    assert "tasks" in res_tasks.json()
+
+
+def test_autonomous_recovery_endpoints(client):
+    # Aisle block recovery
+    res_aisle = client.post("/api/v1/recovery/aisle-block", json={"blocked_node_id": "N_1_1"})
+    assert res_aisle.status_code == 200
+    assert res_aisle.json()["status"] == "RESOLVED_AUTONOMOUSLY"
+
+    # Robot fault recovery
+    res_fault = client.post("/api/v1/recovery/robot-fault", json={"failed_robot_id": "synq-amr-01"})
+    assert res_fault.status_code == 200
+    assert "recovery_status" in res_fault.json()
+
+    # Low battery recovery
+    res_batt = client.post("/api/v1/recovery/low-battery", json={"robot_id": "synq-amr-02", "dock_node": "N_0_0"})
+    assert res_batt.status_code == 200
+    assert res_batt.json()["incident_type"] == "BATTERY_CRITICAL_RECOVERY"
+
+

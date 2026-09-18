@@ -88,6 +88,43 @@ class VDA5050Serializer:
         return time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
 
     @classmethod
+    def create_order_from_nodes(
+        cls,
+        order_id: str,
+        order_update_id: int,
+        node_ids: List[str],
+        manufacturer: str = "synQ-Robotics",
+        serial_number: str = "synq-amr-01"
+    ) -> VDA5050Order:
+        header = VDA5050Header(
+            headerId=1,
+            timestamp=cls.current_timestamp_iso(),
+            version="2.0.0",
+            manufacturer=manufacturer,
+            serialNumber=serial_number
+        )
+        nodes = [
+            VDA5050Node(nodeId=nid, sequenceId=i * 2, released=True)
+            for i, nid in enumerate(node_ids)
+        ]
+        edges = []
+        for i in range(len(node_ids) - 1):
+            edges.append(VDA5050Edge(
+                edgeId=f"e_{node_ids[i]}_{node_ids[i+1]}",
+                sequenceId=i * 2 + 1,
+                startNodeId=node_ids[i],
+                endNodeId=node_ids[i+1],
+                released=True
+            ))
+        return VDA5050Order(
+            header=header,
+            orderId=order_id,
+            orderUpdateId=order_update_id,
+            nodes=nodes,
+            edges=edges
+        )
+
+    @classmethod
     def serialize_order(cls, order: VDA5050Order) -> str:
         return json.dumps(asdict(order), indent=2)
 

@@ -25,6 +25,12 @@ from backend.agent.what_if_simulator import what_if_simulator
 from backend.demo.scenario_runner import scenario_runner
 from backend.demo.qr_generator import qr_generator
 from backend.demo.demo_gatekeeper import demo_gatekeeper
+from fms.adapters import SimulationRobotAdapter, ROS2RobotAdapter, VDA5050RobotAdapter
+from backend.gateway.ros2_gateway import ros2_gateway
+from fms.tasks.task_engine import task_engine
+from fms.observation.observation_loop import observation_loop
+from backend.recovery.recovery_engine import recovery_engine
+from fms.models.domain_models import TaskStatus, PayloadType
 
 app = FastAPI(
     title="FLTX Autonomous Operations Platform API",
@@ -51,6 +57,20 @@ fms = FleetManager(graph)
 fms.register_robot(RobotAgent(robot_id="synq-amr-01", current_node="N_0_0", battery_pct=95.0, payload_type="SCISSOR_LIFT"))
 fms.register_robot(RobotAgent(robot_id="synq-amr-02", current_node="N_3_3", battery_pct=88.0, payload_type="ROLLER_CONVEYOR"))
 fms.register_robot(RobotAgent(robot_id="synq-amr-03", current_node="N_0_3", battery_pct=91.0, payload_type="TOTE_GRIPPER"))
+
+# Wire Autonomous Recovery Engine and Real-time Observation Loop with FMS and Graph
+recovery_engine.fms = fms
+recovery_engine.graph = graph
+
+for rid, bot in fms.robots.items():
+    sim_ad = SimulationRobotAdapter(
+        robot_id=rid,
+        initial_node=bot.current_node,
+        payload_type=bot.payload_type,
+        battery_pct=bot.battery_pct
+    )
+    observation_loop.register_adapter(rid, sim_ad)
+    ros2_gateway.register_robot(rid)
 
 active_orders_history: List[Dict[str, Any]] = []
 
@@ -178,6 +198,24 @@ async def create_order(req: OrderCreateRequest):
     }
     active_orders_history.append(order_record)
 
+    # Track in Task Engine
+    t_payload = PayloadType.ANY
+    try:
+        t_payload = PayloadType(req.required_payload)
+    except Exception:
+        pass
+    task_engine.submit_task(
+        task_id=req.order_id,
+        pick_node=req.pick_node,
+        drop_node=req.drop_node,
+        required_payload=t_payload,
+        priority=req.priority
+    )
+    task_engine.transition_state(req.order_id, TaskStatus.ALLOCATING)
+    task_engine.transition_state(req.order_id, TaskStatus.ASSIGNED)
+    if req.order_id in task_engine.tasks:
+        task_engine.tasks[req.order_id].assigned_robot_id = assigned_bot
+
     # Persist in SQLite Operational Memory
     db.record_mission(order_record)
 
@@ -294,6 +332,53 @@ def trigger_payload_action(robot_id: str, req: PayloadActionRequest):
         "parameter": req.parameter,
         "status": "EXECUTED"
     }
+
+
+# =====================================================================
+# AUTONOMOUS RECOVERY & GATEWAY ENDPOINTS
+# =====================================================================
+
+class AisleBlockRecoveryRequest(BaseModel):
+    blocked_node_id: str
+
+
+class RobotFaultRecoveryRequest(BaseModel):
+    failed_robot_id: str
+
+
+class LowBatteryRecoveryRequest(BaseModel):
+    robot_id: str
+    dock_node: str = "N_0_0"
+
+
+@app.post("/api/v1/recovery/aisle-block")
+async def trigger_aisle_block_recovery(req: AisleBlockRecoveryRequest):
+    return await recovery_engine.recover_aisle_block(req.blocked_node_id)
+
+
+@app.post("/api/v1/recovery/robot-fault")
+async def trigger_robot_fault_recovery(req: RobotFaultRecoveryRequest):
+    return await recovery_engine.recover_robot_failure(req.failed_robot_id)
+
+
+@app.post("/api/v1/recovery/low-battery")
+async def trigger_low_battery_recovery(req: LowBatteryRecoveryRequest):
+    return await recovery_engine.recover_low_battery(req.robot_id, req.dock_node)
+
+
+@app.get("/api/v1/gateway/status")
+def get_gateway_status():
+    return ros2_gateway.get_status()
+
+
+@app.get("/api/v1/tasks")
+def list_tasks():
+    return {"tasks": [t.__dict__ for t in task_engine.list_tasks()]}
+
+
+@app.get("/api/v1/observation/anomalies")
+def get_observation_anomalies():
+    return {"anomalies": observation_loop.evaluate_cycle()}
 
 
 # =====================================================================

@@ -226,6 +226,31 @@ class OperationalDatabase:
             row = cursor.fetchone()
             return dict(row) if row else None
 
+    # Incidents
+    def record_incident(self, data: Dict[str, Any]):
+        incident_id = data.get("incident_id") or f"INC-{int(time.time()*1000)}"
+        incident_type = data.get("incident_type", "GENERIC_FAULT")
+        source_entity = data.get("robot_id") or data.get("source_entity", "FACILITY")
+        location = data.get("node_or_location", "")
+        resolved = 1 if data.get("resolved", True) else 0
+        resolution_summary = data.get("recovery_action") or data.get("description", "")
+        timestamp = data.get("timestamp", time.time())
+
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+            INSERT OR REPLACE INTO incidents (
+                incident_id, incident_type, source_entity, location, resolved, resolution_summary, timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (incident_id, incident_type, source_entity, location, resolved, resolution_summary, timestamp))
+            conn.commit()
+
+    def get_incidents(self, limit: int = 50) -> List[Dict[str, Any]]:
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM incidents ORDER BY timestamp DESC LIMIT ?", (limit,))
+            return [dict(row) for row in cursor.fetchall()]
+
 
 # Global Database Instance
 db = OperationalDatabase()
