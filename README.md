@@ -47,10 +47,10 @@ An industrial-grade, simulation-first, hardware-ready modular Autonomous Mobile 
 | Milestone | Title | Status | Validation |
 | :--- | :--- | :---: | :--- |
 | **M0** | Environment Audit | **COMPLETE** | Darwin arm64 toolchain, CMake 4.4, Python 3.10, Colcon extensions |
-| **M1** | Simulated synQ-AMR & Mecanum Drive | **COMPLETE** | URDF/Xacro model, ros2_control, 8/8 kinematics unit tests passing |
+| **M1** | Simulated synQ-AMR & Mecanum Drive | **COMPLETE** | URDF/Xacro model, ros2_control, Gazebo spawn launcher |
 | **M2** | Mecanum Kinematics Solver | **COMPLETE** | Forward/Inverse equations, $O$-shape roller sign validation, odometry integration |
-| **M3** | Sensor Layer (LiDAR, IMU, TF2) | *Next* | `/sensors/lidar/scan`, `/sensors/imu`, and TF tree validation |
-| **M4** | Localization & SLAM Toolbox | *Planned* | 2D SLAM, loop closure, robot_localization EKF |
+| **M3** | Sensor Layer (LiDAR, IMU, TF2) | **COMPLETE** | `/sensors/lidar/scan`, `/sensors/imu`, TF tree validation, 13/13 tests passing |
+| **M4** | Localization & SLAM Toolbox | *Next* | 2D SLAM, loop closure, robot_localization EKF |
 | **M5** | Nav2 Navigation Stack | *Planned* | Holonomic MPPI local controller, global planner, dynamic obstacle avoidance |
 | **M6** | Mission Executive | *Planned* | BehaviorTree.CPP state machine (`PICK`, `PLACE`, `DOCK`, `CHARGE`) |
 | **M7** | Modular Payload Architecture | *Planned* | 1-Wire auto-ID, dynamic costmap footprint inflation, payload profiles |
@@ -68,11 +68,11 @@ An industrial-grade, simulation-first, hardware-ready modular Autonomous Mobile 
 
 ## 🧪 Quick Test
 
-### Run Mecanum Kinematics Unit Tests
+### Run Complete Test Suite
 ```bash
 make test
 ```
-*Executes 8 mathematical test cases covering forward, reverse, lateral strafing, counter-clockwise rotation, 45-degree diagonal motion, combined holonomic trajectory, and encoder odometry delta integration.*
+*Executes all 13 unit tests across Mecanum kinematics ($O$-shape forward/inverse/diagonal vectors) and Sensor processing (LiDAR range filtering, watchdog dropouts, IMU covariances, and TF chain).*
 
 ### Build with Docker (ROS 2 Jazzy & Gazebo Harmonic)
 ```bash
