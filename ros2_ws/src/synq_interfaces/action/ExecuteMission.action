@@ -1,0 +1,12 @@
+string mission_id
+string mission_type
+geometry_msgs/PoseStamped pick_pose
+geometry_msgs/PoseStamped drop_pose
+string payload_action
+---
+bool success
+string result_message
+float32 execution_time_seconds
+---
+string current_phase
+float32 progress_pct

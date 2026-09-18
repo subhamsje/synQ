@@ -1,0 +1,4 @@
+---
+bool detected
+uint8 payload_type
+string payload_serial_number
