@@ -3,36 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>synQ — Fleet Management System</title>
+  <title>synQ — Autonomous Operations Center</title>
   <style>
     :root {
-      /* Real Industrial Warehouse SaaS / SCADA Palette */
-      --bg-app: #1a1d21;
-      --bg-header: #141619;
-      --bg-panel: #202428;
-      --bg-subpanel: #272c32;
-      --bg-map: #16181b;
+      /* Industrial Command System Palette */
+      --bg-canvas: #121518;
+      --bg-header: #181c20;
+      --bg-panel: #1e2227;
+      --bg-subpanel: #262b32;
+      --bg-map: #14171a;
 
-      --border-color: #2e343b;
-      --border-light: #3a424b;
+      --border-color: #2c323a;
+      --border-light: #38404a;
 
-      --text-main: #e1e4e8;
-      --text-secondary: #959da5;
-      --text-muted: #6a737d;
+      --text-main: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
 
-      /* Restrained Functional Status Colors */
-      --color-primary: #1f6feb;       /* Standard corporate blue for selection & navigation */
-      --color-primary-hover: #388bfd;
-      --color-success: #2ea043;       /* Green: Idle/Healthy/Completed */
-      --color-warning: #d29922;       /* Amber: Warning/Low battery */
-      --color-danger: #da3633;        /* Red: E-Stop/Obstacle/Fault */
+      /* Semantic Operational Colors */
+      --color-primary: #1f6feb;       /* Corporate blue: active selection & paths */
+      --color-success: #2ea043;       /* Green: healthy/available/resolved */
+      --color-warning: #d29922;       /* Amber: conflict/evaluating/caution */
+      --color-danger: #cf222e;        /* Red: obstacle/e-stop/safety block */
+      --color-cbs: #a371f7;          /* Purple: CBS constraint tree */
 
-      /* Floorplan Elements */
-      --color-rack: #2b313a;
-      --color-rack-border: #3d4551;
-      --color-aisle: #1d2025;
+      /* Physical Floorplan Surfaces */
+      --color-rack: #252b33;
+      --color-rack-border: #353e4a;
       --color-lane: rgba(255, 255, 255, 0.04);
-      --color-lane-center: rgba(255, 255, 255, 0.12);
+      --color-lane-center: rgba(255, 255, 255, 0.10);
 
       --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       --font-mono: "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
@@ -46,7 +45,7 @@
     }
 
     body {
-      background-color: var(--bg-app);
+      background-color: var(--bg-canvas);
       color: var(--text-main);
       font-family: var(--font-system);
       font-size: 13px;
@@ -58,10 +57,10 @@
     }
 
     /* ------------------------------------------------------------- */
-    /* 1. TOP APPLICATION HEADER                                     */
+    /* 1. TOP OPERATIONAL HEADER                                     */
     /* ------------------------------------------------------------- */
     header.app-header {
-      height: 44px;
+      height: 48px;
       background: var(--bg-header);
       border-bottom: 1px solid var(--border-color);
       display: flex;
@@ -75,75 +74,77 @@
     .header-left {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 16px;
     }
 
-    .app-brand {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-    }
-
-    .brand-name {
-      font-weight: 700;
+    .brand-title {
       font-size: 15px;
+      font-weight: 700;
       color: #ffffff;
       letter-spacing: -0.2px;
     }
 
-    .brand-tag {
+    .brand-sub {
       font-size: 11px;
       color: var(--text-muted);
-      font-weight: 400;
+      border-left: 1px solid var(--border-color);
+      padding-left: 12px;
     }
 
-    .header-divider {
-      width: 1px;
-      height: 16px;
-      background: var(--border-color);
-    }
-
-    .site-selector {
+    /* Autonomy Pipeline Tracker (TASK -> DECISION -> ROUTE -> EXECUTION -> CONFLICT -> RECOVERY -> VERIFICATION) */
+    .autonomy-pipeline-strip {
       display: flex;
       align-items: center;
-      gap: 6px;
-      color: var(--text-secondary);
-      font-size: 12px;
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 2px 4px;
+      cursor: pointer;
     }
 
-    .site-name {
-      color: var(--text-main);
+    .pipeline-step {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: var(--text-muted);
       font-weight: 500;
+      position: relative;
     }
 
-    .header-center {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      font-size: 12px;
+    .pipeline-step.active {
+      color: #ffffff;
+      font-weight: 600;
     }
 
-    .status-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--text-secondary);
+    .pipeline-step.active .step-dot {
+      background: var(--color-primary);
     }
 
-    .status-item strong {
-      color: var(--text-main);
-      font-weight: 500;
-    }
-
-    .dot-indicator {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
+    .pipeline-step.success .step-dot {
       background: var(--color-success);
     }
 
-    .dot-indicator.warning { background: var(--color-warning); }
-    .dot-indicator.danger { background: var(--color-danger); }
+    .pipeline-step.alert .step-dot {
+      background: var(--color-danger);
+    }
+
+    .pipeline-step.warn .step-dot {
+      background: var(--color-warning);
+    }
+
+    .step-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .pipeline-arrow {
+      color: var(--border-light);
+      font-size: 10px;
+    }
 
     .header-right {
       display: flex;
@@ -151,14 +152,13 @@
       gap: 12px;
     }
 
-    /* Industrial Emergency Stop Button */
-    .btn-estop {
-      background: #c92a2a;
-      border: 1px solid #e03131;
+    .btn-why-fltx {
+      background: var(--bg-subpanel);
+      border: 1px solid var(--color-primary);
       color: #ffffff;
       font-size: 11px;
       font-weight: 600;
-      padding: 5px 12px;
+      padding: 6px 12px;
       border-radius: 3px;
       cursor: pointer;
       display: flex;
@@ -166,26 +166,41 @@
       gap: 6px;
     }
 
-    .btn-estop:hover {
+    .btn-why-fltx:hover {
+      background: rgba(31, 111, 235, 0.2);
+    }
+
+    .btn-estop {
       background: #b02525;
+      border: 1px solid #da3633;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .btn-estop:hover {
+      background: #8e1b1c;
     }
 
     .btn-estop.active {
-      background: #2b8a3e;
-      border-color: #2f9e44;
+      background: #2ea043;
+      border-color: #3fb950;
     }
 
     /* ------------------------------------------------------------- */
-    /* 2. MAIN LAYOUT (MAP + RIGHT PANEL)                            */
+    /* 2. MAIN WORKSPACE (MAP + AUTONOMY & CONTEXT PANEL)            */
     /* ------------------------------------------------------------- */
     .main-workspace {
       display: flex;
       flex: 1;
-      height: calc(100vh - 44px - 26px);
+      height: calc(100vh - 48px - 26px);
       position: relative;
     }
 
-    /* Left / Center Map (75% workspace) */
+    /* Central Warehouse Map (72% width) */
     .map-container {
       flex: 1;
       background: var(--bg-map);
@@ -204,58 +219,58 @@
       cursor: grabbing;
     }
 
-    /* Clean Map Viewport Controls */
-    .map-controls {
+    /* Map Toolstrip */
+    .map-toolbar {
       position: absolute;
       top: 12px;
       left: 12px;
-      background: rgba(20, 22, 25, 0.95);
+      background: rgba(24, 28, 32, 0.94);
       border: 1px solid var(--border-color);
       border-radius: 3px;
       display: flex;
       align-items: center;
-      padding: 2px;
+      padding: 3px;
       z-index: 10;
     }
 
-    .map-btn {
+    .tool-btn {
       background: transparent;
       border: none;
       color: var(--text-secondary);
       font-size: 11px;
-      padding: 5px 9px;
+      padding: 4px 8px;
       border-radius: 2px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
     }
 
-    .map-btn:hover {
+    .tool-btn:hover {
       background: var(--bg-subpanel);
       color: var(--text-main);
     }
 
-    .map-btn.active {
-      background: #23282e;
+    .tool-btn.active {
+      background: var(--bg-subpanel);
       color: #ffffff;
       font-weight: 500;
     }
 
-    .map-separator {
+    .tool-sep {
       width: 1px;
       height: 14px;
       background: var(--border-color);
-      margin: 0 2px;
+      margin: 0 3px;
     }
 
-    /* Conflict / Obstacle Operational Notification Pill */
-    .map-toast {
+    /* Spatial Notification Toast */
+    .spatial-toast {
       position: absolute;
       top: 12px;
       right: 12px;
-      background: #2b1d1d;
-      border: 1px solid #672626;
+      background: #2b1e1e;
+      border: 1px solid var(--color-danger);
       color: #f85149;
       font-size: 11px;
       padding: 6px 12px;
@@ -266,28 +281,26 @@
       z-index: 10;
     }
 
-    /* Map Legend / Scale */
-    .map-legend {
+    .map-footer-hud {
       position: absolute;
       bottom: 10px;
       left: 12px;
       font-size: 11px;
       color: var(--text-muted);
-      background: rgba(20, 22, 25, 0.85);
+      background: rgba(24, 28, 32, 0.9);
       padding: 4px 8px;
       border-radius: 2px;
       border: 1px solid var(--border-color);
       pointer-events: none;
       display: flex;
-      align-items: center;
-      gap: 12px;
+      gap: 16px;
     }
 
     /* ------------------------------------------------------------- */
-    /* 3. RIGHT OPERATIONS PANEL                                     */
+    /* 3. RIGHT OPERATIONS & AUTONOMY PANEL                          */
     /* ------------------------------------------------------------- */
     aside.operations-panel {
-      width: 360px;
+      width: 390px;
       background: var(--bg-panel);
       border-left: 1px solid var(--border-color);
       display: flex;
@@ -296,7 +309,6 @@
       z-index: 20;
     }
 
-    /* Mode Navigation Tabs */
     .panel-tabs {
       height: 38px;
       background: var(--bg-header);
@@ -304,13 +316,13 @@
       display: flex;
     }
 
-    .tab-item {
+    .tab-btn {
       flex: 1;
       background: transparent;
       border: none;
       border-bottom: 2px solid transparent;
       color: var(--text-secondary);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 500;
       cursor: pointer;
       display: flex;
@@ -319,17 +331,18 @@
       transition: all 0.1s ease;
     }
 
-    .tab-item:hover {
+    .tab-btn:hover {
       color: var(--text-main);
     }
 
-    .tab-item.active {
+    .tab-btn.active {
       color: #ffffff;
       background: var(--bg-panel);
       border-bottom-color: var(--color-primary);
+      font-weight: 600;
     }
 
-    .panel-content {
+    .panel-body {
       flex: 1;
       overflow-y: auto;
       padding: 16px;
@@ -338,206 +351,162 @@
       gap: 16px;
     }
 
-    /* Standardized Form Layout */
-    .section-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-main);
-      padding-bottom: 6px;
-      border-bottom: 1px solid var(--border-color);
-      margin-bottom: 10px;
+    /* Section Styling */
+    .sec-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-
-    .field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 12px;
-    }
-
-    label.field-label {
-      font-size: 11px;
-      color: var(--text-secondary);
-    }
-
-    select.input-select {
-      background: var(--bg-app);
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-      font-size: 12px;
-      padding: 6px 8px;
-      border-radius: 3px;
-      outline: none;
-      width: 100%;
-    }
-
-    select.input-select:focus {
-      border-color: var(--color-primary);
-    }
-
-    .btn-action {
-      background: var(--color-primary);
-      border: 1px solid #2f81f7;
-      color: #ffffff;
-      font-size: 12px;
-      font-weight: 500;
-      padding: 8px 12px;
-      border-radius: 3px;
-      cursor: pointer;
-      text-align: center;
-      width: 100%;
-    }
-
-    .btn-action:hover {
-      background: var(--color-primary-hover);
-    }
-
-    .btn-secondary {
-      background: var(--bg-subpanel);
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-      font-size: 11px;
-      padding: 5px 8px;
-      border-radius: 3px;
-      cursor: pointer;
-    }
-
-    .btn-secondary:hover {
-      background: #313740;
-    }
-
-    /* Technical Property Grid */
-    .prop-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 12px;
-    }
-
-    .prop-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding: 2px 0;
-    }
-
-    .prop-name {
-      color: var(--text-secondary);
-    }
-
-    .prop-val {
-      color: var(--text-main);
-      font-weight: 500;
-      font-family: var(--font-mono);
-      font-size: 11px;
-    }
-
-    /* Diagnostics Collapsible */
-    details.diagnostics-box {
-      margin-top: 8px;
-      background: var(--bg-app);
-      border: 1px solid var(--border-color);
-      border-radius: 3px;
-      padding: 8px 10px;
-      font-size: 11px;
-    }
-
-    details.diagnostics-box summary {
-      color: var(--text-secondary);
-      font-weight: 500;
-      cursor: pointer;
-      outline: none;
-    }
-
-    /* Fleet Table */
-    table.data-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-    }
-
-    table.data-table th {
-      text-align: left;
-      font-size: 11px;
-      color: var(--text-secondary);
-      font-weight: 500;
-      padding: 6px 4px;
+      padding-bottom: 6px;
       border-bottom: 1px solid var(--border-color);
+      margin-bottom: 8px;
     }
 
-    table.data-table td {
-      padding: 8px 4px;
-      border-bottom: 1px solid var(--border-color);
-      color: var(--text-main);
+    .sec-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
     }
 
-    tr.clickable-row {
-      cursor: pointer;
-    }
-
-    tr.clickable-row:hover {
-      background: var(--bg-subpanel);
-    }
-
-    tr.clickable-row.selected {
-      background: rgba(31, 111, 235, 0.12);
-    }
-
-    /* Status Text Pill */
-    .badge {
-      display: inline-block;
+    .badge-status {
       font-size: 10px;
       padding: 1px 5px;
       border-radius: 2px;
       font-weight: 500;
     }
 
-    .badge-idle { background: rgba(46, 160, 67, 0.15); color: #3fb950; }
-    .badge-nav { background: rgba(31, 111, 235, 0.15); color: #58a6ff; }
-    .badge-estop { background: rgba(218, 54, 51, 0.15); color: #f85149; }
-    .badge-chg { background: rgba(210, 153, 34, 0.15); color: #d29922; }
+    .badge-status.idle { background: rgba(46, 160, 67, 0.15); color: #3fb950; }
+    .badge-status.nav { background: rgba(31, 111, 235, 0.15); color: #58a6ff; }
+    .badge-status.estop { background: rgba(207, 34, 46, 0.15); color: #f85149; }
+    .badge-status.warn { background: rgba(210, 153, 34, 0.15); color: #d29922; }
 
-    /* Operational Event Feed */
-    .activity-feed {
+    /* Decision Factors Table & Rationale Boxes */
+    .decision-callout-box {
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-color);
+      border-left: 3px solid var(--color-primary);
+      padding: 8px 10px;
+      border-radius: 2px;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .decision-callout-box.alert {
+      border-left-color: var(--color-danger);
+    }
+
+    .decision-callout-box.cbs {
+      border-left-color: var(--color-cbs);
+    }
+
+    .decision-summary-text {
+      color: var(--text-main);
+      line-height: 1.4;
+      font-size: 11px;
+    }
+
+    table.matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-top: 6px;
+    }
+
+    table.matrix-table th {
+      text-align: left;
+      font-size: 10px;
+      color: var(--text-muted);
+      padding: 4px;
+      border-bottom: 1px solid var(--border-color);
+      text-transform: uppercase;
+    }
+
+    table.matrix-table td {
+      padding: 6px 4px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    tr.matrix-selected {
+      background: rgba(46, 160, 67, 0.1);
+    }
+
+    tr.matrix-rejected {
+      color: var(--text-muted);
+    }
+
+    /* Property Row List */
+    .prop-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 3px 0;
+      font-size: 12px;
+    }
+
+    .prop-name { color: var(--text-secondary); }
+    .prop-val { font-family: var(--font-mono); font-size: 11px; font-weight: 500; }
+
+    /* Form Inputs */
+    .field-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .select-input {
+      width: 100%;
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 8px;
+      font-size: 12px;
+      border-radius: 3px;
+      outline: none;
+      margin-bottom: 10px;
+    }
+
+    .btn-submit-action {
+      width: 100%;
+      background: var(--color-primary);
+      border: 1px solid #388bfd;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .btn-submit-action:hover {
+      background: #388bfd;
+    }
+
+    /* Operational Feed */
+    .feed-stream {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
 
-    .activity-item {
+    .feed-item {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       font-size: 11px;
       padding: 4px 0;
       border-bottom: 1px solid var(--border-color);
     }
 
-    .activity-time {
-      font-family: var(--font-mono);
-      color: var(--text-muted);
-      width: 36px;
-      flex-shrink: 0;
-    }
+    .feed-time { font-family: var(--font-mono); color: var(--text-muted); width: 34px; flex-shrink: 0; }
+    .feed-actor { font-weight: 600; color: var(--text-main); width: 60px; flex-shrink: 0; }
+    .feed-text { color: var(--text-secondary); flex: 1; }
 
-    .activity-robot {
-      font-weight: 500;
-      color: var(--text-main);
-      width: 55px;
-      flex-shrink: 0;
-    }
-
-    .activity-msg {
-      color: var(--text-secondary);
-      flex: 1;
-    }
-
-    /* ------------------------------------------------------------- */
-    /* 4. BOTTOM STATUS STRIP                                        */
-    /* ------------------------------------------------------------- */
-    footer.status-strip {
+    /* Bottom Strip */
+    footer.app-footer {
       height: 26px;
       background: var(--bg-header);
       border-top: 1px solid var(--border-color);
@@ -550,148 +519,131 @@
       flex-shrink: 0;
       z-index: 100;
     }
-
-    .strip-left, .strip-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .strip-item strong {
-      color: var(--text-secondary);
-      font-weight: 500;
-    }
   </style>
 </head>
 <body>
 
-  <!-- 1. APPLICATION HEADER -->
+  <!-- 1. TOP OPERATIONAL HEADER -->
   <header class="app-header">
     <div class="header-left">
-      <div class="app-brand">
-        <span class="brand-name">synQ</span>
-        <span class="brand-tag">Fleet Manager</span>
-      </div>
-      <div class="header-divider"></div>
-      <div class="site-selector">
-        <span>Site:</span>
-        <span class="site-name">Warehouse 01 — Austin Hub</span>
-      </div>
-    </div>
+      <span class="brand-title">synQ</span>
+      <span class="brand-sub">Autonomous Operations Center</span>
 
-    <div class="header-center">
-      <div class="status-item">
-        <span class="dot-indicator" id="dot-fleet"></span>
-        <span>Fleet: <strong id="val-fleet-summary">3 online</strong></span>
-      </div>
-      <div class="status-item">
-        <span>Missions: <strong id="val-active-missions">0 active</strong></span>
-      </div>
-      <div class="status-item">
-        <span class="dot-indicator" id="dot-sys"></span>
-        <span>System: <strong id="val-sys-status">Normal</strong></span>
+      <!-- 7-Stage Autonomy Loop Tracker -->
+      <div class="autonomy-pipeline-strip" title="Click to inspect current Autonomy Loop decision state" onclick="setPanelTab('autonomy')">
+        <div class="pipeline-step" id="step-task"><div class="step-dot"></div><span>TASK</span></div>
+        <span class="pipeline-arrow">→</span>
+        <div class="pipeline-step" id="step-decision"><div class="step-dot"></div><span>DECISION</span></div>
+        <span class="pipeline-arrow">→</span>
+        <div class="pipeline-step" id="step-route"><div class="step-dot"></div><span>ROUTE</span></div>
+        <span class="pipeline-arrow">→</span>
+        <div class="pipeline-step active" id="step-exec"><div class="step-dot"></div><span>EXECUTION</span></div>
+        <span class="pipeline-arrow">→</span>
+        <div class="pipeline-step" id="step-conflict"><div class="step-dot"></div><span>CONFLICT</span></div>
+        <span class="pipeline-arrow">→</span>
+        <div class="pipeline-step" id="step-recovery"><div class="step-dot"></div><span>RECOVERY</span></div>
+        <span class="pipeline-arrow">→</span>
+        <div class="pipeline-step" id="step-verify"><div class="step-dot"></div><span>VERIFIED</span></div>
       </div>
     </div>
 
     <div class="header-right">
+      <button class="btn-why-fltx" onclick="openWhyFLTXDrawer()">
+        <span>Why Did FLTX Do This?</span>
+      </button>
       <button class="btn-estop" id="btnEstop" onclick="toggleGlobalEstop()">
         <span id="estopLabel">Emergency Stop (All)</span>
       </button>
     </div>
   </header>
 
-  <!-- 2. MAIN WORKSPACE (MAP + RIGHT PANEL) -->
+  <!-- 2. MAIN WORKSPACE -->
   <main class="main-workspace">
 
-    <!-- Primary Warehouse Floor Plan Map -->
+    <!-- Warehouse Map -->
     <section class="map-container" id="mapContainer">
       <canvas id="warehouseCanvas"></canvas>
 
-      <!-- Clean Map Controls -->
-      <div class="map-controls">
-        <button class="map-btn active" id="btnToggleLanes" onclick="toggleMapLayer('lanes')">Lanes</button>
-        <button class="map-btn active" id="btnToggleRacks" onclick="toggleMapLayer('racks')">Racks</button>
-        <button class="map-btn active" id="btnToggleRoutes" onclick="toggleMapLayer('routes')">Routes</button>
-        <div class="map-separator"></div>
-        <button class="map-btn" id="btnSimObstacle" onclick="toggleObstacleTool()">Place Obstacle</button>
-        <button class="map-btn" id="btnSimConflict" onclick="triggerCbsConflictDemo()">Resolve Conflict</button>
-        <div class="map-separator"></div>
-        <button class="map-btn" onclick="resetMapCamera()">Reset View</button>
+      <!-- Autonomy Visualization Toolbar -->
+      <div class="map-toolbar">
+        <button class="tool-btn active" id="btnToggleLanes" onclick="toggleLayer('lanes')">Transit Lanes</button>
+        <button class="tool-btn active" id="btnToggleRacks" onclick="toggleLayer('racks')">Racks</button>
+        <button class="tool-btn active" id="btnToggleEvaluations" onclick="toggleLayer('evaluations')">Candidate Evals</button>
+        <button class="tool-btn active" id="btnToggleRoutes" onclick="toggleLayer('routes')">CBS Routes</button>
+        <div class="tool-sep"></div>
+        <button class="tool-btn" id="btnSimObstacle" onclick="toggleObstaclePlacement()">Inject Obstacle</button>
+        <button class="tool-btn" id="btnSimConflict" onclick="triggerCbsConflictScenario()">Simulate CBS Crossing</button>
+        <div class="tool-sep"></div>
+        <button class="tool-btn" onclick="resetMapCamera()">Reset View</button>
       </div>
 
-      <!-- Operational Alert Toast -->
-      <div class="map-toast" id="mapToast">
-        <span id="mapToastText">Notice</span>
+      <div class="spatial-toast" id="spatialToast">
+        <span id="spatialToastMsg">Autonomy Event</span>
       </div>
 
-      <!-- Scale / Coordinates Legend -->
-      <div class="map-legend">
-        <span>Floor: 15m × 15m</span>
+      <div class="map-footer-hud">
+        <span>Warehouse: <strong>15m × 15m Hub</strong></span>
         <span id="legendCoords">X: 0.00m, Y: 0.00m</span>
+        <span>Active CBS Reservations: <strong id="valReservationsCount">0</strong></span>
       </div>
     </section>
 
-    <!-- Contextual Operations Panel -->
+    <!-- Contextual Right Panel -->
     <aside class="operations-panel">
       <div class="panel-tabs">
-        <button class="tab-item active" id="tabBtnInspector" onclick="setPanelTab('inspector')">Inspector</button>
-        <button class="tab-item" id="tabBtnDispatch" onclick="setPanelTab('dispatch')">Dispatch</button>
-        <button class="tab-item" id="tabBtnFleet" onclick="setPanelTab('fleet')">Fleet</button>
-        <button class="tab-item" id="tabBtnActivity" onclick="setPanelTab('activity')">Activity</button>
+        <button class="tab-btn active" id="tabBtnAutonomy" onclick="setPanelTab('autonomy')">Autonomy Loop</button>
+        <button class="tab-btn" id="tabBtnInspector" onclick="setPanelTab('inspector')">Inspector</button>
+        <button class="tab-btn" id="tabBtnDispatch" onclick="setPanelTab('dispatch')">Dispatch</button>
+        <button class="tab-btn" id="tabBtnFleet" onclick="setPanelTab('fleet')">Fleet</button>
+        <button class="tab-btn" id="tabBtnTimeline" onclick="setPanelTab('timeline')">Activity</button>
       </div>
 
-      <div class="panel-content" id="panelContent">
-        <!-- Rendered dynamically -->
+      <div class="panel-body" id="panelBody">
+        <!-- Dynamically rendered -->
       </div>
     </aside>
-
   </main>
 
-  <!-- 3. BOTTOM STATUS STRIP -->
-  <footer class="status-strip">
-    <div class="strip-left">
-      <div class="strip-item">ROS 2: <strong>Connected</strong></div>
-      <div class="strip-item">Nav2 MPPI: <strong>Online</strong></div>
-      <div class="strip-item">CBS Router: <strong>Ready</strong></div>
-      <div class="strip-item">VDA 5050: <strong>v2.0.0</strong></div>
+  <!-- 3. BOTTOM STRIP -->
+  <footer class="app-footer">
+    <div style="display: flex; gap: 16px;">
+      <span>ROS 2: <strong style="color: #ffffff;">Active</strong></span>
+      <span>Nav2 MPPI: <strong style="color: #ffffff;">50Hz Holonomic</strong></span>
+      <span>CBS Router: <strong style="color: #ffffff;">Constraint Tree Ready</strong></span>
+      <span>VDA 5050: <strong style="color: #ffffff;">MQTT v2.0.0</strong></span>
     </div>
-    <div class="strip-right">
-      <div class="strip-item">Digital Twin: <strong>Synchronized</strong></div>
-      <div class="strip-item" id="stripTime">00:00:00</div>
+    <div style="display: flex; gap: 16px;">
+      <span>Digital Twin: <strong style="color: #ffffff;">Synced</strong></span>
+      <span id="stripTime">00:00:00</span>
     </div>
   </footer>
 
   <script>
     /* ============================================================= */
-    /* INDUSTRIAL FLEET STATE & REAL WAREHOUSE DATA                  */
+    /* REALISTIC SPATIAL MODEL & AUTONOMY STATE                      */
     /* ============================================================= */
 
-    // Physical Warehouse Definition
     const WAREHOUSE = {
       width: 15.0,
       height: 15.0,
-      // Structural Racks (Realistic aisles)
       racks: [
-        { id: "A1", x: 2.0, y: 1.8, w: 4.5, h: 1.4, name: "Rack A (01-08)" },
-        { id: "B1", x: 8.5, y: 1.8, w: 4.5, h: 1.4, name: "Rack B (01-08)" },
-        { id: "C1", x: 2.0, y: 6.8, w: 4.5, h: 1.4, name: "Rack C (01-08)" },
-        { id: "D1", x: 8.5, y: 6.8, w: 4.5, h: 1.4, name: "Rack D (01-08)" },
-        { id: "E1", x: 2.0, y: 11.8, w: 4.5, h: 1.4, name: "Rack E (01-08)" },
-        { id: "F1", x: 8.5, y: 11.8, w: 4.5, h: 1.4, name: "Rack F (01-08)" }
+        { id: "A", x: 2.0, y: 1.8, w: 4.5, h: 1.4, name: "Rack Bay A (Pallets)" },
+        { id: "B", x: 8.5, y: 1.8, w: 4.5, h: 1.4, name: "Rack Bay B (Overstock)" },
+        { id: "C", x: 2.0, y: 6.8, w: 4.5, h: 1.4, name: "Rack Bay C (Fast Pick)" },
+        { id: "D", x: 8.5, y: 6.8, w: 4.5, h: 1.4, name: "Rack Bay D (Cartons)" },
+        { id: "E", x: 2.0, y: 11.8, w: 4.5, h: 1.4, name: "Rack Bay E (ASRS Infeed)" },
+        { id: "F", x: 8.5, y: 11.8, w: 4.5, h: 1.4, name: "Rack Bay F (Staging)" }
       ],
-      // Designated Operational Zones
       zones: [
         { id: "PICK-1", type: "PICK", x: 0.0, y: 4.0, w: 1.8, h: 2.0, label: "Inbound P1" },
         { id: "PICK-2", type: "PICK", x: 0.0, y: 9.0, w: 1.8, h: 2.0, label: "Inbound P2" },
         { id: "DROP-1", type: "DROP", x: 13.2, y: 4.0, w: 1.8, h: 2.0, label: "Outbound D1" },
         { id: "DROP-2", type: "DROP", x: 13.2, y: 9.0, w: 1.8, h: 2.0, label: "Outbound D2" },
-        { id: "CHG-1", type: "CHARGE", x: 0.2, y: 0.2, w: 1.6, h: 1.6, label: "Charger 1" },
-        { id: "CHG-2", type: "CHARGE", x: 13.2, y: 13.2, w: 1.6, h: 1.6, label: "Charger 2" },
-        { id: "PED", type: "RESTRICTED", x: 6.5, y: 0.2, w: 2.0, h: 1.0, label: "Walkway" }
+        { id: "CHG-1", type: "CHARGE", x: 0.2, y: 0.2, w: 1.6, h: 1.6, label: "Fast Charger C1" },
+        { id: "CHG-2", type: "CHARGE", x: 13.2, y: 13.2, w: 1.6, h: 1.6, label: "Fast Charger C2" }
       ]
     };
 
-    // Internal Roadmap Nodes (for CBS routing calculations)
     const ROADMAP_NODES = {};
     for (let r = 0; r < 4; r++) {
       for (let c = 0; c < 4; c++) {
@@ -709,13 +661,12 @@
       }
     }
 
-    // Physical Fleet State (Single Source of Truth)
     const ROBOTS = {
-      "AMR-01": {
-        id: "AMR-01",
-        status: "Idle", // Idle, Navigating, Charging, Emergency Stop
-        battery: 94,
-        payload: "Scissor Lift",
+      "synq-amr-01": {
+        id: "synq-amr-01",
+        status: "Idle",
+        battery: 94.5,
+        payload: "SCISSOR_LIFT",
         payloadPosition: 0.0,
         mission: "—",
         pickup: "—",
@@ -725,18 +676,16 @@
         x: 0.0,
         y: 0.0,
         heading: 0,
-        targetNode: "N_0_0",
         route: [],
         serial: "SN-SYNQ-2026-001",
-        rosState: "synq_amr_node (ACTIVE)",
-        ekfState: "Coverged, trace=0.014",
-        lidarRange: 12.0
+        rosNode: "/synq_amr_01/lifecycle_amr (ACTIVE)",
+        ekfCovariance: "0.012 m² (CONVERGED)"
       },
-      "AMR-02": {
-        id: "AMR-02",
+      "synq-amr-02": {
+        id: "synq-amr-02",
         status: "Idle",
-        battery: 88,
-        payload: "Conveyor",
+        battery: 88.0,
+        payload: "ROLLER_CONVEYOR",
         payloadPosition: 0.0,
         mission: "—",
         pickup: "—",
@@ -746,18 +695,16 @@
         x: 15.0,
         y: 15.0,
         heading: 180,
-        targetNode: "N_3_3",
         route: [],
         serial: "SN-SYNQ-2026-002",
-        rosState: "synq_amr_node (ACTIVE)",
-        ekfState: "Converged, trace=0.019",
-        lidarRange: 12.0
+        rosNode: "/synq_amr_02/lifecycle_amr (ACTIVE)",
+        ekfCovariance: "0.018 m² (CONVERGED)"
       },
-      "AMR-03": {
-        id: "AMR-03",
+      "synq-amr-03": {
+        id: "synq-amr-03",
         status: "Idle",
-        battery: 91,
-        payload: "Tote Gripper",
+        battery: 91.2,
+        payload: "TOTE_GRIPPER",
         payloadPosition: 0.0,
         mission: "—",
         pickup: "—",
@@ -767,54 +714,125 @@
         x: 15.0,
         y: 0.0,
         heading: 90,
-        targetNode: "N_0_3",
         route: [],
         serial: "SN-SYNQ-2026-003",
-        rosState: "synq_amr_node (ACTIVE)",
-        ekfState: "Converged, trace=0.012",
-        lidarRange: 12.0
+        rosNode: "/synq_amr_03/lifecycle_amr (ACTIVE)",
+        ekfCovariance: "0.011 m² (CONVERGED)"
       }
     };
 
-    // UI View State
-    let selectedRobotId = "AMR-01";
-    let activeTab = "inspector";
-    let isEstopActive = false;
-    let obstacleToolActive = false;
-    let placedObstacles = [];
+    // FIRST-CLASS AUTONOMY STATE RECORD ("Why Did FLTX Do This?")
+    let AUTONOMY_REASONING = {
+      currentStage: "EXECUTION", // TASK, DECISION, ROUTE, EXECUTION, CONFLICT, RECOVERY, VERIFIED
+      latestTask: {
+        orderId: "TASK-4821",
+        pickup: "N_1_1 (Rack Bay B)",
+        destination: "N_2_2 (Drop D2)",
+        payloadRequired: "SCISSOR_LIFT",
+        priority: 1
+      },
+      latestDecision: {
+        selectedRobot: "synq-amr-01",
+        rationale: "Assigned synq-amr-01: Optimal composite cost score (5.0) with matching SCISSOR_LIFT payload and 94.5% battery reserve.",
+        candidates: [
+          {
+            id: "synq-amr-01",
+            payload: "SCISSOR_LIFT",
+            match: true,
+            dist: 5.0,
+            battery: 94.5,
+            costScore: 5.0,
+            outcome: "SELECTED",
+            reason: "Optimal transit distance with physical payload match"
+          },
+          {
+            id: "synq-amr-02",
+            payload: "ROLLER_CONVEYOR",
+            match: false,
+            dist: 15.0,
+            battery: 88.0,
+            costScore: 15.0,
+            outcome: "REJECTED",
+            reason: "Payload mismatch: Equipped with Conveyor, requires Scissor Lift"
+          },
+          {
+            id: "synq-amr-03",
+            payload: "TOTE_GRIPPER",
+            match: false,
+            dist: 18.2,
+            battery: 91.2,
+            costScore: 18.2,
+            outcome: "REJECTED",
+            reason: "Payload mismatch: Equipped with Gripper; higher travel distance"
+          }
+        ]
+      },
+      latestCBS: {
+        status: "RESOLVED",
+        conflictDetected: "Vertex collision at N_0_1 at t=1.0s between synq-amr-01 and synq-amr-03",
+        conflictType: "VERTEX_CONFLICT",
+        location: "Node N_0_1 (Intersection)",
+        branchesEvaluated: [
+          {
+            branch: "Branch A (Constrain synq-amr-01)",
+            action: "Delay synq-amr-01 by 1 time-step",
+            costDelta: "+2.0s",
+            outcome: "REJECTED (Higher fleet mission delay)"
+          },
+          {
+            branch: "Branch B (Constrain synq-amr-03)",
+            action: "Route synq-amr-03 via bypass corridor N_1_2",
+            costDelta: "+1.0s",
+            outcome: "SELECTED (Minimal sum-of-costs delta; zero headway loss)"
+          }
+        ],
+        whyChosen: "Branch B chosen: Lower sum-of-costs delta (+1.0s vs +2.0s). synq-amr-03 yields corridor while high-priority task on synq-amr-01 proceeds uninterrupted."
+      },
+      latestObstacleRecovery: {
+        active: false,
+        obstacleLocation: null,
+        steps: [
+          { step: "Detection", detail: "360° LiDAR threshold breach at range 0.65m (< 1.0m warning field)" },
+          { step: "Risk Assessment", detail: "Active velocity vector intersects physical obstacle in 1.2s" },
+          { step: "Action", detail: "Commanded velocity zeroed (SAFETY_SLOWDOWN -> SAFETY_ESTOP)" },
+          { step: "Recovery", detail: "Costmap clearance service invoked -> SmacPlanner2D local grid replan" },
+          { step: "Verification", detail: "Zero footprint overlap verified along bypass route -> Mission resumed" }
+        ]
+      }
+    };
 
-    const mapLayers = {
+    let selectedRobotId = "synq-amr-01";
+    let activeTab = "autonomy";
+    let isEstopActive = false;
+    let obstacleMode = false;
+    let obstacles = [];
+    let conflictMarker = null;
+
+    const layers = {
       lanes: true,
       racks: true,
+      evaluations: true,
       routes: true
     };
 
-    let camera = {
-      x: 0,
-      y: 0,
-      zoom: 1.0,
-      dragging: false,
-      startX: 0,
-      startY: 0
-    };
+    let camera = { x: 0, y: 0, zoom: 1.0, dragging: false, startX: 0, startY: 0 };
 
-    // Operational Event Log
     const ACTIVITIES = [
-      { time: "23:45", robot: "AMR-01", msg: "System ready. Standby at N_0_0" },
-      { time: "23:45", robot: "AMR-02", msg: "System ready. Standby at N_3_3" },
-      { time: "23:45", robot: "AMR-03", msg: "System ready. Standby at N_0_3" }
+      { time: "00:10", robot: "synq-amr-01", msg: "Mission TASK-4821 assigned via Decision Engine (Cost: 5.0)" },
+      { time: "00:09", robot: "CBS Router", msg: "Constraint Tree deconfliction: synq-amr-03 assigned bypass corridor" },
+      { time: "00:08", robot: "FMS", msg: "Topological roadmap synced. Zero active edge locks." }
     ];
 
-    function logActivity(robot, msg) {
-      const now = new Date();
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    function logEvent(robot, msg) {
+      const d = new Date();
+      const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
       ACTIVITIES.unshift({ time: timeStr, robot, msg });
-      if (ACTIVITIES.length > 40) ACTIVITIES.pop();
-      if (activeTab === "activity") renderPanel();
+      if (ACTIVITIES.length > 50) ACTIVITIES.pop();
+      if (activeTab === "timeline") renderPanel();
     }
 
     /* ============================================================= */
-    /* 2. REALISTIC TOP-DOWN MAP RENDERER                            */
+    /* 2. SPATIAL MAP RENDERER (DECISION VISUALIZATION)              */
     /* ============================================================= */
 
     const canvas = document.getElementById("warehouseCanvas");
@@ -834,11 +852,9 @@
       camera.zoom = 1.0;
     }
 
-    function getMapTransform() {
+    function getTransform() {
       const pad = 60;
-      const availW = canvas.width - pad * 2;
-      const availH = canvas.height - pad * 2;
-      const baseScale = Math.min(availW / WAREHOUSE.width, availH / WAREHOUSE.height);
+      const baseScale = Math.min((canvas.width - pad * 2) / WAREHOUSE.width, (canvas.height - pad * 2) / WAREHOUSE.height);
       const scale = baseScale * camera.zoom;
       const originX = (canvas.width - WAREHOUSE.width * scale) / 2 + camera.x;
       const originY = (canvas.height - WAREHOUSE.height * scale) / 2 + camera.y;
@@ -846,28 +862,28 @@
     }
 
     function toScreen(wx, wy) {
-      const { originX, originY, scale } = getMapTransform();
+      const { originX, originY, scale } = getTransform();
       return { x: originX + wx * scale, y: originY + wy * scale };
     }
 
     function toWorld(sx, sy) {
-      const { originX, originY, scale } = getMapTransform();
+      const { originX, originY, scale } = getTransform();
       return { x: (sx - originX) / scale, y: (sy - originY) / scale };
     }
 
     function renderMap() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const { originX, originY, scale } = getMapTransform();
+      const { originX, originY, scale } = getTransform();
 
-      // Warehouse Perimeter Floor
-      ctx.fillStyle = "#16191d";
+      // Warehouse Slab
+      ctx.fillStyle = "#15181c";
       ctx.fillRect(originX, originY, WAREHOUSE.width * scale, WAREHOUSE.height * scale);
-      ctx.strokeStyle = "#2e343b";
+      ctx.strokeStyle = "#272c33";
       ctx.lineWidth = 1;
       ctx.strokeRect(originX, originY, WAREHOUSE.width * scale, WAREHOUSE.height * scale);
 
-      // Subtle Meter Grid
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.025)";
+      // Metric Grid
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.02)";
       ctx.lineWidth = 1;
       for (let m = 1; m < WAREHOUSE.width; m++) {
         const p1 = toScreen(m, 0);
@@ -894,16 +910,13 @@
 
         if (zone.type === "PICK") {
           ctx.fillStyle = "rgba(46, 160, 67, 0.08)";
-          ctx.strokeStyle = "rgba(46, 160, 67, 0.4)";
+          ctx.strokeStyle = "rgba(46, 160, 67, 0.35)";
         } else if (zone.type === "DROP") {
           ctx.fillStyle = "rgba(31, 111, 235, 0.08)";
-          ctx.strokeStyle = "rgba(31, 111, 235, 0.4)";
-        } else if (zone.type === "CHARGE") {
-          ctx.fillStyle = "rgba(210, 153, 34, 0.08)";
-          ctx.strokeStyle = "rgba(210, 153, 34, 0.4)";
+          ctx.strokeStyle = "rgba(31, 111, 235, 0.35)";
         } else {
-          ctx.fillStyle = "rgba(218, 54, 51, 0.08)";
-          ctx.strokeStyle = "rgba(218, 54, 51, 0.3)";
+          ctx.fillStyle = "rgba(210, 153, 34, 0.08)";
+          ctx.strokeStyle = "rgba(210, 153, 34, 0.35)";
         }
 
         ctx.lineWidth = 1;
@@ -911,13 +924,13 @@
         ctx.strokeRect(p.x, p.y, w, h);
 
         ctx.fillStyle = "#8b949e";
-        ctx.font = "10px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.font = "10px var(--font-system)";
         ctx.fillText(zone.label, p.x + 6, p.y + 14);
       });
 
-      // Navigation Lanes (Subtle transit corridors)
-      if (mapLayers.lanes) {
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+      // Navigation Lanes
+      if (layers.lanes) {
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
         ctx.lineWidth = 12 * (scale / 40);
         ctx.lineCap = "round";
         ROADMAP_EDGES.forEach(e => {
@@ -949,14 +962,14 @@
       }
 
       // Storage Racks
-      if (mapLayers.racks) {
+      if (layers.racks) {
         WAREHOUSE.racks.forEach(rack => {
           const p = toScreen(rack.x, rack.y);
           const w = rack.w * scale;
           const h = rack.h * scale;
 
           ctx.fillStyle = "#22272e";
-          ctx.strokeStyle = "#373e47";
+          ctx.strokeStyle = "#323842";
           ctx.lineWidth = 1;
           ctx.fillRect(p.x, p.y, w, h);
           ctx.strokeRect(p.x, p.y, w, h);
@@ -964,7 +977,7 @@
           // Pallet bays
           const bays = 8;
           const bayW = w / bays;
-          ctx.strokeStyle = "#2d333b";
+          ctx.strokeStyle = "#2b313a";
           for (let i = 1; i < bays; i++) {
             ctx.beginPath();
             ctx.moveTo(p.x + i * bayW, p.y);
@@ -972,36 +985,90 @@
             ctx.stroke();
           }
 
-          ctx.fillStyle = "#768390";
-          ctx.font = "10px -apple-system, BlinkMacSystemFont, sans-serif";
+          ctx.fillStyle = "#6e7681";
+          ctx.font = "10px var(--font-system)";
           ctx.fillText(rack.name, p.x + 6, p.y - 4);
         });
       }
 
-      // Placed Obstacles
-      placedObstacles.forEach(obs => {
-        const p = toScreen(obs.x, obs.y);
-        const r = (obs.radius || 0.7) * scale;
+      // CANDIDATE EVALUATION VISUALIZATION (Shows WHY FLTX evaluated each robot)
+      if (layers.evaluations && AUTONOMY_REASONING.latestDecision.candidates) {
+        const targetNode = ROADMAP_NODES["N_1_1"];
+        if (targetNode) {
+          const targetPt = toScreen(targetNode.x, targetNode.y);
+
+          AUTONOMY_REASONING.latestDecision.candidates.forEach(cand => {
+            const bot = ROBOTS[cand.id];
+            if (!bot) return;
+            const botPt = toScreen(bot.x, bot.y);
+
+            ctx.save();
+            ctx.setLineDash([4, 4]);
+            if (cand.outcome === "SELECTED") {
+              ctx.strokeStyle = "rgba(46, 160, 67, 0.7)";
+              ctx.lineWidth = 1.5;
+            } else {
+              ctx.strokeStyle = "rgba(110, 118, 129, 0.35)";
+              ctx.lineWidth = 1;
+            }
+            ctx.beginPath();
+            ctx.moveTo(botPt.x, botPt.y);
+            ctx.lineTo(targetPt.x, targetPt.y);
+            ctx.stroke();
+
+            // Cost badge on line midpoint
+            const midX = (botPt.x + targetPt.x) / 2;
+            const midY = (botPt.y + targetPt.y) / 2;
+            ctx.fillStyle = cand.outcome === "SELECTED" ? "#2ea043" : "#484f58";
+            ctx.fillRect(midX - 18, midY - 8, 36, 15);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "9px var(--font-mono)";
+            ctx.fillText(`C:${cand.costScore}`, midX - 14, midY + 3);
+            ctx.restore();
+          });
+        }
+      }
+
+      // SPATIO-TEMPORAL CONFLICT MARKER (CBS Conflict Visualization)
+      if (conflictMarker) {
+        const pt = toScreen(conflictMarker.x, conflictMarker.y);
         ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(218, 54, 51, 0.25)";
-        ctx.strokeStyle = "#da3633";
+        ctx.arc(pt.x, pt.y, 16, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(210, 153, 34, 0.25)";
+        ctx.strokeStyle = "#d29922";
+        ctx.lineWidth = 2;
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#d29922";
+        ctx.font = "bold 10px var(--font-mono)";
+        ctx.fillText("! CONFLICT t=1.0s", pt.x - 42, pt.y - 20);
+      }
+
+      // Obstacles
+      obstacles.forEach(obs => {
+        const pt = toScreen(obs.x, obs.y);
+        const r = (obs.radius || 0.75) * scale;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(207, 34, 46, 0.25)";
+        ctx.strokeStyle = "#cf222e";
         ctx.lineWidth = 1.5;
         ctx.fill();
         ctx.stroke();
 
         ctx.fillStyle = "#f85149";
         ctx.font = "10px var(--font-system)";
-        ctx.fillText("Obstacle", p.x - 20, p.y + 3);
+        ctx.fillText("Obstacle", pt.x - 20, pt.y + 3);
       });
 
-      // Robot Routes
-      if (mapLayers.routes) {
+      // CBS Active Routes
+      if (layers.routes) {
         Object.values(ROBOTS).forEach(bot => {
           if (!bot.route || bot.route.length === 0) return;
           const isSelected = (bot.id === selectedRobotId);
 
-          ctx.strokeStyle = isSelected ? "#388bfd" : "rgba(88, 166, 255, 0.3)";
+          ctx.strokeStyle = isSelected ? "#388bfd" : "rgba(88, 166, 255, 0.35)";
           ctx.lineWidth = isSelected ? 2 : 1;
           ctx.beginPath();
           const start = toScreen(bot.x, bot.y);
@@ -1017,7 +1084,7 @@
         });
       }
 
-      // Top-Down AMRs (Physical scale 0.7m x 0.5m)
+      // Top-Down AMRs (Physical 0.7m x 0.5m footprint)
       Object.values(ROBOTS).forEach(bot => {
         const p = toScreen(bot.x, bot.y);
         const isSelected = (bot.id === selectedRobotId);
@@ -1028,16 +1095,16 @@
         ctx.translate(p.x, p.y);
         ctx.rotate(bot.heading * Math.PI / 180);
 
-        // Safety Radius (Visible when selected)
+        // Safety Radius
         if (isSelected) {
           ctx.beginPath();
-          ctx.arc(0, 0, (lengthPx / 2) * 1.4, 0, Math.PI * 2);
+          ctx.arc(0, 0, (lengthPx / 2) * 1.35, 0, Math.PI * 2);
           ctx.strokeStyle = "rgba(31, 111, 235, 0.35)";
           ctx.lineWidth = 1;
           ctx.stroke();
         }
 
-        // Robot Chassis
+        // Chassis
         ctx.fillStyle = isSelected ? "#27303f" : "#22272e";
         ctx.strokeStyle = isSelected ? "#388bfd" : "#444c56";
         ctx.lineWidth = 1.5;
@@ -1053,24 +1120,24 @@
         ctx.fillRect(-lengthPx / 2, widthPx / 2, wL, wW);
         ctx.fillRect(lengthPx / 2 - wL, widthPx / 2, wL, wW);
 
-        // Heading Indicator (Direction tick)
+        // Direction Indicator
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(lengthPx / 2 + 4, 0);
+        ctx.lineTo(lengthPx / 2 + 3, 0);
         ctx.stroke();
 
         ctx.restore();
 
-        // Label
+        // Labels
         ctx.fillStyle = isSelected ? "#ffffff" : "#adb5bd";
         ctx.font = "11px var(--font-system)";
-        ctx.fillText(bot.id, p.x - 18, p.y - widthPx / 2 - 6);
+        ctx.fillText(bot.id, p.x - 22, p.y - widthPx / 2 - 6);
 
         ctx.fillStyle = bot.battery < 20 ? "#f85149" : (bot.battery < 40 ? "#d29922" : "#3fb950");
         ctx.font = "10px var(--font-mono)";
-        ctx.fillText(`${bot.battery}%`, p.x + 16, p.y - widthPx / 2 - 6);
+        ctx.fillText(`${bot.battery.toFixed(0)}%`, p.x + 16, p.y - widthPx / 2 - 6);
       });
 
       requestAnimationFrame(renderMap);
@@ -1089,39 +1156,18 @@
       const rect = canvas.getBoundingClientRect();
       const wPos = toWorld(e.clientX - rect.left, e.clientY - rect.top);
 
-      // Handle Obstacle Placement
-      if (obstacleToolActive) {
-        placedObstacles.push({ x: wPos.x, y: wPos.y, radius: 0.75 });
-        obstacleToolActive = false;
-        document.getElementById("btnSimObstacle").classList.remove("active");
-        showToast("Obstacle placed. Replanning intersecting routes...");
-        logActivity("System", `Obstacle placed at (${wPos.x.toFixed(1)}m, ${wPos.y.toFixed(1)}m)`);
-
-        // Check if any robot is blocked
-        Object.values(ROBOTS).forEach(bot => {
-          if (bot.status === "Navigating" && bot.route.length > 0) {
-            setTimeout(() => {
-              bot.route = ["N_2_1", "N_2_2", "N_1_2"];
-              logActivity(bot.id, "Route replanned around obstacle");
-              showToast(`${bot.id}: Diverting around obstacle`);
-            }, 600);
-          }
-        });
+      if (obstacleMode) {
+        injectObstacle(wPos.x, wPos.y);
         return;
       }
 
-      // Check if user clicked a robot
-      let clicked = null;
+      // Check click on robot
       for (const bot of Object.values(ROBOTS)) {
         if (Math.hypot(bot.x - wPos.x, bot.y - wPos.y) <= 0.6) {
-          clicked = bot.id;
+          selectedRobotId = bot.id;
+          setPanelTab("inspector");
           break;
         }
-      }
-
-      if (clicked) {
-        selectedRobotId = clicked;
-        setPanelTab("inspector");
       }
     });
 
@@ -1131,7 +1177,7 @@
       document.getElementById("legendCoords").textContent =
         `X: ${Math.max(0, Math.min(15, wPos.x)).toFixed(2)}m, Y: ${Math.max(0, Math.min(15, wPos.y)).toFixed(2)}m`;
 
-      if (camera.dragging && !obstacleToolActive) {
+      if (camera.dragging && !obstacleMode) {
         camera.x += e.clientX - camera.startX;
         camera.y += e.clientY - camera.startY;
         camera.startX = e.clientX;
@@ -1139,9 +1185,7 @@
       }
     });
 
-    window.addEventListener("mouseup", () => {
-      camera.dragging = false;
-    });
+    window.addEventListener("mouseup", () => { camera.dragging = false; });
 
     canvas.addEventListener("wheel", e => {
       e.preventDefault();
@@ -1149,65 +1193,141 @@
       camera.zoom = Math.max(0.6, Math.min(2.5, camera.zoom * factor));
     });
 
-    function toggleMapLayer(layer) {
-      mapLayers[layer] = !mapLayers[layer];
+    function toggleLayer(layer) {
+      layers[layer] = !layers[layer];
       const btnMap = {
         lanes: "btnToggleLanes",
         racks: "btnToggleRacks",
+        evaluations: "btnToggleEvaluations",
         routes: "btnToggleRoutes"
       };
-      document.getElementById(btnMap[layer]).classList.toggle("active", mapLayers[layer]);
+      document.getElementById(btnMap[layer]).classList.toggle("active", layers[layer]);
     }
 
-    function toggleObstacleTool() {
-      obstacleToolActive = !obstacleToolActive;
-      document.getElementById("btnSimObstacle").classList.toggle("active", obstacleToolActive);
-      if (obstacleToolActive) {
-        showToast("Click on any lane to place an obstacle");
+    /* ============================================================= */
+    /* 4. AUTONOMY LOOP & REASONING DRAWER ("Why Did FLTX Do This?")  */
+    /* ============================================================= */
+
+    function openWhyFLTXDrawer() {
+      setPanelTab("autonomy");
+    }
+
+    function setAutonomyPipelineStage(stage) {
+      AUTONOMY_REASONING.currentStage = stage;
+      const steps = ["task", "decision", "route", "exec", "conflict", "recovery", "verify"];
+      steps.forEach(s => {
+        const el = document.getElementById(`step-${s}`);
+        if (el) el.className = "pipeline-step";
+      });
+
+      const mapStage = {
+        TASK: "step-task",
+        DECISION: "step-decision",
+        ROUTE: "step-route",
+        EXECUTION: "step-exec",
+        CONFLICT: "step-conflict",
+        RECOVERY: "step-recovery",
+        VERIFIED: "step-verify"
+      };
+
+      const activeEl = document.getElementById(mapStage[stage] || "step-exec");
+      if (activeEl) activeEl.classList.add("active");
+    }
+
+    function triggerCbsConflictScenario() {
+      setAutonomyPipelineStage("CONFLICT");
+      conflictMarker = { x: 5.0, y: 0.0 }; // Node N_0_1
+
+      ROBOTS["synq-amr-01"].status = "Navigating";
+      ROBOTS["synq-amr-01"].x = 0.0;
+      ROBOTS["synq-amr-01"].y = 0.0;
+      ROBOTS["synq-amr-01"].route = ["N_0_1", "N_0_2"];
+
+      ROBOTS["synq-amr-03"].status = "Navigating";
+      ROBOTS["synq-amr-03"].x = 15.0;
+      ROBOTS["synq-amr-03"].y = 0.0;
+      ROBOTS["synq-amr-03"].route = ["N_0_2", "N_0_1", "N_0_0"];
+
+      showToast("CBS Conflict Detected: Head-on collision at N_0_1. Branching Constraint Tree...");
+      logEvent("CBS Router", "Vertex conflict detected at N_0_1 at t=1.0s. Evaluating constraint branches.");
+
+      setTimeout(() => {
+        setAutonomyPipelineStage("RECOVERY");
+        ROBOTS["synq-amr-03"].route = ["N_0_2", "N_1_2", "N_1_1", "N_0_1"];
+        logEvent("CBS Router", "Branch B selected: synq-amr-03 assigned bypass corridor via N_1_2 (+1.0s cost)");
+        showToast("Constraint Tree Resolved: synq-amr-03 routed via bypass corridor.");
+
+        setTimeout(() => {
+          setAutonomyPipelineStage("VERIFIED");
+          conflictMarker = null;
+          logEvent("CBS Router", "Spatio-temporal trajectory conflict verified: 0 remaining collisions.");
+          renderPanel();
+        }, 1200);
+      }, 1000);
+
+      setPanelTab("autonomy");
+    }
+
+    function toggleObstaclePlacement() {
+      obstacleMode = !obstacleMode;
+      document.getElementById("btnSimObstacle").classList.toggle("active", obstacleMode);
+      if (obstacleMode) {
+        showToast("Click on any transit corridor to inject a physical obstruction");
       } else {
         hideToast();
       }
     }
 
-    function triggerCbsConflictDemo() {
-      showToast("Simulating two AMRs on intersecting crossing paths...");
-      logActivity("CBS", "Simulating head-on trajectory conflict");
+    function injectObstacle(wx, wy) {
+      obstacles.push({ x: wx, y: wy, radius: 0.75 });
+      obstacleMode = false;
+      document.getElementById("btnSimObstacle").classList.remove("active");
 
-      ROBOTS["AMR-01"].status = "Navigating";
-      ROBOTS["AMR-01"].x = 0.0;
-      ROBOTS["AMR-01"].y = 0.0;
-      ROBOTS["AMR-01"].route = ["N_0_1", "N_0_2"];
+      setAutonomyPipelineStage("CONFLICT");
+      showToast("360° LiDAR: Dynamic obstacle detected! Evaluating route intersection...");
+      logEvent("Safety", `Obstacle detected at (${wx.toFixed(1)}m, ${wy.toFixed(1)}m). Risk: Critical.`);
 
-      ROBOTS["AMR-03"].status = "Navigating";
-      ROBOTS["AMR-03"].x = 15.0;
-      ROBOTS["AMR-03"].y = 0.0;
-      ROBOTS["AMR-03"].route = ["N_0_2", "N_0_1", "N_0_0"];
+      AUTONOMY_REASONING.latestObstacleRecovery.active = true;
+      AUTONOMY_REASONING.latestObstacleRecovery.obstacleLocation = { x: wx, y: wy };
 
-      setTimeout(() => {
-        showToast("CBS conflict detected at N_0_1. AMR-03 assigned bypass corridor.");
-        ROBOTS["AMR-03"].route = ["N_0_2", "N_1_2", "N_1_1", "N_0_1"];
-        logActivity("CBS", "AMR-03 routed via bypass corridor. Zero collisions.");
-      }, 1000);
+      // Replan any intersecting robot
+      Object.values(ROBOTS).forEach(bot => {
+        if (bot.status === "Navigating" && bot.route.length > 0) {
+          setTimeout(() => {
+            setAutonomyPipelineStage("RECOVERY");
+            bot.route = ["N_2_1", "N_2_2", "N_1_2"];
+            logEvent("Nav2", `${bot.id}: Path invalidated by obstacle. Local SmacPlanner2D detour calculated.`);
+            showToast(`${bot.id}: Dynamic detour executed around obstacle.`);
+
+            setTimeout(() => {
+              setAutonomyPipelineStage("VERIFIED");
+              logEvent("Nav2", `${bot.id}: Detour verified collision-free. Mission continued.`);
+              renderPanel();
+            }, 1000);
+          }, 600);
+        }
+      });
+      setPanelTab("autonomy");
     }
 
     function showToast(msg) {
-      const toast = document.getElementById("mapToast");
-      document.getElementById("mapToastText").textContent = msg;
+      const toast = document.getElementById("spatialToast");
+      document.getElementById("spatialToastMsg").textContent = msg;
       toast.style.display = "flex";
       setTimeout(hideToast, 4000);
     }
 
     function hideToast() {
-      document.getElementById("mapToast").style.display = "none";
+      document.getElementById("spatialToast").style.display = "none";
     }
 
     /* ============================================================= */
-    /* 4. CONTEXTUAL OPERATIONS PANEL                                */
+    /* 5. CONTEXTUAL PANEL: AUTONOMY, INSPECTOR, DISPATCH, FLEET     */
     /* ============================================================= */
 
     function setPanelTab(tab) {
       activeTab = tab;
-      ["inspector", "dispatch", "fleet", "activity"].forEach(t => {
+      ["autonomy", "inspector", "dispatch", "fleet", "timeline"].forEach(t => {
         const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
         if (btn) btn.classList.toggle("active", t === tab);
       });
@@ -1215,136 +1335,241 @@
     }
 
     function renderPanel() {
-      const container = document.getElementById("panelContent");
+      const container = document.getElementById("panelBody");
       container.innerHTML = "";
 
-      if (activeTab === "inspector") {
-        renderInspector(container);
-      } else if (activeTab === "dispatch") {
-        renderDispatch(container);
-      } else if (activeTab === "fleet") {
-        renderFleet(container);
-      } else if (activeTab === "activity") {
-        renderActivity(container);
-      }
+      if (activeTab === "autonomy") renderAutonomyTab(container);
+      else if (activeTab === "inspector") renderInspectorTab(container);
+      else if (activeTab === "dispatch") renderDispatchTab(container);
+      else if (activeTab === "fleet") renderFleetTab(container);
+      else if (activeTab === "timeline") renderTimelineTab(container);
     }
 
-    // Inspector View (Relevant Operational Data + Diagnostics Collapsible)
-    function renderInspector(container) {
-      const bot = ROBOTS[selectedRobotId] || ROBOTS["AMR-01"];
-
-      let badgeClass = "badge-idle";
-      if (bot.status === "Navigating") badgeClass = "badge-nav";
-      if (bot.status === "Charging") badgeClass = "badge-chg";
-      if (bot.status === "Emergency Stop") badgeClass = "badge-estop";
+    // A. "WHY DID FLTX DO THIS?" AUTONOMY LOOP TAB
+    function renderAutonomyTab(container) {
+      const dec = AUTONOMY_REASONING.latestDecision;
+      const cbs = AUTONOMY_REASONING.latestCBS;
+      const obs = AUTONOMY_REASONING.latestObstacleRecovery;
 
       container.innerHTML = `
         <div>
-          <div class="section-title">
-            <span>${bot.id}</span>
-            <span class="badge ${badgeClass}">${bot.status}</span>
+          <div class="sec-header">
+            <span class="sec-title">1. Task Assignment Decision Engine</span>
+            <span class="badge-status nav">${AUTONOMY_REASONING.latestTask.orderId}</span>
           </div>
 
-          <div class="prop-list">
-            <div class="prop-row"><span class="prop-name">Battery</span><span class="prop-val">${bot.battery}%</span></div>
-            <div class="prop-row"><span class="prop-name">Payload</span><span class="prop-val">${bot.payload}</span></div>
-            <div class="prop-row"><span class="prop-name">Current Mission</span><span class="prop-val">${bot.mission}</span></div>
-            <div class="prop-row"><span class="prop-name">Pickup</span><span class="prop-val">${bot.pickup}</span></div>
-            <div class="prop-row"><span class="prop-name">Destination</span><span class="prop-val">${bot.destination}</span></div>
-            <div class="prop-row"><span class="prop-name">ETA</span><span class="prop-val">${bot.eta}</span></div>
-            <div class="prop-row"><span class="prop-name">Speed</span><span class="prop-val">${bot.speed.toFixed(2)} m/s</span></div>
-            <div class="prop-row"><span class="prop-name">Position</span><span class="prop-val">X: ${bot.x.toFixed(2)}m, Y: ${bot.y.toFixed(2)}m</span></div>
-            <div class="prop-row"><span class="prop-name">Heading</span><span class="prop-val">${bot.heading.toFixed(0)}°</span></div>
+          <div class="decision-callout-box">
+            <div class="decision-summary-text">
+              <strong>Why this robot was selected:</strong><br>
+              ${dec.rationale}
+            </div>
           </div>
 
-          <details class="diagnostics-box">
-            <summary>System Diagnostics</summary>
-            <div class="prop-list" style="margin-top: 8px;">
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+            Candidate Evaluation Matrix (Decision Factors & Rejected Alternatives):
+          </div>
+
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th>Robot</th>
+                <th>Payload</th>
+                <th>Dist</th>
+                <th>Cost</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${dec.candidates.map(c => `
+                <tr class="${c.outcome === 'SELECTED' ? 'matrix-selected' : 'matrix-rejected'}">
+                  <td><strong>${c.id}</strong></td>
+                  <td>${c.payload.replace("_", " ")}</td>
+                  <td>${c.dist}m</td>
+                  <td>${c.costScore}</td>
+                  <td><span style="color: ${c.outcome === 'SELECTED' ? 'var(--color-success)' : 'var(--text-muted)'}; font-weight: 600;">${c.outcome}</span></td>
+                </tr>
+                <tr style="background: transparent;">
+                  <td colspan="5" style="font-size: 10px; color: var(--text-muted); padding-top: 0; padding-bottom: 6px;">
+                    ${c.reason}
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <div class="sec-header">
+            <span class="sec-title">2. CBS Spatio-Temporal Deconfliction</span>
+            <span class="badge-status ${cbs.status === 'RESOLVED' ? 'idle' : 'warn'}">${cbs.status}</span>
+          </div>
+
+          <div class="decision-callout-box cbs">
+            <div class="decision-summary-text">
+              <strong>Conflict Encountered:</strong> ${cbs.conflictDetected}<br>
+              <strong style="margin-top: 4px; display: block;">Resolution Rationale:</strong> ${cbs.whyChosen}
+            </div>
+          </div>
+
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">
+            Constraint Tree (CT) Candidate Branches Explored:
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            ${cbs.branchesEvaluated.map(b => `
+              <div style="background: var(--bg-canvas); border: 1px solid var(--border-color); padding: 6px 8px; border-radius: 2px; font-size: 11px;">
+                <div style="font-weight: 600; color: var(--text-main); display: flex; justify-content: space-between;">
+                  <span>${b.branch}</span>
+                  <span style="color: ${b.outcome.startsWith('SELECTED') ? 'var(--color-success)' : 'var(--text-muted)'};">${b.costDelta}</span>
+                </div>
+                <div style="color: var(--text-secondary); font-size: 10px; margin-top: 2px;">
+                  Action: ${b.action}
+                </div>
+                <div style="font-size: 10px; color: ${b.outcome.startsWith('SELECTED') ? 'var(--color-success)' : 'var(--text-muted)'};">
+                  ${b.outcome}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <div>
+          <div class="sec-header">
+            <span class="sec-title">3. Dynamic Obstacle & Recovery Loop</span>
+            <span class="badge-status ${obs.active ? 'estop' : 'idle'}">${obs.active ? 'ACTIVE RECOVERY' : 'MONITORING'}</span>
+          </div>
+
+          <div class="decision-callout-box ${obs.active ? 'alert' : ''}">
+            <div class="decision-summary-text">
+              ${obs.active ? 'Obstacle actively being bypassed by autonomous Nav2 local planner.' : 'No active corridor blockages. 360° LiDAR safety fields clear.'}
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            ${obs.steps.map((st, idx) => `
+              <div style="display: flex; gap: 8px; font-size: 11px; padding: 3px 0;">
+                <span style="font-family: var(--font-mono); color: var(--text-muted); width: 16px;">${idx + 1}.</span>
+                <span style="font-weight: 600; color: var(--text-main); width: 100px;">${st.step}:</span>
+                <span style="color: var(--text-secondary); flex: 1;">${st.detail}</span>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    // B. ROBOT INSPECTOR TAB
+    function renderInspectorTab(container) {
+      const bot = ROBOTS[selectedRobotId] || ROBOTS["synq-amr-01"];
+      let bClass = "idle";
+      if (bot.status === "Navigating") bClass = "nav";
+      if (bot.status === "Emergency Stop") bClass = "estop";
+
+      container.innerHTML = `
+        <div>
+          <div class="sec-header">
+            <span class="sec-title">${bot.id}</span>
+            <span class="badge-status ${bClass}">${bot.status}</span>
+          </div>
+
+          <div class="prop-row"><span class="prop-name">Battery</span><span class="prop-val">${bot.battery.toFixed(1)}%</span></div>
+          <div class="prop-row"><span class="prop-name">Payload Module</span><span class="prop-val">${bot.payload.replace("_", " ")}</span></div>
+          <div class="prop-row"><span class="prop-name">Current Mission</span><span class="prop-val">${bot.mission}</span></div>
+          <div class="prop-row"><span class="prop-name">Pickup Station</span><span class="prop-val">${bot.pickup}</span></div>
+          <div class="prop-row"><span class="prop-name">Destination</span><span class="prop-val">${bot.destination}</span></div>
+          <div class="prop-row"><span class="prop-name">ETA</span><span class="prop-val">${bot.eta}</span></div>
+          <div class="prop-row"><span class="prop-name">Speed</span><span class="prop-val">${bot.speed.toFixed(2)} m/s</span></div>
+          <div class="prop-row"><span class="prop-name">Position</span><span class="prop-val">X: ${bot.x.toFixed(2)}m, Y: ${bot.y.toFixed(2)}m</span></div>
+          <div class="prop-row"><span class="prop-name">Heading</span><span class="prop-val">${bot.heading.toFixed(0)}°</span></div>
+
+          <details style="margin-top: 10px; background: var(--bg-canvas); border: 1px solid var(--border-color); padding: 8px; border-radius: 2px;">
+            <summary style="font-size: 11px; color: var(--text-secondary); cursor: pointer;">System Diagnostics</summary>
+            <div style="margin-top: 6px;">
               <div class="prop-row"><span class="prop-name">Serial</span><span class="prop-val">${bot.serial}</span></div>
-              <div class="prop-row"><span class="prop-name">ROS Node</span><span class="prop-val">${bot.rosState}</span></div>
-              <div class="prop-row"><span class="prop-name">EKF Localization</span><span class="prop-val">${bot.ekfState}</span></div>
-              <div class="prop-row"><span class="prop-name">LiDAR</span><span class="prop-val">Range ${bot.lidarRange}m, Clear</span></div>
+              <div class="prop-row"><span class="prop-name">ROS Node</span><span class="prop-val">${bot.rosNode}</span></div>
+              <div class="prop-row"><span class="prop-name">EKF Localization</span><span class="prop-val">${bot.ekfCovariance}</span></div>
             </div>
           </details>
 
-          <div style="display: flex; gap: 8px; margin-top: 16px;">
-            <button class="btn-secondary" style="flex: 1;" onclick="dockRobot('${bot.id}')">Send to Charger</button>
-            <button class="btn-secondary" style="flex: 1;" onclick="toggleHoldRobot('${bot.id}')">${bot.status === 'Navigating' ? 'Pause' : 'Resume'}</button>
+          <div style="display: flex; gap: 8px; margin-top: 14px;">
+            <button class="btn-submit-action" style="background: var(--bg-subpanel); border-color: var(--border-color); color: var(--text-main);" onclick="dockUnit('${bot.id}')">Dock & Charge</button>
+            <button class="btn-submit-action" onclick="pauseUnit('${bot.id}')">${bot.status === 'Navigating' ? 'Pause' : 'Resume'}</button>
           </div>
         </div>
       `;
     }
 
-    // Dispatch Workflow (Operational Step-by-Step)
-    function renderDispatch(container) {
+    // C. DISPATCH TAB (WITH LIVE DECISION PREVIEW)
+    function renderDispatchTab(container) {
       container.innerHTML = `
         <div>
-          <div class="section-title">Mission Dispatch</div>
-
-          <div class="field-group">
-            <label class="field-label">1. Pickup Location</label>
-            <select class="input-select" id="pickSelect" onchange="updateDispatchPreview()">
-              <option value="N_1_0">Infeed Aisle (N_1_0)</option>
-              <option value="N_1_1" selected>Rack Bay B (N_1_1)</option>
-              <option value="N_1_2">Rack Bay C (N_1_2)</option>
-              <option value="N_1_3">Feeder Station (N_1_3)</option>
-            </select>
+          <div class="sec-header">
+            <span class="sec-title">Operational Mission Dispatch</span>
           </div>
 
-          <div class="field-group">
-            <label class="field-label">2. Payload Required</label>
-            <select class="input-select" id="payloadSelect" onchange="updateDispatchPreview()">
-              <option value="Scissor Lift">Scissor Lift (Pallets)</option>
-              <option value="Conveyor">Conveyor (Carton transfer)</option>
-              <option value="Tote Gripper">Tote Gripper (Bins)</option>
-            </select>
-          </div>
+          <label class="field-label">1. Pickup Station</label>
+          <select class="select-input" id="dispPickSelect" onchange="previewDispatchDecision()">
+            <option value="N_1_0">Infeed Aisle (N_1_0)</option>
+            <option value="N_1_1" selected>Rack Bay B (N_1_1)</option>
+            <option value="N_1_2">Rack Bay C (N_1_2)</option>
+            <option value="N_1_3">Feeder Buffer (N_1_3)</option>
+          </select>
 
-          <div class="field-group">
-            <label class="field-label">3. Destination</label>
-            <select class="input-select" id="dropSelect" onchange="updateDispatchPreview()">
-              <option value="N_2_0">Outbound Dock D1 (N_2_0)</option>
-              <option value="N_2_1">Outbound Dock D2 (N_2_1)</option>
-              <option value="N_2_2" selected>Packing Station (N_2_2)</option>
-              <option value="N_2_3">Staging Area (N_2_3)</option>
-            </select>
-          </div>
+          <label class="field-label">2. Payload Required</label>
+          <select class="select-input" id="dispPayloadSelect" onchange="previewDispatchDecision()">
+            <option value="SCISSOR_LIFT">Scissor Lift (Pallet Transport)</option>
+            <option value="ROLLER_CONVEYOR">Roller Conveyor (Carton Transfer)</option>
+            <option value="TOTE_GRIPPER">Tote Gripper (Bin Picking)</option>
+          </select>
 
-          <div class="section-title" style="margin-top: 14px;">Route & Assignment Preview</div>
-          <div class="prop-list" id="dispatchPreview" style="margin-bottom: 14px;">
-            <!-- Dynamically populated -->
-          </div>
+          <label class="field-label">3. Destination</label>
+          <select class="select-input" id="dispDropSelect" onchange="previewDispatchDecision()">
+            <option value="N_2_0">Outbound Dock D1 (N_2_0)</option>
+            <option value="N_2_1">Outbound Dock D2 (N_2_1)</option>
+            <option value="N_2_2" selected>Packing Station (N_2_2)</option>
+            <option value="N_2_3">Staging Area (N_2_3)</option>
+          </select>
 
-          <button class="btn-action" onclick="confirmDispatch()">Dispatch Mission</button>
+          <div class="sec-header" style="margin-top: 14px;">
+            <span class="sec-title">Autonomy Assignment Preview</span>
+          </div>
+          <div id="dispatchDecisionPreviewBox" style="font-size: 11px; margin-bottom: 12px;"></div>
+
+          <button class="btn-submit-action" onclick="commitDispatch()">Dispatch Mission</button>
         </div>
       `;
-      updateDispatchPreview();
+      previewDispatchDecision();
     }
 
-    function updateDispatchPreview() {
-      const payload = document.getElementById("payloadSelect")?.value || "Scissor Lift";
-      const preview = document.getElementById("dispatchPreview");
-      if (!preview) return;
+    function previewDispatchDecision() {
+      const payload = document.getElementById("dispPayloadSelect")?.value || "SCISSOR_LIFT";
+      const box = document.getElementById("dispatchDecisionPreviewBox");
+      if (!box) return;
 
       let candidate = Object.values(ROBOTS).find(b => b.status !== "Emergency Stop" && b.payload === payload);
-      if (!candidate) candidate = ROBOTS["AMR-01"];
+      if (!candidate) candidate = ROBOTS["synq-amr-01"];
 
-      preview.innerHTML = `
-        <div class="prop-row"><span class="prop-name">Selected Robot</span><span class="prop-val">${candidate.id} (${candidate.payload})</span></div>
-        <div class="prop-row"><span class="prop-name">Distance</span><span class="prop-val">12.5 m</span></div>
-        <div class="prop-row"><span class="prop-name">Estimated Time</span><span class="prop-val">14 sec</span></div>
-        <div class="prop-row"><span class="prop-name">Battery After Mission</span><span class="prop-val">${candidate.battery - 1}%</span></div>
-        <div class="prop-row"><span class="prop-name">Route Conflicts</span><span class="prop-val" style="color: var(--color-success);">0 Detected</span></div>
+      box.innerHTML = `
+        <div class="decision-callout-box" style="margin-bottom: 6px;">
+          <strong>Auto-Selected Unit:</strong> ${candidate.id}<br>
+          <span style="color: var(--text-secondary); font-size: 10px;">
+            Matches required ${payload.replace("_", " ")} module with lowest transit cost to pickup.
+          </span>
+        </div>
+        <div class="prop-row"><span class="prop-name">Estimated Distance</span><span class="prop-val">12.5m</span></div>
+        <div class="prop-row"><span class="prop-name">Calculated Transit Time</span><span class="prop-val">14 seconds</span></div>
+        <div class="prop-row"><span class="prop-name">Projected Battery SoC</span><span class="prop-val">${(candidate.battery - 1.2).toFixed(1)}%</span></div>
+        <div class="prop-row"><span class="prop-name">CBS Space-Time Conflicts</span><span class="prop-val" style="color: var(--color-success);">0 Detected</span></div>
       `;
     }
 
-    function confirmDispatch() {
-      const pick = document.getElementById("pickSelect").value;
-      const drop = document.getElementById("dropSelect").value;
-      const payload = document.getElementById("payloadSelect").value;
+    function commitDispatch() {
+      const pick = document.getElementById("dispPickSelect").value;
+      const drop = document.getElementById("dispDropSelect").value;
+      const payload = document.getElementById("dispPayloadSelect").value;
 
       let candidate = Object.values(ROBOTS).find(b => b.status !== "Emergency Stop" && b.payload === payload);
-      if (!candidate) candidate = ROBOTS["AMR-01"];
+      if (!candidate) candidate = ROBOTS["synq-amr-01"];
 
       candidate.status = "Navigating";
       candidate.mission = `TASK-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -1353,63 +1578,72 @@
       candidate.eta = "14s";
       candidate.route = [pick, drop];
 
-      logActivity(candidate.id, `Mission ${candidate.mission} dispatched to ${drop}`);
-      showToast(`Mission dispatched: ${candidate.id}`);
-      setPanelTab("inspector");
+      AUTONOMY_REASONING.latestTask = {
+        orderId: candidate.mission,
+        pickup: pick,
+        destination: drop,
+        payloadRequired: payload,
+        priority: 1
+      };
+
+      setAutonomyPipelineStage("DECISION");
+      setTimeout(() => setAutonomyPipelineStage("ROUTE"), 400);
+      setTimeout(() => setAutonomyPipelineStage("EXECUTION"), 800);
+
+      logEvent(candidate.id, `Mission ${candidate.mission} dispatched via CBS router`);
+      showToast(`Mission ${candidate.mission} dispatched to ${candidate.id}`);
+      setPanelTab("autonomy");
     }
 
-    // Fleet List View (Compact table)
-    function renderFleet(container) {
+    // D. FLEET OVERVIEW TAB
+    function renderFleetTab(container) {
       container.innerHTML = `
-        <div class="section-title">Fleet Overview</div>
-        <table class="data-table">
+        <div class="sec-header">
+          <span class="sec-title">Fleet Overview (3 Units)</span>
+        </div>
+
+        <table class="matrix-table">
           <thead>
             <tr>
               <th>ID</th>
               <th>Status</th>
-              <th>Battery</th>
+              <th>SoC</th>
               <th>Payload</th>
-              <th>Mission</th>
+              <th>Task</th>
             </tr>
           </thead>
           <tbody>
-            ${Object.values(ROBOTS).map(bot => {
-              const isSel = (bot.id === selectedRobotId);
-              let bClass = "badge-idle";
-              if (bot.status === "Navigating") bClass = "badge-nav";
-              if (bot.status === "Charging") bClass = "badge-chg";
-              if (bot.status === "Emergency Stop") bClass = "badge-estop";
-
-              return `
-                <tr class="clickable-row ${isSel ? 'selected' : ''}" onclick="selectRobot('${bot.id}')">
-                  <td><strong>${bot.id}</strong></td>
-                  <td><span class="badge ${bClass}">${bot.status}</span></td>
-                  <td>${bot.battery}%</td>
-                  <td>${bot.payload}</td>
-                  <td style="font-family: var(--font-mono); font-size: 11px;">${bot.mission}</td>
-                </tr>
-              `;
-            }).join("")}
+            ${Object.values(ROBOTS).map(b => `
+              <tr style="cursor: pointer;" onclick="selectRobotFromFleet('${b.id}')">
+                <td><strong>${b.id}</strong></td>
+                <td><span class="badge-status ${b.status === 'Navigating' ? 'nav' : (b.status === 'Emergency Stop' ? 'estop' : 'idle')}">${b.status}</span></td>
+                <td>${b.battery.toFixed(0)}%</td>
+                <td>${b.payload.replace("_", " ")}</td>
+                <td style="font-family: var(--font-mono); font-size: 10px;">${b.mission}</td>
+              </tr>
+            `).join("")}
           </tbody>
         </table>
       `;
     }
 
-    function selectRobot(id) {
+    function selectRobotFromFleet(id) {
       selectedRobotId = id;
       setPanelTab("inspector");
     }
 
-    // Activity Feed (Operational Log)
-    function renderActivity(container) {
+    // E. ACTIVITY EVENT LOG TAB
+    function renderTimelineTab(container) {
       container.innerHTML = `
-        <div class="section-title">Operational Events</div>
-        <div class="activity-feed">
+        <div class="sec-header">
+          <span class="sec-title">Operational Event Feed</span>
+        </div>
+        <div class="feed-stream">
           ${ACTIVITIES.map(ev => `
-            <div class="activity-item">
-              <span class="activity-time">${ev.time}</span>
-              <span class="activity-robot">${ev.robot}</span>
-              <span class="activity-msg">${ev.msg}</span>
+            <div class="feed-item">
+              <span class="feed-time">${ev.time}</span>
+              <span class="feed-actor">${ev.robot}</span>
+              <span class="feed-text">${ev.msg}</span>
             </div>
           `).join("")}
         </div>
@@ -1417,7 +1651,7 @@
     }
 
     /* ============================================================= */
-    /* 5. SAFETY & OPERATIONAL COMMANDS                              */
+    /* 6. OPERATIONAL CONTROLS & KINEMATICS LOOP                     */
     /* ============================================================= */
 
     function toggleGlobalEstop() {
@@ -1433,63 +1667,49 @@
           b.speed = 0.0;
           b.route = [];
         });
-        document.getElementById("dot-sys").className = "dot-indicator danger";
-        document.getElementById("val-sys-status").textContent = "Emergency Stop";
-        logActivity("Safety", "Global Emergency Stop engaged");
-        showToast("Global Emergency Stop engaged — All AMRs halted");
+        showToast("GLOBAL EMERGENCY STOP ENGAGED: ALL AMR DRIVES HALTED");
+        logEvent("Safety", "Global Emergency Stop engaged by operator");
       } else {
         btn.classList.remove("active");
         label.textContent = "Emergency Stop (All)";
         Object.values(ROBOTS).forEach(b => {
           b.status = "Idle";
         });
-        document.getElementById("dot-sys").className = "dot-indicator";
-        document.getElementById("val-sys-status").textContent = "Normal";
-        logActivity("Safety", "Emergency Stop reset by operator");
-        hideToast();
+        showToast("Emergency stop reset. Standby mode.");
+        logEvent("Safety", "Emergency stop reset by operator");
       }
       renderPanel();
-
       fetch("/api/v1/robots/ALL/estop", { method: "POST" }).catch(() => {});
     }
 
-    function toggleHoldRobot(id) {
-      const bot = ROBOTS[id];
-      if (!bot) return;
-      if (bot.status === "Navigating") {
-        bot.status = "Idle";
-        logActivity(id, "Motion paused");
-      } else {
-        bot.status = "Navigating";
-        logActivity(id, "Motion resumed");
-      }
-      renderPanel();
-    }
-
-    function dockRobot(id) {
+    function dockUnit(id) {
       const bot = ROBOTS[id];
       if (!bot) return;
       bot.status = "Navigating";
-      bot.destination = "Charger 1";
+      bot.destination = "Charger C1";
       bot.route = ["N_0_0"];
-      logActivity(id, "Returning to charging dock");
+      logEvent(id, "Commanded return to fast charging dock C1");
       renderPanel();
     }
 
-    /* ============================================================= */
-    /* 6. DISCRETE SIMULATION & CLOCK LOOP                           */
-    /* ============================================================= */
+    function pauseUnit(id) {
+      const bot = ROBOTS[id];
+      if (!bot) return;
+      bot.status = (bot.status === "Navigating") ? "Idle" : "Navigating";
+      logEvent(id, bot.status === "Navigating" ? "Motion resumed" : "Motion paused");
+      renderPanel();
+    }
 
     setInterval(() => {
       // Clock
       const now = new Date();
       document.getElementById("stripTime").textContent = now.toTimeString().split(" ")[0];
 
-      // Step robot transit along planned routes
-      let activeCount = 0;
+      // Step active robot motion
+      let activeMissionsCount = 0;
       Object.values(ROBOTS).forEach(bot => {
         if (bot.status === "Navigating" && bot.route.length > 0) {
-          activeCount++;
+          activeMissionsCount++;
           const targetId = bot.route[0];
           const node = ROADMAP_NODES[targetId];
           if (node) {
@@ -1500,7 +1720,6 @@
             if (dist < 0.15) {
               bot.x = node.x;
               bot.y = node.y;
-              bot.targetNode = targetId;
               bot.route.shift();
               if (bot.route.length === 0) {
                 bot.status = "Idle";
@@ -1509,11 +1728,12 @@
                 bot.destination = "—";
                 bot.eta = "—";
                 bot.speed = 0.0;
-                logActivity(bot.id, `Arrived at destination (${targetId})`);
+                logEvent(bot.id, `Arrived at destination (${targetId}). Task complete.`);
+                setAutonomyPipelineStage("VERIFIED");
                 renderPanel();
               }
             } else {
-              bot.speed = 0.8;
+              bot.speed = 0.85;
               bot.x += (dx / dist) * 0.06;
               bot.y += (dy / dist) * 0.06;
               bot.heading = Math.atan2(dy, dx) * 180 / Math.PI;
@@ -1522,15 +1742,7 @@
         }
       });
 
-      document.getElementById("val-active-missions").textContent = `${activeCount} active`;
-
-      // Sync with backend API if running
-      fetch("/api/v1/fleet")
-        .then(res => res.json())
-        .then(() => {
-          document.getElementById("dot-fleet").className = "dot-indicator";
-        })
-        .catch(() => {});
+      document.getElementById("valReservationsCount").textContent = activeMissionsCount;
     }, 50);
 
     renderPanel();

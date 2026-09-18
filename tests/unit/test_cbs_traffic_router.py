@@ -104,3 +104,71 @@ def test_fleet_manager_order_assignment_and_payload_matching():
     assigned_lift = fms.submit_order(order_lift)
     assert assigned_lift == "AMR-LIFT-1"
     assert bot1.is_busy is True
+
+
+def test_cbs_plan_with_trace_returns_decision_metadata():
+    """Verify plan_with_trace returns conflict logs, constraint tree branches, and resolution summary."""
+    grid = WarehouseGraph.create_standard_warehouse_grid()
+    router = CBSRouter(grid)
+
+    plans = [
+        AgentPlan(agent_id="synq-1", start_node="N_0_0", goal_node="N_0_2"),
+        AgentPlan(agent_id="synq-2", start_node="N_0_2", goal_node="N_0_0")
+    ]
+
+    routes, trace = router.plan_with_trace(plans)
+    assert routes is not None
+    assert "synq-1" in routes
+    assert "synq-2" in routes
+
+    # Verify trace schema and contents
+    assert "initial_unconstrained_paths" in trace
+    assert "conflicts_detected" in trace
+    assert "branches_explored" in trace
+    assert "resolution_summary" in trace
+    assert trace["resolved"] is True
+    assert len(trace["conflicts_detected"]) >= 1
+    assert len(trace["branches_explored"]) >= 1
+
+
+def test_fleet_manager_evaluate_dispatch_decision_matrix():
+    """Verify dispatch decision matrix evaluates candidates, rejection reasons, and rationale."""
+    grid = WarehouseGraph.create_standard_warehouse_grid()
+    fms = FleetManager(grid)
+
+    bot1 = RobotAgent(robot_id="AMR-LIFT-1", current_node="N_0_0", battery_pct=90.0, payload_type="SCISSOR_LIFT")
+    bot2 = RobotAgent(robot_id="AMR-CONV-1", current_node="N_1_1", battery_pct=85.0, payload_type="ROLLER_CONVEYOR")
+    bot3 = RobotAgent(robot_id="AMR-LIFT-LOW", current_node="N_0_1", battery_pct=15.0, payload_type="SCISSOR_LIFT")
+
+    fms.register_robot(bot1)
+    fms.register_robot(bot2)
+    fms.register_robot(bot3)
+
+    order = WarehouseOrder(
+        order_id="ORD-EVAL-1",
+        pick_node="N_0_2",
+        drop_node="N_2_2",
+        required_payload="SCISSOR_LIFT"
+    )
+
+    eval_result = fms.evaluate_dispatch_decision(order)
+    assert eval_result["order_id"] == "ORD-EVAL-1"
+    assert eval_result["selected_robot"] == "AMR-LIFT-1"
+    assert len(eval_result["candidates"]) == 3
+
+    # Check that AMR-LIFT-LOW is rejected due to battery
+    low_bot_eval = next(c for c in eval_result["candidates"] if c["robot_id"] == "AMR-LIFT-LOW")
+    assert low_bot_eval["decision"] == "REJECTED"
+    assert "below minimum 20% dispatch threshold" in low_bot_eval["rejection_reason"]
+
+    # Check that AMR-CONV-1 is rejected due to payload mismatch
+    conv_bot_eval = next(c for c in eval_result["candidates"] if c["robot_id"] == "AMR-CONV-1")
+    assert conv_bot_eval["decision"] == "REJECTED"
+    assert "Payload mismatch" in conv_bot_eval["rejection_reason"]
+    assert "ROLLER_CONVEYOR" in conv_bot_eval["rejection_reason"]
+
+    # Check winner
+    winner_eval = next(c for c in eval_result["candidates"] if c["robot_id"] == "AMR-LIFT-1")
+    assert winner_eval["decision"] == "SELECTED"
+    assert "Assigned AMR-LIFT-1" in eval_result["decision_rationale"]
+

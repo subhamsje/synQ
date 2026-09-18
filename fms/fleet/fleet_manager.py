@@ -78,3 +78,90 @@ class FleetManager:
                 if aid in self.robots:
                     self.robots[aid].planned_trajectory = path
         return routes
+
+    def evaluate_dispatch_decision(self, order: WarehouseOrder) -> Dict[str, Any]:
+        """
+        Evaluates task assignment decision factors across all fleet candidates.
+        Produces a complete decision trace with rejected alternatives and rationale.
+        """
+        candidates_evaluation = []
+        eligible = []
+
+        for rid, bot in self.robots.items():
+            dist = self.graph.get_distance(bot.current_node, order.pick_node)
+            payload_ok = (order.required_payload == "ANY" or bot.payload_type == order.required_payload)
+            batt_ok = (bot.battery_pct >= 20.0)
+            avail_ok = (not bot.is_busy)
+
+            rejection_reasons = []
+            if not avail_ok:
+                rejection_reasons.append(f"Unit busy executing task {bot.current_mission_id or 'UNKNOWN'}")
+            if not batt_ok:
+                rejection_reasons.append(f"Battery level ({bot.battery_pct:.1f}%) below minimum 20% dispatch threshold")
+            if not payload_ok:
+                rejection_reasons.append(f"Payload mismatch: Equipped with {bot.payload_type}, requires {order.required_payload}")
+
+            # Cost calculation: distance + battery penalty if < 40%
+            battery_penalty = max(0.0, (40.0 - bot.battery_pct) * 0.1)
+            cost_score = round(dist + battery_penalty, 2)
+
+            is_eligible = avail_ok and batt_ok and payload_ok
+            eval_entry = {
+                "robot_id": rid,
+                "current_node": bot.current_node,
+                "payload_type": bot.payload_type,
+                "payload_match": payload_ok,
+                "battery_pct": bot.battery_pct,
+                "battery_sufficient": batt_ok,
+                "is_busy": bot.is_busy,
+                "distance_to_pickup_m": round(dist, 2),
+                "cost_score": cost_score,
+                "is_eligible": is_eligible,
+                "decision": "PENDING",
+                "rejection_reason": "; ".join(rejection_reasons) if rejection_reasons else None
+            }
+            candidates_evaluation.append(eval_entry)
+            if is_eligible:
+                eligible.append((cost_score, dist, rid, eval_entry))
+
+        selected_id = None
+        rationale = ""
+
+        if eligible:
+            eligible.sort()
+            winner_entry = eligible[0][3]
+            winner_entry["decision"] = "SELECTED"
+            selected_id = winner_entry["robot_id"]
+
+            for _, _, rid, entry in eligible[1:]:
+                entry["decision"] = "REJECTED"
+                entry["rejection_reason"] = f"Higher transit cost score ({entry['cost_score']} vs {winner_entry['cost_score']})"
+
+            for entry in candidates_evaluation:
+                if entry["decision"] == "PENDING":
+                    entry["decision"] = "REJECTED"
+
+            rationale = (
+                f"Assigned {selected_id}: Optimal composite cost score ({winner_entry['cost_score']}) "
+                f"with {winner_entry['distance_to_pickup_m']}m transit distance and matching {winner_entry['payload_type']} payload."
+            )
+        else:
+            for entry in candidates_evaluation:
+                entry["decision"] = "REJECTED"
+            rationale = "No available AMR satisfied physical payload and battery operational constraints."
+
+        return {
+            "order_id": order.order_id,
+            "pick_node": order.pick_node,
+            "drop_node": order.drop_node,
+            "required_payload": order.required_payload,
+            "selected_robot": selected_id,
+            "candidates": candidates_evaluation,
+            "decision_rationale": rationale,
+            "constraints": [
+                f"Payload must match {order.required_payload}",
+                "Battery must exceed 20.0% dispatch cutoff",
+                "Unit must not have concurrent active task assignment"
+            ]
+        }
+

@@ -2,7 +2,7 @@ import heapq
 import math
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Tuple, Optional, Set
+from typing import Dict, List, Tuple, Optional, Set, Any
 
 from fms.topology.warehouse_graph import WarehouseGraph
 
@@ -174,6 +174,112 @@ class CBSRouter:
                     )
 
         return None
+
+    def plan_with_trace(self, agents: List[AgentPlan]) -> Tuple[Optional[Dict[str, List[str]]], Dict[str, Any]]:
+        """
+        High-level Conflict-Based Search with full decision tree tracing.
+        Exposes conflicts detected, candidate branches evaluated, and resolution rationale.
+        """
+        trace = {
+            "initial_unconstrained_paths": {},
+            "conflicts_detected": [],
+            "branches_explored": [],
+            "resolved": False,
+            "resolution_summary": "Zero initial conflicts detected. Paths are collision-free."
+        }
+
+        root_constraints: Dict[str, Set[Tuple]] = {a.agent_id: set() for a in agents}
+        root_paths: Dict[str, List[str]] = {}
+
+        for a in agents:
+            path = self.space_time_a_star(a.agent_id, a.start_node, a.goal_node, root_constraints[a.agent_id])
+            if path is None:
+                trace["resolution_summary"] = f"Agent {a.agent_id} could not find a path to {a.goal_node}."
+                return None, trace
+            root_paths[a.agent_id] = path
+
+        trace["initial_unconstrained_paths"] = {k: list(v) for k, v in root_paths.items()}
+        root_cost = sum(len(p) for p in root_paths.values())
+        open_tree = [CTNode(cost=root_cost, constraints=root_constraints, paths=root_paths)]
+
+        iterations = 0
+        max_iterations = 200
+
+        while open_tree and iterations < max_iterations:
+            iterations += 1
+            curr_node: CTNode = heapq.heappop(open_tree)
+
+            conflict = self._find_first_conflict(curr_node.paths)
+            if conflict is None:
+                trace["resolved"] = True
+                if trace["conflicts_detected"]:
+                    trace["resolution_summary"] = (
+                        f"Resolved {len(trace['conflicts_detected'])} conflict(s) by branching constraint tree. "
+                        f"Final trajectories deconflict with minimal sum-of-costs delta."
+                    )
+                return curr_node.paths, trace
+
+            conflict_info = {
+                "iteration": iterations,
+                "agent_1": conflict.agent_1,
+                "agent_2": conflict.agent_2,
+                "conflict_type": conflict.conflict_type.name,
+                "time_step": conflict.time_step,
+                "location": conflict.node if conflict.conflict_type == ConflictType.VERTEX else f"{conflict.edge[0]} <-> {conflict.edge[1]}"
+            }
+            trace["conflicts_detected"].append(conflict_info)
+
+            # Branch on the conflict
+            branch_records = []
+            for agent_id in [conflict.agent_1, conflict.agent_2]:
+                new_constraints = {
+                    aid: set(cons) for aid, cons in curr_node.constraints.items()
+                }
+
+                if conflict.conflict_type == ConflictType.VERTEX:
+                    new_constraints[agent_id].add(('VERTEX', conflict.node, conflict.time_step))
+                elif conflict.conflict_type == ConflictType.EDGE:
+                    u, v = conflict.edge
+                    if agent_id == conflict.agent_1:
+                        new_constraints[agent_id].add(('EDGE', u, v, conflict.time_step))
+                    else:
+                        new_constraints[agent_id].add(('EDGE', v, u, conflict.time_step))
+
+                agent_obj = next(a for a in agents if a.agent_id == agent_id)
+                new_path = self.space_time_a_star(
+                    agent_id,
+                    agent_obj.start_node,
+                    agent_obj.goal_node,
+                    new_constraints[agent_id]
+                )
+
+                if new_path is not None:
+                    new_paths = dict(curr_node.paths)
+                    new_paths[agent_id] = new_path
+                    new_cost = sum(len(p) for p in new_paths.values())
+                    branch_cost_delta = new_cost - root_cost
+
+                    branch_rec = {
+                        "constrained_agent": agent_id,
+                        "constraint": f"Cannot occupy {conflict_info['location']} at t={conflict.time_step}",
+                        "resulting_path": new_path,
+                        "cost_delta": branch_cost_delta
+                    }
+                    branch_records.append(branch_rec)
+
+                    heapq.heappush(
+                        open_tree,
+                        CTNode(cost=new_cost, constraints=new_constraints, paths=new_paths)
+                    )
+            
+            trace["branches_explored"].append({
+                "conflict": conflict_info,
+                "branches": branch_records
+            })
+
+        trace["resolution_summary"] = "CBS exceeded maximum iterations without convergence."
+        return None, trace
+
 
     def _find_first_conflict(self, paths: Dict[str, List[str]]) -> Optional[Conflict]:
         """Detects the earliest vertex or edge conflict between any two agents."""

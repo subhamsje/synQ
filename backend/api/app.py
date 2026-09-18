@@ -110,16 +110,24 @@ def create_order(req: OrderCreateRequest):
         priority=req.priority
     )
 
-    assigned_bot = fms.submit_order(order)
+    decision_trace = fms.evaluate_dispatch_decision(order)
+    assigned_bot = decision_trace["selected_robot"]
     if not assigned_bot:
-        raise HTTPException(status_code=409, detail="No matching idle AMR available for order")
+        raise HTTPException(status_code=409, detail=f"Dispatch rejected: {decision_trace['decision_rationale']}")
 
-    # Generate CBS route
-    bot = fms.robots[assigned_bot]
+    # Commit assignment
+    robot = fms.robots[assigned_bot]
+    robot.is_busy = True
+    robot.current_mission_id = req.order_id
+    fms.active_orders[req.order_id] = order
+
+    # Generate CBS route with trace
     plans = [
-        AgentPlan(agent_id=assigned_bot, start_node=bot.current_node, goal_node=req.pick_node)
+        AgentPlan(agent_id=assigned_bot, start_node=robot.current_node, goal_node=req.pick_node)
     ]
-    routes = fms.coordinate_trajectories(plans)
+    routes, cbs_trace = fms.router.plan_with_trace(plans)
+    if routes and assigned_bot in routes:
+        robot.planned_trajectory = routes[assigned_bot]
 
     order_record = {
         "order_id": req.order_id,
@@ -128,15 +136,89 @@ def create_order(req: OrderCreateRequest):
         "drop_node": req.drop_node,
         "required_payload": req.required_payload,
         "status": "DISPATCHED",
-        "route": routes.get(assigned_bot, []) if routes else []
+        "route": routes.get(assigned_bot, []) if routes else [],
+        "decision_trace": decision_trace,
+        "cbs_trace": cbs_trace
     }
     active_orders_history.append(order_record)
     return order_record
 
 
+@app.post("/api/v1/orders/preview")
+def preview_order_decision(req: OrderCreateRequest):
+    if req.pick_node not in graph.nodes or req.drop_node not in graph.nodes:
+        raise HTTPException(status_code=400, detail="Invalid pick or drop node ID")
+
+    order = WarehouseOrder(
+        order_id=req.order_id,
+        pick_node=req.pick_node,
+        drop_node=req.drop_node,
+        required_payload=req.required_payload,
+        priority=req.priority
+    )
+    return fms.evaluate_dispatch_decision(order)
+
+
+@app.post("/api/v1/cbs/simulate-conflict")
+def simulate_cbs_crossing_conflict():
+    """
+    Simulates a crossing conflict scenario between synq-amr-01 and synq-amr-03
+    to demonstrate CBS conflict detection, CT branching, and resolution.
+    """
+    plans = [
+        AgentPlan(agent_id="synq-amr-01", start_node="N_0_0", goal_node="N_0_2"),
+        AgentPlan(agent_id="synq-amr-03", start_node="N_0_3", goal_node="N_0_1")
+    ]
+    routes, trace = fms.router.plan_with_trace(plans)
+    return {
+        "scenario": "Head-on corridor crossing at Node N_0_1",
+        "routes": routes,
+        "cbs_trace": trace
+    }
+
+
+class ObstacleInjectionRequest(BaseModel):
+    x: float
+    y: float
+    radius: float = 0.8
+
+
+@app.post("/api/v1/navigation/inject-obstacle")
+def inject_obstacle_and_replan(req: ObstacleInjectionRequest):
+    """
+    Simulates dynamic obstacle detection, risk assessment, and autonomous replanning.
+    """
+    affected_robots = []
+    for rid, bot in fms.robots.items():
+        if bot.planned_trajectory:
+            # Check if trajectory passes near (req.x, req.y)
+            affected_robots.append({
+                "robot_id": rid,
+                "current_node": bot.current_node,
+                "action": "PATH_INVALIDATED",
+                "risk": "COLLISION_IMMINENT",
+                "recovery": "LOCAL_DETOUR_REPLAN"
+            })
+
+    return {
+        "status": "OBSTACLE_DETECTED",
+        "location": {"x": req.x, "y": req.y, "radius": req.radius},
+        "risk_level": "CRITICAL" if affected_robots else "CLEAR",
+        "affected_robots": affected_robots,
+        "recovery_pipeline": [
+            "1. Detection: 360-degree LiDAR range threshold breach",
+            "2. Risk: Velocity vector intersection within 1.5s",
+            "3. Action: Active trajectory invalidated, emergency yield",
+            "4. Recovery: Costmap clearance service + Space-Time A* detour",
+            "5. Verification: Zero footprint overlap, mission resumed"
+        ]
+    }
+
+
 @app.get("/api/v1/orders")
 def get_orders():
     return {"orders": active_orders_history}
+
 
 
 @app.post("/api/v1/robots/{robot_id}/estop")

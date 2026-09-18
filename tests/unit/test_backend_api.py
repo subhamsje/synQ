@@ -50,6 +50,50 @@ def test_order_creation_and_routing(client):
     assert data["assigned_amr"] == "synq-amr-01"
     assert data["status"] == "DISPATCHED"
     assert len(data["route"]) > 0
+    assert "decision_trace" in data
+    assert "cbs_trace" in data
+    assert data["decision_trace"]["selected_robot"] == "synq-amr-01"
+
+
+def test_order_preview_endpoint(client):
+    preview_data = {
+        "order_id": "PREVIEW-ORD-01",
+        "pick_node": "N_0_1",
+        "drop_node": "N_2_2",
+        "required_payload": "SCISSOR_LIFT",
+        "priority": 1
+    }
+    response = client.post("/api/v1/orders/preview", json=preview_data)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["order_id"] == "PREVIEW-ORD-01"
+    assert "candidates" in data
+    assert "decision_rationale" in data
+    assert "constraints" in data
+
+
+def test_simulate_cbs_conflict_endpoint(client):
+    response = client.post("/api/v1/cbs/simulate-conflict")
+    assert response.status_code == 200
+    data = response.json()
+    assert "scenario" in data
+    assert "routes" in data
+    assert "cbs_trace" in data
+    assert data["cbs_trace"]["resolved"] is True
+
+
+def test_inject_obstacle_endpoint(client):
+    obs_data = {
+        "x": 5.0,
+        "y": 5.0,
+        "radius": 1.0
+    }
+    response = client.post("/api/v1/navigation/inject-obstacle", json=obs_data)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "OBSTACLE_DETECTED"
+    assert "recovery_pipeline" in data
+    assert len(data["recovery_pipeline"]) == 5
 
 
 def test_payload_action_endpoint(client):
@@ -76,3 +120,4 @@ def test_frontend_root_endpoint(client):
     assert response.status_code == 200
     assert "synQ" in response.text
     assert "Digital Twin" in response.text
+
