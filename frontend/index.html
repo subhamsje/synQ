@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>synQ — Modular AMR Digital Twin & Fleet Control Center</title>
+  <style>
+    :root {
+      --bg-dark: #070a12;
+      --panel-bg: rgba(14, 20, 36, 0.85);
+      --panel-border: rgba(0, 243, 255, 0.2);
+      --accent-cyan: #00f3ff;
+      --accent-blue: #0066ff;
+      --accent-green: #00ff88;
+      --accent-amber: #ffb800;
+      --accent-red: #ff3366;
+      --text-main: #e6f1ff;
+      --text-muted: #8899b7;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Top Navigation Header */
+    header {
+      height: 56px;
+      background: rgba(10, 15, 28, 0.95);
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #000;
+      font-size: 18px;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #fff;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--accent-cyan);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .system-status-pills {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    .btn-estop-global {
+      background: linear-gradient(180deg, #ff4466, #cc0033);
+      border: 1px solid #ff7799;
+      color: #fff;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(255, 51, 102, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    .btn-estop-global:hover {
+      background: #ff1144;
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(255, 51, 102, 0.8);
+    }
+
+    /* Main Content Layout */
+    .main-container {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 56px);
+      position: relative;
+    }
+
+    /* Left Side Canvas Area */
+    .viewport-container {
+      flex: 1;
+      position: relative;
+      background: radial-gradient(circle at center, #0e1526 0%, #070a12 100%);
+    }
+
+    canvas#digitalTwinCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .viewport-overlay {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      pointer-events: none;
+      backdrop-filter: blur(8px);
+    }
+
+    /* Right Sidebar Control Panel */
+    .control-sidebar {
+      width: 440px;
+      background: var(--panel-bg);
+      border-left: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      backdrop-filter: blur(12px);
+    }
+
+    .sidebar-section {
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent-cyan);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Robot Card */
+    .robot-cards-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .robot-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .robot-card:hover, .robot-card.active {
+      border-color: var(--accent-cyan);
+      background: rgba(0, 243, 255, 0.05);
+    }
+
+    .robot-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .robot-id {
+      font-weight: 700;
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+
+    .payload-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .payload-lift { background: rgba(0, 243, 255, 0.2); color: var(--accent-cyan); }
+    .payload-conv { background: rgba(255, 184, 0, 0.2); color: var(--accent-amber); }
+    .payload-grip { background: rgba(0, 255, 136, 0.2); color: var(--accent-green); }
+
+    .robot-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    .battery-bar-container {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .battery-bar-fill {
+      height: 100%;
+      background: var(--accent-green);
+      transition: width 0.3s ease;
+    }
+
+    /* Form Elements */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    select, input {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      outline: none;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      border: none;
+      color: #000;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.2);
+    }
+
+    /* Telemetry Log Terminal */
+    .terminal-window {
+      background: #04060a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 10px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      height: 140px;
+      overflow-y: auto;
+      color: #00ff88;
+      line-height: 1.5;
+    }
+
+    .terminal-line-time {
+      color: #8899b7;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">Q</div>
+      <div>
+        <div class="brand-title">synQ</div>
+        <div class="brand-subtitle">Smart AMR Platform & FMS</div>
+      </div>
+    </div>
+
+    <div class="system-status-pills">
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span>CBS ROUTER: ACTIVE</span>
+      </div>
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span>VDA 5050: v2.0.0</span>
+      </div>
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span>FLEET: 3 ONLINE</span>
+      </div>
+      <button class="btn-estop-global" onclick="triggerGlobalEstop()">EMERGENCY STOP (ALL)</button>
+    </div>
+  </header>
+
+  <!-- Main Viewport and Sidebar -->
+  <div class="main-container">
+    <div class="viewport-container">
+      <canvas id="digitalTwinCanvas"></canvas>
+      <div class="viewport-overlay">
+        <div>WAREHOUSE: SMART LOGISTICS HUB [15m x 15m]</div>
+        <div style="color: var(--accent-cyan); margin-top: 4px;">COORDINATION: SPATIO-TEMPORAL CBS</div>
+      </div>
+    </div>
+
+    <div class="control-sidebar">
+      <!-- Active Fleet -->
+      <div class="sidebar-section">
+        <div class="section-title">
+          <span>Active Fleet Telemetry</span>
+          <span style="font-size: 10px; color: var(--accent-green);">100% HEALTH</span>
+        </div>
+        <div class="robot-cards-grid" id="robotCards">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Order Dispatch -->
+      <div class="sidebar-section">
+        <div class="section-title">Dispatch Warehouse Mission</div>
+        <div class="form-group">
+          <label>Pick Location</label>
+          <select id="pickNodeSelect">
+            <option value="N_1_0">Aisle 1-A (N_1_0)</option>
+            <option value="N_1_1" selected>Aisle 1-B (N_1_1)</option>
+            <option value="N_1_2">Aisle 1-C (N_1_2)</option>
+            <option value="N_1_3">Aisle 1-D (N_1_3)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Drop Location</label>
+          <select id="dropNodeSelect">
+            <option value="N_2_0">Drop Dock 1 (N_2_0)</option>
+            <option value="N_2_1">Drop Dock 2 (N_2_1)</option>
+            <option value="N_2_2" selected>Drop Dock 3 (N_2_2)</option>
+            <option value="N_2_3">Drop Dock 4 (N_2_3)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Required Payload</label>
+          <select id="payloadSelect">
+            <option value="SCISSOR_LIFT">Scissor Lift (Pallet Transport)</option>
+            <option value="ROLLER_CONVEYOR">Roller Conveyor (ASRS Transfer)</option>
+            <option value="TOTE_GRIPPER">Tote Gripper (Bin Picking)</option>
+          </select>
+        </div>
+
+        <button class="btn-primary" onclick="dispatchOrder()">Dispatch via CBS Router</button>
+      </div>
+
+      <!-- Live VDA 5050 MQTT Stream -->
+      <div class="sidebar-section" style="flex: 1; border-bottom: none;">
+        <div class="section-title">VDA 5050 State & Telemetry Log</div>
+        <div class="terminal-window" id="telemetryLog">
+          <div><span class="terminal-line-time">[00:00:00]</span>synQ FMS Connected to uagv/v2/synQ/synq-amr-01/state</div>
+          <div><span class="terminal-line-time">[00:00:01]</span>Topological roadmap synchronized (16 nodes, 48 directed edges)</div>
+          <div><span class="terminal-line-time">[00:00:02]</span>CBS Spatio-temporal reservation engine standing by.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Warehouse Graph Representation
+    const nodes = [];
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        nodes.push({
+          id: `N_${r}_${c}`,
+          r: r,
+          c: c,
+          x: c * 5.0,
+          y: r * 5.0,
+          type: (r===0 && c===0) || (r===3 && c===3) ? "CHARGE" : (r===1 ? "PICK" : (r===2 ? "DROP" : "TRANSIT"))
+        });
+      }
+    }
+
+    // Simulated AMR Fleet
+    const fleet = [
+      {
+        id: "synq-amr-01",
+        payload: "SCISSOR_LIFT",
+        battery: 94.5,
+        r: 0, c: 0,
+        x: 0.0, y: 0.0,
+        targetR: 0, targetC: 0,
+        theta: 0,
+        busy: false,
+        path: []
+      },
+      {
+        id: "synq-amr-02",
+        payload: "ROLLER_CONVEYOR",
+        battery: 88.0,
+        r: 3, c: 3,
+        x: 15.0, y: 15.0,
+        targetR: 3, targetC: 3,
+        theta: Math.PI,
+        busy: false,
+        path: []
+      },
+      {
+        id: "synq-amr-03",
+        payload: "TOTE_GRIPPER",
+        battery: 91.2,
+        r: 0, c: 3,
+        x: 15.0, y: 0.0,
+        targetR: 0, targetC: 3,
+        theta: Math.PI / 2,
+        busy: false,
+        path: []
+      }
+    ];
+
+    let selectedRobotId = "synq-amr-01";
+
+    function logMsg(msg) {
+      const log = document.getElementById("telemetryLog");
+      const d = new Date();
+      const timeStr = d.toTimeString().split(" ")[0];
+      const div = document.createElement("div");
+      div.innerHTML = `<span class="terminal-line-time">[${timeStr}]</span>${msg}`;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function renderFleetCards() {
+      const container = document.getElementById("robotCards");
+      container.innerHTML = "";
+      fleet.forEach(bot => {
+        let badgeClass = "payload-lift";
+        if (bot.payload === "ROLLER_CONVEYOR") badgeClass = "payload-conv";
+        if (bot.payload === "TOTE_GRIPPER") badgeClass = "payload-grip";
+
+        const card = document.createElement("div");
+        card.className = `robot-card ${bot.id === selectedRobotId ? "active" : ""}`;
+        card.onclick = () => { selectedRobotId = bot.id; renderFleetCards(); };
+        card.innerHTML = `
+          <div class="robot-card-header">
+            <span class="robot-id">${bot.id}</span>
+            <span class="payload-badge ${badgeClass}">${bot.payload.replace("_", " ")}</span>
+          </div>
+          <div class="robot-metrics">
+            <div>STATUS: <span style="color: ${bot.busy ? 'var(--accent-amber)' : 'var(--accent-green)'}">${bot.busy ? 'EN ROUTE' : 'IDLE'}</span></div>
+            <div>SOC: ${bot.battery.toFixed(1)}%</div>
+            <div>POS: (${bot.x.toFixed(1)}m, ${bot.y.toFixed(1)}m)</div>
+            <div>NODE: N_${bot.r}_${bot.c}</div>
+          </div>
+          <div class="battery-bar-container">
+            <div class="battery-bar-fill" style="width: ${bot.battery}%"></div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function dispatchOrder() {
+      const pick = document.getElementById("pickNodeSelect").value;
+      const drop = document.getElementById("dropNodeSelect").value;
+      const payload = document.getElementById("payloadSelect").value;
+
+      // Find best idle matching robot
+      const candidate = fleet.find(b => !b.busy && b.payload === payload);
+      if (!candidate) {
+        logMsg(`<span style="color: var(--accent-red)">DISPATCH ERROR: No idle AMR matching ${payload}</span>`);
+        return;
+      }
+
+      candidate.busy = true;
+      logMsg(`Order Dispatched: [${candidate.id}] assigned -> Pick: ${pick} | Drop: ${drop}`);
+
+      // Simple animated path progression
+      const pickNode = nodes.find(n => n.id === pick);
+      const dropNode = nodes.find(n => n.id === drop);
+
+      candidate.path = [
+        { x: candidate.x, y: candidate.y },
+        { x: pickNode.x, y: pickNode.y },
+        { x: dropNode.x, y: dropNode.y }
+      ];
+
+      renderFleetCards();
+    }
+
+    function triggerGlobalEstop() {
+      fleet.forEach(b => {
+        b.busy = false;
+        b.path = [];
+      });
+      logMsg(`<span style="color: var(--accent-red)">EMERGENCY STOP ENGAGED: ALL 3 AMRs HALTED</span>`);
+      renderFleetCards();
+    }
+
+    // Canvas 2D Digital Twin Renderer
+    const canvas = document.getElementById("digitalTwinCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const margin = 80;
+      const scaleX = (canvas.width - margin * 2) / 15.0;
+      const scaleY = (canvas.height - margin * 2) / 15.0;
+      const scale = Math.min(scaleX, scaleY);
+
+      const offsetX = (canvas.width - 15.0 * scale) / 2;
+      const offsetY = (canvas.height - 15.0 * scale) / 2;
+
+      function toScreen(x, y) {
+        return {
+          sx: offsetX + x * scale,
+          sy: offsetY + y * scale
+        };
+      }
+
+      // Draw Warehouse Grid Edges
+      ctx.strokeStyle = "rgba(0, 243, 255, 0.15)";
+      ctx.lineWidth = 2;
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          const p1 = toScreen(c * 5.0, r * 5.0);
+          if (c < 3) {
+            const p2 = toScreen((c + 1) * 5.0, r * 5.0);
+            ctx.beginPath();
+            ctx.moveTo(p1.sx, p1.sy);
+            ctx.lineTo(p2.sx, p2.sy);
+            ctx.stroke();
+          }
+          if (r < 3) {
+            const p3 = toScreen(c * 5.0, (r + 1) * 5.0);
+            ctx.beginPath();
+            ctx.moveTo(p1.sx, p1.sy);
+            ctx.lineTo(p3.sx, p3.sy);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw Nodes
+      nodes.forEach(n => {
+        const pt = toScreen(n.x, n.y);
+        ctx.beginPath();
+        ctx.arc(pt.sx, pt.sy, 6, 0, Math.PI * 2);
+        if (n.type === "CHARGE") {
+          ctx.fillStyle = "#ffb800";
+        } else if (n.type === "PICK") {
+          ctx.fillStyle = "#00f3ff";
+        } else if (n.type === "DROP") {
+          ctx.fillStyle = "#00ff88";
+        } else {
+          ctx.fillStyle = "#4a6080";
+        }
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.font = "10px monospace";
+        ctx.fillText(n.id, pt.sx + 10, pt.sy + 4);
+      });
+
+      // Update & Draw AMRs
+      fleet.forEach(bot => {
+        // Move towards path waypoint if active
+        if (bot.path && bot.path.length > 0) {
+          const target = bot.path[0];
+          const dx = target.x - bot.x;
+          const dy = target.y - bot.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 0.1) {
+            bot.path.shift();
+            if (bot.path.length === 0) {
+              bot.busy = false;
+              logMsg(`[${bot.id}] Completed order and arrived at destination.`);
+              renderFleetCards();
+            }
+          } else {
+            bot.x += (dx / dist) * 0.05;
+            bot.y += (dy / dist) * 0.05;
+            bot.theta = Math.atan2(dy, dx);
+          }
+        }
+
+        const pt = toScreen(bot.x, bot.y);
+
+        // Draw AMR Chassis Body (0.7m x 0.5m scaled)
+        const w = 0.7 * scale;
+        const h = 0.5 * scale;
+
+        ctx.save();
+        ctx.translate(pt.sx, pt.sy);
+        ctx.rotate(bot.theta);
+
+        // Halo glow
+        ctx.shadowColor = bot.id === selectedRobotId ? "rgba(0, 243, 255, 0.8)" : "rgba(0, 102, 255, 0.4)";
+        ctx.shadowBlur = bot.id === selectedRobotId ? 16 : 8;
+
+        // Base Chassis
+        ctx.fillStyle = "#162238";
+        ctx.strokeStyle = bot.id === selectedRobotId ? "var(--accent-cyan)" : "#0066ff";
+        ctx.lineWidth = 2;
+        ctx.fillRect(-w/2, -h/2, w, h);
+        ctx.strokeRect(-w/2, -h/2, w, h);
+
+        // Mecanum Wheels (4 corners)
+        ctx.fillStyle = "#334460";
+        ctx.fillRect(-w/2, -h/2 - 3, w/3, 4);
+        ctx.fillRect(w/2 - w/3, -h/2 - 3, w/3, 4);
+        ctx.fillRect(-w/2, h/2 - 1, w/3, 4);
+        ctx.fillRect(w/2 - w/3, h/2 - 1, w/3, 4);
+
+        // LiDAR dome
+        ctx.fillStyle = "#ff3366";
+        ctx.beginPath();
+        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Forward heading tick
+        ctx.strokeStyle = "#fff";
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(w/2 + 4, 0);
+        ctx.stroke();
+
+        ctx.restore();
+
+        // Label above robot
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 11px monospace";
+        ctx.fillText(bot.id, pt.sx - 24, pt.sy - 22);
+      });
+
+      requestAnimationFrame(draw);
+    }
+
+    renderFleetCards();
+    requestAnimationFrame(draw);
+  </script>
+</body>
+</html>
