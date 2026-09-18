@@ -1,0 +1,206 @@
+<?xml version="1.0"?>
+<robot name="synq_amr" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ==================== PHYSICAL PARAMETERS ==================== -->
+  <xacro:property name="chassis_length" value="0.70"/>
+  <xacro:property name="chassis_width"  value="0.50"/>
+  <xacro:property name="chassis_height" value="0.18"/>
+  <xacro:property name="chassis_mass"   value="22.0"/>
+
+  <xacro:property name="wheel_radius"   value="0.076"/>
+  <xacro:property name="wheel_width"    value="0.050"/>
+  <xacro:property name="wheel_mass"     value="1.5"/>
+
+  <xacro:property name="wheelbase_x"    value="0.25"/> <!-- Lx: 0.25m from center -->
+  <xacro:property name="track_y"        value="0.20"/> <!-- Ly: 0.20m from center -->
+
+  <!-- Inertia Macros -->
+  <xacro:macro name="box_inertia" params="m w h d">
+    <inertial>
+      <mass value="${m}"/>
+      <inertia ixx="${(m/12) * (h*h + d*d)}" ixy="0.0" ixz="0.0"
+               iyy="${(m/12) * (w*w + d*d)}" iyz="0.0"
+               izz="${(m/12) * (w*w + h*h)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="cylinder_inertia" params="m r h">
+    <inertial>
+      <mass value="${m}"/>
+      <inertia ixx="${(m/12) * (3*r*r + h*h)}" ixy="0.0" ixz="0.0"
+               iyy="${(m/12) * (3*r*r + h*h)}" iyz="0.0"
+               izz="${(m/2) * (r*r)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- ==================== BASE FOOTPRINT & CHASSIS ==================== -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 ${chassis_height/2}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${chassis_length} ${chassis_width} ${chassis_height}"/>
+      </geometry>
+      <material name="synq_slate">
+        <color rgba="0.18 0.20 0.25 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${chassis_height/2}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${chassis_length} ${chassis_width} ${chassis_height}"/>
+      </geometry>
+    </collision>
+    <xacro:box_inertia m="${chassis_mass}" w="${chassis_width}" h="${chassis_height}" d="${chassis_length}"/>
+  </link>
+
+  <!-- ==================== MECANUM WHEELS ==================== -->
+  <xacro:macro name="mecanum_wheel" params="prefix x_reflect y_reflect">
+    <link name="wheel_${prefix}_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <material name="synq_amber">
+          <color rgba="0.95 0.65 0.15 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+      <xacro:cylinder_inertia m="${wheel_mass}" r="${wheel_radius}" h="${wheel_width}"/>
+    </link>
+
+    <joint name="wheel_${prefix}_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="wheel_${prefix}_link"/>
+      <origin xyz="${x_reflect*wheelbase_x} ${y_reflect*track_y} 0" rpy="-1.57079632679 0 0"/>
+      <axis xyz="0 0 1"/>
+      <dynamics damping="0.05" friction="0.1"/>
+    </joint>
+
+    <gazebo reference="wheel_${prefix}_link">
+      <mu1>0.05</mu1>
+      <mu2>0.80</mu2>
+      <kp>1000000.0</kp>
+      <kd>100.0</kd>
+      <material>Gazebo/Yellow</material>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:mecanum_wheel prefix="fl" x_reflect="1"  y_reflect="1" />
+  <xacro:mecanum_wheel prefix="fr" x_reflect="1"  y_reflect="-1"/>
+  <xacro:mecanum_wheel prefix="rl" x_reflect="-1" y_reflect="1" />
+  <xacro:mecanum_wheel prefix="rr" x_reflect="-1" y_reflect="-1"/>
+
+  <!-- ==================== SENSORS ==================== -->
+  <!-- 2D LiDAR Scanner -->
+  <link name="lidar_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.038" length="0.040"/>
+      </geometry>
+      <material name="synq_cyan">
+        <color rgba="0.0 0.8 0.9 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.038" length="0.040"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.25"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0.28 0.0 ${chassis_height}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- 6-DOF IMU -->
+  <link name="imu_link">
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0.0 0.0 0.08" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Universal Modular Payload Dock Interface -->
+  <link name="payload_dock_link"/>
+
+  <joint name="payload_dock_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="payload_dock_link"/>
+    <origin xyz="0.0 0.0 ${chassis_height}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ==================== ROS 2 CONTROL HARDWARE INTERFACE ==================== -->
+  <ros2_control name="synq_hardware" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <joint name="wheel_fl_joint">
+      <command_interface name="velocity">
+        <param name="min">-20.0</param>
+        <param name="max">20.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="wheel_fr_joint">
+      <command_interface name="velocity">
+        <param name="min">-20.0</param>
+        <param name="max">20.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="wheel_rl_joint">
+      <command_interface name="velocity">
+        <param name="min">-20.0</param>
+        <param name="max">20.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="wheel_rr_joint">
+      <command_interface name="velocity">
+        <param name="min">-20.0</param>
+        <param name="max">20.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+
+  <!-- Gazebo ROS2 Control Plugin -->
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find synq_bringup)/config/synq_controllers.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+</robot>

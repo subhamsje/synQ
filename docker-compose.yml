@@ -1,0 +1,21 @@
+services:
+  synq-sim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: synq_amr_sim
+    network_mode: host
+    ipc: host
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - ./ros2_ws:/workspace/ros2_ws
+      - ./simulation:/workspace/simulation
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    working_dir: /workspace/ros2_ws
+    command: >
+      bash -c "source /opt/ros/jazzy/setup.bash &&
+               colcon build --symlink-install &&
+               source install/setup.bash &&
+               ros2 launch synq_bringup synq_spawn.launch.py"
