@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FLTX Live Facility Demo Portal</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --panel-elevated: #21262d;
+      --border: #30363d;
+      --border-subtle: #21262d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger: #f85149;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding-bottom: 60px;
+    }
+    .header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+    .brand-badge {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(63, 185, 80, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(63, 185, 80, 0.4);
+    }
+    .status-strip {
+      display: flex;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .status-pill {
+      background: var(--panel-elevated);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+    }
+    .status-pill strong { color: var(--text); }
+    .nav-tabs {
+      display: flex;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .nav-btn {
+      flex: 1;
+      padding: 12px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      text-align: center;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .nav-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      background: rgba(88, 166, 255, 0.05);
+    }
+    .container {
+      padding: 16px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn-scenario {
+      width: 100%;
+      text-align: left;
+      background: var(--panel-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      color: var(--text);
+      cursor: pointer;
+      display: block;
+      transition: border-color 0.15s ease;
+    }
+    .btn-scenario:hover { border-color: var(--accent); }
+    .scenario-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .scenario-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .scenario-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: rgba(210, 153, 34, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(210, 153, 34, 0.3);
+    }
+    .query-chip {
+      display: inline-block;
+      font-size: 11px;
+      background: var(--panel-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 6px 12px;
+      margin: 0 6px 8px 0;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .query-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .input-field {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+    }
+    .input-field:focus { border-color: var(--accent); }
+    .btn-primary {
+      background: var(--accent);
+      color: #0d1117;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      padding: 0 16px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .output-box {
+      background: var(--bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 12px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    pre.code-report {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      color: #c9d1d9;
+      background: var(--bg);
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      line-height: 1.4;
+      border: 1px solid var(--border-subtle);
+    }
+    .roster-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 12px;
+    }
+    .roster-row:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="brand-row">
+      <div class="brand-title">FLTX AUTONOMOUS OPERATIONS</div>
+      <div class="brand-badge">● LIVE DEMO</div>
+    </div>
+    <div class="status-strip">
+      <div class="status-pill">Fleet: <strong>12 AMRs</strong></div>
+      <div class="status-pill">Active: <strong>4 Missions</strong></div>
+      <div class="status-pill">Uptime: <strong>99.4%</strong></div>
+      <div class="status-pill">Incidents: <strong style="color: var(--success)">0 Critical</strong></div>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-btn active" onclick="setTab('scenarios')">Break Facility</button>
+    <button class="nav-btn" onclick="setTab('agent')">Ask FLTX</button>
+    <button class="nav-btn" onclick="setTab('report')">Daily Report</button>
+    <button class="nav-btn" onclick="setTab('fleet')">Fleet Roster</button>
+  </div>
+
+  <div class="container">
+
+    <!-- TAB 1: BREAK THE FACILITY (SCENARIO RUNNER) -->
+    <div id="tabScenarios">
+      <div class="card">
+        <div class="card-title">
+          <span>FACILITY DISRUPTION SIMULATOR</span>
+          <span style="font-size: 10px; color: var(--text-muted);">HACKATHON JUDGE MODE</span>
+        </div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+          Trigger physical and operational disruptions to observe FLTX's autonomous detection, deconfliction, and self-healing recovery loops.
+        </p>
+
+        <button class="btn-scenario" onclick="runScenario('BLOCK_AISLE_C04')">
+          <div class="scenario-title">
+            <span>[ BLOCK AISLE C04 ]</span>
+            <span class="scenario-badge">HIGH RISK</span>
+          </div>
+          <div class="scenario-desc">Injects dynamic physical obstacle in primary arterial lane. Triggers CBS detour & verifies SLA.</div>
+        </button>
+
+        <button class="btn-scenario" onclick="runScenario('DISABLE_ROBOT_AMR07')">
+          <div class="scenario-title">
+            <span>[ DISABLE ROBOT AMR-07 ]</span>
+            <span class="scenario-badge" style="color: var(--danger); border-color: rgba(248,81,73,0.3)">CRITICAL</span>
+          </div>
+          <div class="scenario-desc">Simulates drive motor failure. Reallocates 3 active tasks across remaining fleet with 0 cancellations.</div>
+        </button>
+
+        <button class="btn-scenario" onclick="runScenario('DEGRADE_BATTERY')">
+          <div class="scenario-title">
+            <span>[ DEGRADE BATTERY (14% SoC) ]</span>
+            <span class="scenario-badge">ENERGY</span>
+          </div>
+          <div class="scenario-desc">Forces emergency low battery threshold. Triggers in-transit task handoff & auto dock rescue.</div>
+        </button>
+
+        <button class="btn-scenario" onclick="runScenario('CONGEST_CORRIDOR')">
+          <div class="scenario-title">
+            <span>[ CONGEST INTERSECTION ]</span>
+            <span class="scenario-badge">CBS ROUTING</span>
+          </div>
+          <div class="scenario-desc">Converges 5 AMRs on intersection N_1_1. Constraint Tree schedules deconfliction without deadlock.</div>
+        </button>
+
+        <button class="btn-scenario" onclick="runScenario('ADD_URGENT_TASK')">
+          <div class="scenario-title">
+            <span>[ URGENT MEDICAL ORDER (4m SLA) ]</span>
+            <span class="scenario-badge" style="color: var(--accent); border-color: rgba(88,166,255,0.3)">PRIORITY</span>
+          </div>
+          <div class="scenario-desc">Injects critical priority order. Lower-priority pallet moves yield right-of-way.</div>
+        </button>
+
+        <button class="btn-scenario" onclick="runScenario('BURST_10_TASKS')">
+          <div class="scenario-title">
+            <span>[ BURST: 10 SIMULTANEOUS TASKS ]</span>
+            <span class="scenario-badge">BATCH</span>
+          </div>
+          <div class="scenario-desc">Simultaneous multi-criteria auction across all 12 AMRs. Demonstrates instant load balancing.</div>
+        </button>
+
+        <div id="scenarioResultBox" style="display: none;" class="output-box"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: ASK FLTX (OPERATIONS AGENT) -->
+    <div id="tabAgent" style="display: none;">
+      <div class="card">
+        <div class="card-title">ASK FLTX — OPERATIONS INTELLIGENCE</div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+          Ask high-level operational questions. FLTX queries its SQLite Operational Memory to provide evidence-backed root cause answers and candidate actions.
+        </p>
+
+        <div>
+          <span class="query-chip" onclick="askQuestion('Why was productivity lower yesterday?')">"Why was productivity lower yesterday?"</span>
+          <span class="query-chip" onclick="askQuestion('Why did you reassign AMR-07?')">"Why did you reassign AMR-07?"</span>
+          <span class="query-chip" onclick="askQuestion('What happened in the last hour?')">"What happened in the last hour?"</span>
+          <span class="query-chip" onclick="askQuestion('What happens if AMR-07 is unavailable for 2 hours?')">"What if AMR-07 is unavailable for 2 hours?"</span>
+        </div>
+
+        <div class="input-row">
+          <input type="text" id="agentInput" class="input-field" placeholder="Ask about fleet, bottlenecks, or what-if...">
+          <button class="btn-primary" onclick="submitCustomQuery()">Ask</button>
+        </div>
+
+        <div id="agentResultBox" style="display: none;" class="output-box"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: DAILY OPERATIONS REPORT -->
+    <div id="tabReport" style="display: none;">
+      <div class="card">
+        <div class="card-title">DAILY OPERATIONS BRIEF</div>
+        <pre id="dailyReportPre" class="code-report">Loading report...</pre>
+      </div>
+    </div>
+
+    <!-- TAB 4: FLEET ROSTER -->
+    <div id="tabFleet" style="display: none;">
+      <div class="card">
+        <div class="card-title">HETEROGENEOUS FLEET ROSTER (12 UNITS)</div>
+        <div id="rosterList">Loading fleet...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function setTab(tab) {
+      ['scenarios', 'agent', 'report', 'fleet'].forEach(t => {
+        document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = (t === tab) ? 'block' : 'none';
+      });
+      document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', ['scenarios', 'agent', 'report', 'fleet'][idx] === tab);
+      });
+      if (tab === 'report') loadDailyReport();
+      if (tab === 'fleet') loadFleet();
+    }
+
+    async function runScenario(scenarioId) {
+      const box = document.getElementById('scenarioResultBox');
+      box.style.display = 'block';
+      box.innerHTML = `<span style="color: var(--accent);">Executing scenario ${scenarioId}...</span>`;
+
+      try {
+        const res = await fetch(`/api/v1/demo/run-scenario/${scenarioId}`, { method: 'POST' });
+        const data = await res.json();
+        
+        let stepsHtml = '';
+        if (data.narrative) {
+          stepsHtml = data.narrative.map(step => `<li style="margin-left: 16px; margin-bottom: 4px;">${step}</li>`).join('');
+        }
+
+        box.innerHTML = `
+          <strong style="color: var(--success); font-size: 13px;">✓ ${data.title || 'Scenario Executed'}</strong>
+          <ul style="margin: 8px 0; color: var(--text);">
+            ${stepsHtml}
+          </ul>
+          <div style="font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 6px; margin-top: 6px;">
+            Events broadcasted to FLTX Event Bus & recorded in SQLite Operational Memory.
+          </div>
+        `;
+      } catch (err) {
+        box.innerHTML = `<span style="color: var(--danger);">Failed to execute: ${err.message}</span>`;
+      }
+    }
+
+    async function askQuestion(query) {
+      document.getElementById('agentInput').value = query;
+      submitCustomQuery();
+    }
+
+    async function submitCustomQuery() {
+      const query = document.getElementById('agentInput').value.trim();
+      if (!query) return;
+
+      const box = document.getElementById('agentResultBox');
+      box.style.display = 'block';
+      box.innerHTML = `<span style="color: var(--accent);">Querying Operational Memory...</span>`;
+
+      try {
+        const res = await fetch('/api/v1/agent/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query })
+        });
+        const data = await res.json();
+
+        let content = '';
+        if (data.headline) {
+          content += `<div style="font-size: 14px; font-weight: 600; color: var(--warning); margin-bottom: 8px;">${data.headline}</div>`;
+        }
+        if (data.contributing_factors) {
+          content += `<strong style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Contributing Factors:</strong>`;
+          content += `<ul style="margin: 6px 0 10px 18px;">` + data.contributing_factors.map(f => `<li><strong>${f.factor}:</strong> ${f.impact}</li>`).join('') + `</ul>`;
+        }
+        if (data.candidate_actions) {
+          content += `<strong style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Recommended Candidate Actions:</strong>`;
+          content += `<ul style="margin: 6px 0 10px 18px;">` + data.candidate_actions.map(a => `<li><span style="color: var(--accent); font-weight: 600;">${a.option}:</span> ${a.action} <em>(${a.expected_benefit})</em></li>`).join('') + `</ul>`;
+        }
+        if (data.decision_steps) {
+          content += `<strong style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Autonomy Decision Trace:</strong>`;
+          content += `<ul style="margin: 6px 0 10px 18px;">` + data.decision_steps.map(s => `<li><strong>${s.step}:</strong> ${s.detail}</li>`).join('') + `</ul>`;
+        }
+        if (data.simulated_throughput) {
+          content += `
+            <div style="margin-bottom: 6px;">
+              <strong>Simulated Throughput:</strong> ${data.simulated_throughput} missions/day 
+              <span style="color: var(--danger);">(${data.expected_impact})</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">Congestion Delta: ${data.congestion_delta_pct}% • Battery Util: +${data.battery_utilization_delta_pct}%</div>
+            <div><strong>Recommended Mitigation:</strong> ${data.recommended_mitigation}</div>
+          `;
+        }
+        if (data.highlight_event) {
+          content += `<div>${data.highlight_event}</div>`;
+        }
+
+        box.innerHTML = content || `<pre style="font-size: 11px;">${JSON.stringify(data, null, 2)}</pre>`;
+      } catch (err) {
+        box.innerHTML = `<span style="color: var(--danger);">Query error: ${err.message}</span>`;
+      }
+    }
+
+    async function loadDailyReport() {
+      const pre = document.getElementById('dailyReportPre');
+      try {
+        const res = await fetch('/api/v1/reports/daily');
+        const data = await res.json();
+        pre.textContent = data.report || data.message || JSON.stringify(data, null, 2);
+      } catch (err) {
+        pre.textContent = "Error loading daily report: " + err.message;
+      }
+    }
+
+    async function loadFleet() {
+      const container = document.getElementById('rosterList');
+      try {
+        const res = await fetch('/api/v1/fleet');
+        const data = await res.json();
+        const fleet = data.fleet || [];
+
+        container.innerHTML = fleet.map(bot => `
+          <div class="roster-row">
+            <div>
+              <strong style="color: #fff;">${bot.robot_id}</strong>
+              <span style="color: var(--text-muted); font-size: 10px; margin-left: 6px;">${bot.payload_type}</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span style="font-size: 11px; color: ${bot.battery_pct < 60 ? 'var(--warning)' : 'var(--text)'};">${bot.battery_pct}%</span>
+              <span style="font-size: 10px; padding: 2px 6px; border-radius: 3px; background: rgba(255,255,255,0.06);">${bot.status}</span>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = "Error loading fleet: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
