@@ -49,9 +49,9 @@ An industrial-grade, simulation-first, hardware-ready modular Autonomous Mobile 
 | **M0** | Environment Audit | **COMPLETE** | Darwin arm64 toolchain, CMake 4.4, Python 3.10, Colcon extensions |
 | **M1** | Simulated synQ-AMR & Mecanum Drive | **COMPLETE** | URDF/Xacro model, ros2_control, Gazebo spawn launcher |
 | **M2** | Mecanum Kinematics Solver | **COMPLETE** | Forward/Inverse equations, $O$-shape roller sign validation, odometry integration |
-| **M3** | Sensor Layer (LiDAR, IMU, TF2) | **COMPLETE** | `/sensors/lidar/scan`, `/sensors/imu`, TF tree validation, 13/13 tests passing |
-| **M4** | Localization & SLAM Toolbox | *Next* | 2D SLAM, loop closure, robot_localization EKF |
-| **M5** | Nav2 Navigation Stack | *Planned* | Holonomic MPPI local controller, global planner, dynamic obstacle avoidance |
+| **M3** | Sensor Layer (LiDAR, IMU, TF2) | **COMPLETE** | `/sensors/lidar/scan`, `/sensors/imu`, TF tree validation, range filtering |
+| **M4** | Localization & SLAM Toolbox | **COMPLETE** | EKF slip rejection, AMCL omni model, SLAM Toolbox Ceres, 18/18 tests passing |
+| **M5** | Nav2 Navigation Stack | *Next* | Holonomic MPPI local controller, global planner, dynamic obstacle avoidance |
 | **M6** | Mission Executive | *Planned* | BehaviorTree.CPP state machine (`PICK`, `PLACE`, `DOCK`, `CHARGE`) |
 | **M7** | Modular Payload Architecture | *Planned* | 1-Wire auto-ID, dynamic costmap footprint inflation, payload profiles |
 | **M8** | synQ FMS Fleet Management | *Planned* | Multi-AMR task allocation, battery routing, traffic management |
@@ -72,7 +72,7 @@ An industrial-grade, simulation-first, hardware-ready modular Autonomous Mobile 
 ```bash
 make test
 ```
-*Executes all 13 unit tests across Mecanum kinematics ($O$-shape forward/inverse/diagonal vectors) and Sensor processing (LiDAR range filtering, watchdog dropouts, IMU covariances, and TF chain).*
+*Executes all 18 unit tests across Mecanum kinematics, Sensor processing, EKF wheel slip rejection, AMCL convergence monitoring, and SLAM map validation.*
 
 ### Build with Docker (ROS 2 Jazzy & Gazebo Harmonic)
 ```bash
