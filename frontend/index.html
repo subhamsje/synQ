@@ -548,6 +548,9 @@
     </div>
 
     <div class="header-right">
+      <button class="tool-btn" style="background: rgba(88,166,255,0.15); color: #58a6ff; border: 1px solid rgba(88,166,255,0.35); font-weight: 600; padding: 5px 12px; border-radius: 4px; cursor: pointer;" onclick="openDemoQrModal()">
+        <span>Judge Demo QR</span>
+      </button>
       <button class="btn-why-fltx" onclick="openWhyFLTXDrawer()">
         <span>Why Did FLTX Do This?</span>
       </button>
@@ -592,6 +595,7 @@
     <aside class="operations-panel">
       <div class="panel-tabs">
         <button class="tab-btn active" id="tabBtnAutonomy" onclick="setPanelTab('autonomy')">Autonomy Loop</button>
+        <button class="tab-btn" id="tabBtnAgent" onclick="setPanelTab('agent')">Ask FLTX</button>
         <button class="tab-btn" id="tabBtnInspector" onclick="setPanelTab('inspector')">Inspector</button>
         <button class="tab-btn" id="tabBtnDispatch" onclick="setPanelTab('dispatch')">Dispatch</button>
         <button class="tab-btn" id="tabBtnFleet" onclick="setPanelTab('fleet')">Fleet</button>
@@ -1327,7 +1331,7 @@
 
     function setPanelTab(tab) {
       activeTab = tab;
-      ["autonomy", "inspector", "dispatch", "fleet", "timeline"].forEach(t => {
+      ["autonomy", "agent", "inspector", "dispatch", "fleet", "timeline"].forEach(t => {
         const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
         if (btn) btn.classList.toggle("active", t === tab);
       });
@@ -1339,10 +1343,91 @@
       container.innerHTML = "";
 
       if (activeTab === "autonomy") renderAutonomyTab(container);
+      else if (activeTab === "agent") renderAgentTab(container);
       else if (activeTab === "inspector") renderInspectorTab(container);
       else if (activeTab === "dispatch") renderDispatchTab(container);
       else if (activeTab === "fleet") renderFleetTab(container);
       else if (activeTab === "timeline") renderTimelineTab(container);
+    }
+
+    // AGENT: "ASK FLTX" TAB
+    function renderAgentTab(container) {
+      container.innerHTML = `
+        <div class="sec-header">
+          <span class="sec-title">AI Operations Agent ("Ask FLTX")</span>
+          <span class="badge-status nav">OPERATIONAL MEMORY</span>
+        </div>
+        <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.4;">
+          Query historical performance, investigate incident root causes, or simulate "what-if" capacity adjustments.
+        </p>
+        <div style="margin-bottom: 12px;">
+          <span class="query-chip" style="display:inline-block; font-size:10px; background:var(--bg-canvas); border:1px solid var(--border-color); padding:4px 8px; border-radius:12px; cursor:pointer; margin:0 4px 6px 0;" onclick="askAgentPre('Why was productivity lower yesterday?')">"Why was productivity lower yesterday?"</span>
+          <span class="query-chip" style="display:inline-block; font-size:10px; background:var(--bg-canvas); border:1px solid var(--border-color); padding:4px 8px; border-radius:12px; cursor:pointer; margin:0 4px 6px 0;" onclick="askAgentPre('Why did you reassign AMR-07?')">"Why did you reassign AMR-07?"</span>
+          <span class="query-chip" style="display:inline-block; font-size:10px; background:var(--bg-canvas); border:1px solid var(--border-color); padding:4px 8px; border-radius:12px; cursor:pointer; margin:0 4px 6px 0;" onclick="askAgentPre('What happened in the last hour?')">"What happened in the last hour?"</span>
+          <span class="query-chip" style="display:inline-block; font-size:10px; background:var(--bg-canvas); border:1px solid var(--border-color); padding:4px 8px; border-radius:12px; cursor:pointer; margin:0 4px 6px 0;" onclick="askAgentPre('What happens if AMR-07 is unavailable for 2 hours?')">"What if AMR-07 unavailable for 2h?"</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:12px;">
+          <input type="text" id="agentInputConsole" class="select-input" style="margin-bottom:0;" placeholder="Ask FLTX about fleet, bottlenecks...">
+          <button class="tool-btn" style="background:var(--color-primary); color:#fff; border:none; padding:0 12px; border-radius:3px; font-weight:600; cursor:pointer;" onclick="submitAgentConsoleQuery()">Ask</button>
+        </div>
+        <div id="agentConsoleResult" style="display:none; font-size:11px; line-height:1.5; background:var(--bg-canvas); border:1px solid var(--border-color); border-radius:4px; padding:10px;"></div>
+      `;
+    }
+
+    async function askAgentPre(q) {
+      const input = document.getElementById("agentInputConsole");
+      if (input) input.value = q;
+      submitAgentConsoleQuery();
+    }
+
+    async function submitAgentConsoleQuery() {
+      const input = document.getElementById("agentInputConsole");
+      const box = document.getElementById("agentConsoleResult");
+      if (!input || !box) return;
+      const query = input.value.trim();
+      if (!query) return;
+
+      box.style.display = "block";
+      box.innerHTML = `<span style="color: var(--color-primary);">Querying Operational Memory database...</span>`;
+
+      try {
+        const res = await fetch("/api/v1/agent/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query })
+        });
+        const data = await res.json();
+
+        let html = "";
+        if (data.headline) {
+          html += `<div style="font-weight:600; color:var(--color-warning); margin-bottom:6px;">${data.headline}</div>`;
+        }
+        if (data.contributing_factors) {
+          html += `<strong style="color:var(--text-secondary); text-transform:uppercase; font-size:10px;">Contributing Factors:</strong>`;
+          html += `<ul style="margin:4px 0 8px 16px;">` + data.contributing_factors.map(f => `<li><strong>${f.factor}:</strong> ${f.impact}</li>`).join('') + `</ul>`;
+        }
+        if (data.candidate_actions) {
+          html += `<strong style="color:var(--text-secondary); text-transform:uppercase; font-size:10px;">Recommended Candidate Actions:</strong>`;
+          html += `<ul style="margin:4px 0 8px 16px;">` + data.candidate_actions.map(a => `<li><span style="color:var(--color-primary); font-weight:600;">${a.option}:</span> ${a.action} <em>(${a.expected_benefit})</em></li>`).join('') + `</ul>`;
+        }
+        if (data.decision_steps) {
+          html += `<strong style="color:var(--text-secondary); text-transform:uppercase; font-size:10px;">Autonomy Decision Trace:</strong>`;
+          html += `<ul style="margin:4px 0 8px 16px;">` + data.decision_steps.map(s => `<li><strong>${s.step}:</strong> ${s.detail}</li>`).join('') + `</ul>`;
+        }
+        if (data.simulated_throughput) {
+          html += `
+            <div style="margin-bottom:4px;"><strong>Simulated Throughput:</strong> ${data.simulated_throughput} missions/day <span style="color:var(--color-danger);">(${data.expected_impact})</span></div>
+            <div style="font-size:10px; color:var(--text-secondary); margin-bottom:4px;">Congestion Delta: ${data.congestion_delta_pct}% • Battery Util: +${data.battery_utilization_delta_pct}%</div>
+            <div><strong>Recommended Mitigation:</strong> ${data.recommended_mitigation}</div>
+          `;
+        }
+        if (data.highlight_event) {
+          html += `<div>${data.highlight_event}</div>`;
+        }
+        box.innerHTML = html || `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+      } catch (err) {
+        box.innerHTML = `<span style="color: var(--color-danger);">Query failed: ${err.message}</span>`;
+      }
     }
 
     // A. "WHY DID FLTX DO THIS?" AUTONOMY LOOP TAB
@@ -1586,6 +1671,23 @@
         priority: 1
       };
 
+      // Call central FMS API to calculate CBS route & persist to Operational Memory
+      fetch("/api/v1/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_id: candidate.mission,
+          pick_node: pick,
+          drop_node: drop,
+          required_payload: payload,
+          priority: 1
+        })
+      }).then(res => res.json()).then(data => {
+        if (data.decision_trace && data.decision_trace.decision_rationale) {
+          AUTONOMY_REASONING.latestDecision.rationale = data.decision_trace.decision_rationale;
+        }
+      }).catch(() => {});
+
       setAutonomyPipelineStage("DECISION");
       setTimeout(() => setAutonomyPipelineStage("ROUTE"), 400);
       setTimeout(() => setAutonomyPipelineStage("EXECUTION"), 800);
@@ -1745,7 +1847,56 @@
       document.getElementById("valReservationsCount").textContent = activeMissionsCount;
     }, 50);
 
+    // JUDGE DEMO QR CODE MODAL
+    async function openDemoQrModal() {
+      const modal = document.getElementById("demoQrModal");
+      const qrBox = document.getElementById("qrCodeContainer");
+      if (!modal || !qrBox) return;
+      modal.style.display = "flex";
+      qrBox.innerHTML = "<span style='font-size:11px; color:#333;'>Generating QR...</span>";
+
+      try {
+        const res = await fetch("/api/v1/demo/qr");
+        const svg = await res.text();
+        qrBox.innerHTML = svg;
+      } catch (err) {
+        qrBox.innerHTML = "<span style='color:red;'>Failed to load QR</span>";
+      }
+    }
+
+    // WEBSOCKET TELEMETRY & EVENT STREAM LISTENER
+    try {
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      const ws = new WebSocket(`${proto}//${location.host}/ws/telemetry`);
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.recent_events && data.recent_events.length > 0) {
+            const latest = data.recent_events[0];
+            if (!ACTIVITIES.some(a => a.msg === latest.message)) {
+              logEvent(latest.source, latest.message);
+            }
+          }
+        } catch (e) {}
+      };
+    } catch (e) {}
+
     renderPanel();
   </script>
+
+  <!-- JUDGE DEMO QR MODAL -->
+  <div id="demoQrModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.75); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px; max-width: 360px; text-align: center; color: #fff; box-shadow: 0 16px 32px rgba(0,0,0,0.5);">
+      <h3 style="margin-bottom: 6px; font-size: 15px; font-weight: 600;">FLTX Live Facility Demo Portal</h3>
+      <p style="font-size: 11px; color: #8b949e; margin-bottom: 16px; line-height: 1.4;">
+        Scan with your smartphone camera to access the live 12-AMR facility sandbox, run failure scenarios, and query Operational Memory.
+      </p>
+      <div id="qrCodeContainer" style="background: #ffffff; padding: 12px; border-radius: 6px; display: inline-block; margin-bottom: 16px;"></div>
+      <div style="font-size: 11px; margin-bottom: 16px;">
+        <a href="/demo" target="_blank" style="color: #58a6ff; text-decoration: none;">Open Demo Portal in Browser →</a>
+      </div>
+      <button onclick="document.getElementById('demoQrModal').style.display='none'" style="background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 7px 16px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">Close</button>
+    </div>
+  </div>
 </body>
 </html>
