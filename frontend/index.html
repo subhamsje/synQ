@@ -3,46 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>synQ — Autonomous Robotics Control & Industrial Digital Twin</title>
+  <title>synQ — Fleet Management System</title>
   <style>
     :root {
-      /* Industrial Command Center Color System */
-      --bg-canvas: #090c10;
-      --bg-panel: #0d1117;
-      --bg-surface: #161b22;
-      --bg-surface-elevated: #21262d;
-      --border-subtle: #30363d;
-      --border-strong: #484f58;
+      /* Real Industrial Warehouse SaaS / SCADA Palette */
+      --bg-app: #1a1d21;
+      --bg-header: #141619;
+      --bg-panel: #202428;
+      --bg-subpanel: #272c32;
+      --bg-map: #16181b;
 
-      --text-primary: #f0f6fc;
-      --text-secondary: #8b949e;
-      --text-muted: #6e7681;
+      --border-color: #2e343b;
+      --border-light: #3a424b;
 
-      /* Semantic Status Colors (Strict Industrial Usage) */
-      --state-online: #2ea043;
-      --state-online-subtle: rgba(46, 160, 67, 0.15);
-      --state-warning: #d29922;
-      --state-warning-subtle: rgba(210, 153, 34, 0.15);
-      --state-danger: #da3633;
-      --state-danger-subtle: rgba(218, 54, 51, 0.18);
-      --state-accent: #388bfd;
-      --state-accent-subtle: rgba(56, 139, 253, 0.15);
-      --state-focus: #58a6ff;
+      --text-main: #e1e4e8;
+      --text-secondary: #959da5;
+      --text-muted: #6a737d;
 
-      /* Spatial Floorplan Colors */
-      --floor-grid: #131922;
-      --aisle-lane: #161d28;
-      --rack-border: #2d3848;
-      --rack-fill: #1a2230;
-      --rack-slot: #242d3c;
-      --zone-pick: #17362a;
-      --zone-drop: #192f3d;
-      --zone-charge: #362917;
-      --zone-restricted: #3b1e22;
+      /* Restrained Functional Status Colors */
+      --color-primary: #1f6feb;       /* Standard corporate blue for selection & navigation */
+      --color-primary-hover: #388bfd;
+      --color-success: #2ea043;       /* Green: Idle/Healthy/Completed */
+      --color-warning: #d29922;       /* Amber: Warning/Low battery */
+      --color-danger: #da3633;        /* Red: E-Stop/Obstacle/Fault */
 
-      /* Technical Typography */
-      --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, Helvetica, Arial, sans-serif;
-      --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", Menlo, monospace;
+      /* Floorplan Elements */
+      --color-rack: #2b313a;
+      --color-rack-border: #3d4551;
+      --color-aisle: #1d2025;
+      --color-lane: rgba(255, 255, 255, 0.04);
+      --color-lane-center: rgba(255, 255, 255, 0.12);
+
+      --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
     }
 
     * {
@@ -53,9 +46,11 @@
     }
 
     body {
-      background-color: var(--bg-canvas);
-      color: var(--text-primary);
-      font-family: var(--font-ui);
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      font-family: var(--font-system);
+      font-size: 13px;
+      line-height: 1.4;
       height: 100vh;
       overflow: hidden;
       display: flex;
@@ -63,324 +58,278 @@
     }
 
     /* ------------------------------------------------------------- */
-    /* 1. TOP COMMAND BAR                                            */
+    /* 1. TOP APPLICATION HEADER                                     */
     /* ------------------------------------------------------------- */
-    header.command-bar {
-      height: 48px;
-      background: var(--bg-panel);
-      border-bottom: 1px solid var(--border-subtle);
+    header.app-header {
+      height: 44px;
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 16px;
-      z-index: 1000;
       flex-shrink: 0;
+      z-index: 100;
     }
 
-    .brand-cluster {
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .app-brand {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .brand-name {
+      font-weight: 700;
+      font-size: 15px;
+      color: #ffffff;
+      letter-spacing: -0.2px;
+    }
+
+    .brand-tag {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .header-divider {
+      width: 1px;
+      height: 16px;
+      background: var(--border-color);
+    }
+
+    .site-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .site-name {
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    .header-center {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 12px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+    }
+
+    .status-item strong {
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    .dot-indicator {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--color-success);
+    }
+
+    .dot-indicator.warning { background: var(--color-warning); }
+    .dot-indicator.danger { background: var(--color-danger); }
+
+    .header-right {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .brand-mark {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .brand-logo-badge {
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-strong);
-      color: var(--text-primary);
-      font-family: var(--font-mono);
-      font-weight: 700;
-      font-size: 13px;
-      padding: 2px 7px;
-      border-radius: 3px;
-      letter-spacing: 0.5px;
-    }
-
-    .brand-title {
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      color: var(--text-primary);
-    }
-
-    .brand-subtitle {
-      font-size: 10px;
-      font-family: var(--font-mono);
-      color: var(--text-secondary);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      border-left: 1px solid var(--border-subtle);
-      padding-left: 10px;
-      margin-left: 2px;
-    }
-
-    /* Subsystem Status Strip */
-    .system-health-strip {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--bg-canvas);
-      padding: 4px 10px;
-      border: 1px solid var(--border-subtle);
-      border-radius: 4px;
-    }
-
-    .subsystem-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 2px 6px;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
-    .subsystem-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--state-online);
-    }
-
-    .subsystem-dot.degraded { background: var(--state-warning); }
-    .subsystem-dot.offline { background: var(--state-danger); }
-
-    /* Operational Summary Metrics */
-    .command-metrics {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-secondary);
-    }
-
-    .metric-pair {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .metric-val {
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    /* Tactile Industrial E-Stop */
-    .estop-control-cluster {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .btn-industrial-estop {
-      background: #b62324;
-      border: 2px solid #f85149;
+    /* Industrial Emergency Stop Button */
+    .btn-estop {
+      background: #c92a2a;
+      border: 1px solid #e03131;
       color: #ffffff;
-      font-family: var(--font-mono);
-      font-weight: 700;
       font-size: 11px;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      padding: 5px 14px;
-      border-radius: 4px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 3px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(0, 0, 0, 0.4);
-      transition: background 0.15s ease, transform 0.05s ease;
+      gap: 6px;
     }
 
-    .btn-industrial-estop:hover {
-      background: #da3633;
+    .btn-estop:hover {
+      background: #b02525;
     }
 
-    .btn-industrial-estop:active {
-      background: #8e1b1c;
-      transform: translateY(1px);
-    }
-
-    .btn-industrial-estop.active {
-      background: #388bfd;
-      border-color: #58a6ff;
-    }
-
-    .estop-indicator-lamp {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #ffffff;
+    .btn-estop.active {
+      background: #2b8a3e;
+      border-color: #2f9e44;
     }
 
     /* ------------------------------------------------------------- */
-    /* 2. MAIN 3-ZONE LAYOUT                                         */
+    /* 2. MAIN LAYOUT (MAP + RIGHT PANEL)                            */
     /* ------------------------------------------------------------- */
-    .operations-workspace {
+    .main-workspace {
       display: flex;
       flex: 1;
-      height: calc(100vh - 48px);
+      height: calc(100vh - 44px - 26px);
       position: relative;
     }
 
-    /* Center Spatial Map Zone (Occupies 75%) */
-    .spatial-viewport-pane {
+    /* Left / Center Map (75% workspace) */
+    .map-container {
       flex: 1;
+      background: var(--bg-map);
       position: relative;
-      background: var(--bg-canvas);
       overflow: hidden;
-      cursor: crosshair;
     }
 
-    canvas#warehouseSpatialCanvas {
+    canvas#warehouseCanvas {
       width: 100%;
       height: 100%;
       display: block;
+      cursor: grab;
     }
 
-    /* Floating Viewport Overlays */
-    .viewport-toolbar {
+    canvas#warehouseCanvas:active {
+      cursor: grabbing;
+    }
+
+    /* Clean Map Viewport Controls */
+    .map-controls {
       position: absolute;
       top: 12px;
       left: 12px;
+      background: rgba(20, 22, 25, 0.95);
+      border: 1px solid var(--border-color);
+      border-radius: 3px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(13, 17, 23, 0.92);
-      border: 1px solid var(--border-subtle);
-      border-radius: 4px;
-      padding: 4px 6px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      z-index: 50;
-      backdrop-filter: blur(4px);
+      padding: 2px;
+      z-index: 10;
     }
 
-    .v-tool-btn {
+    .map-btn {
       background: transparent;
-      border: 1px solid transparent;
+      border: none;
       color: var(--text-secondary);
-      font-family: var(--font-mono);
-      font-size: 10px;
-      padding: 3px 8px;
-      border-radius: 3px;
+      font-size: 11px;
+      padding: 5px 9px;
+      border-radius: 2px;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 4px;
     }
 
-    .v-tool-btn:hover {
-      background: var(--bg-surface);
-      color: var(--text-primary);
-      border-color: var(--border-subtle);
+    .map-btn:hover {
+      background: var(--bg-subpanel);
+      color: var(--text-main);
     }
 
-    .v-tool-btn.active {
-      background: var(--state-accent-subtle);
-      border-color: var(--state-accent);
-      color: var(--state-focus);
+    .map-btn.active {
+      background: #23282e;
+      color: #ffffff;
+      font-weight: 500;
     }
 
-    .v-tool-separator {
+    .map-separator {
       width: 1px;
       height: 14px;
-      background: var(--border-subtle);
+      background: var(--border-color);
+      margin: 0 2px;
     }
 
-    .viewport-status-hud {
-      position: absolute;
-      bottom: 12px;
-      left: 12px;
-      background: rgba(13, 17, 23, 0.9);
-      border: 1px solid var(--border-subtle);
-      border-radius: 4px;
-      padding: 6px 10px;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--text-secondary);
-      z-index: 50;
-      pointer-events: none;
-      display: flex;
-      gap: 16px;
-    }
-
-    .hud-metric strong {
-      color: var(--text-primary);
-      font-weight: 600;
-    }
-
-    /* Interactive Conflict & Obstacle Banner */
-    .spatial-alert-banner {
+    /* Conflict / Obstacle Operational Notification Pill */
+    .map-toast {
       position: absolute;
       top: 12px;
       right: 12px;
-      background: rgba(218, 54, 51, 0.15);
-      border: 1px solid var(--state-danger);
+      background: #2b1d1d;
+      border: 1px solid #672626;
       color: #f85149;
-      font-family: var(--font-mono);
       font-size: 11px;
       padding: 6px 12px;
-      border-radius: 4px;
+      border-radius: 3px;
       display: none;
       align-items: center;
       gap: 8px;
-      z-index: 60;
+      z-index: 10;
+    }
+
+    /* Map Legend / Scale */
+    .map-legend {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      background: rgba(20, 22, 25, 0.85);
+      padding: 4px 8px;
+      border-radius: 2px;
+      border: 1px solid var(--border-color);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
     /* ------------------------------------------------------------- */
-    /* 3. RIGHT-SIDE OPERATIONS PANEL                                */
+    /* 3. RIGHT OPERATIONS PANEL                                     */
     /* ------------------------------------------------------------- */
-    aside.operations-sidebar {
-      width: 380px;
+    aside.operations-panel {
+      width: 360px;
       background: var(--bg-panel);
-      border-left: 1px solid var(--border-subtle);
+      border-left: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
-      z-index: 80;
+      z-index: 20;
     }
 
-    /* Tab Header */
-    .sidebar-tab-strip {
+    /* Mode Navigation Tabs */
+    .panel-tabs {
+      height: 38px;
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border-color);
       display: flex;
-      border-bottom: 1px solid var(--border-subtle);
-      background: var(--bg-panel);
     }
 
-    .sidebar-tab {
+    .tab-item {
       flex: 1;
-      text-align: center;
-      padding: 10px 4px;
-      font-size: 11px;
-      font-family: var(--font-mono);
-      font-weight: 500;
-      color: var(--text-secondary);
       background: transparent;
       border: none;
       border-bottom: 2px solid transparent;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 500;
       cursor: pointer;
-      transition: color 0.15s ease, border-color 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.1s ease;
     }
 
-    .sidebar-tab:hover {
-      color: var(--text-primary);
+    .tab-item:hover {
+      color: var(--text-main);
     }
 
-    .sidebar-tab.active {
-      color: var(--text-primary);
-      border-bottom-color: var(--state-accent);
-      background: var(--bg-surface);
-      font-weight: 600;
+    .tab-item.active {
+      color: #ffffff;
+      background: var(--bg-panel);
+      border-bottom-color: var(--color-primary);
     }
 
-    .sidebar-content-area {
+    .panel-content {
       flex: 1;
       overflow-y: auto;
       padding: 16px;
@@ -389,1374 +338,1055 @@
       gap: 16px;
     }
 
-    /* Section Headings */
-    .pane-section-header {
+    /* Standardized Form Layout */
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 10px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      margin-bottom: 8px;
-      padding-bottom: 4px;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .pane-section-title {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--text-secondary);
-    }
-
-    .pane-section-tag {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      padding: 1px 5px;
-      background: var(--bg-surface-elevated);
-      color: var(--text-muted);
-      border-radius: 2px;
-    }
-
-    /* Dense Data Grid Layout */
-    .data-key-value-grid {
-      display: grid;
-      grid-template-columns: 110px 1fr;
-      row-gap: 6px;
-      column-gap: 8px;
-      font-size: 11px;
-      font-family: var(--font-mono);
-    }
-
-    .dk-label {
-      color: var(--text-muted);
-      text-transform: uppercase;
-      font-size: 10px;
-      display: flex;
       align-items: center;
     }
 
-    .dk-value {
-      color: var(--text-primary);
-      font-weight: 500;
-      word-break: break-all;
-    }
-
-    /* Fleet Table */
-    .fleet-summary-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-family: var(--font-mono);
-      font-size: 11px;
-    }
-
-    .fleet-summary-table th {
-      text-align: left;
-      font-size: 9px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      padding: 6px 4px;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .fleet-summary-table td {
-      padding: 7px 4px;
-      border-bottom: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-    }
-
-    .fleet-row {
-      cursor: pointer;
-    }
-
-    .fleet-row:hover {
-      background: var(--bg-surface);
-    }
-
-    .fleet-row.selected {
-      background: var(--state-accent-subtle);
-      color: var(--text-primary);
-    }
-
-    .fleet-row.selected td {
-      color: var(--text-primary);
-      font-weight: 600;
-    }
-
-    /* Status Badges */
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-family: var(--font-mono);
-      font-size: 9px;
-      font-weight: 600;
-      padding: 1px 6px;
-      border-radius: 2px;
-      text-transform: uppercase;
-    }
-
-    .status-badge.nominal {
-      background: var(--state-online-subtle);
-      color: var(--state-online);
-      border: 1px solid rgba(46, 160, 67, 0.4);
-    }
-
-    .status-badge.active {
-      background: var(--state-accent-subtle);
-      color: var(--state-focus);
-      border: 1px solid rgba(56, 139, 253, 0.4);
-    }
-
-    .status-badge.warning {
-      background: var(--state-warning-subtle);
-      color: var(--state-warning);
-      border: 1px solid rgba(210, 153, 34, 0.4);
-    }
-
-    .status-badge.estop {
-      background: var(--state-danger-subtle);
-      color: var(--state-danger);
-      border: 1px solid rgba(218, 54, 51, 0.4);
-    }
-
-    /* Dispatch Workflow Controls */
-    .dispatch-step-cluster {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .dispatch-step {
+    .field-group {
       display: flex;
       flex-direction: column;
       gap: 4px;
+      margin-bottom: 12px;
     }
 
-    .dispatch-step-label {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .dispatch-step-num {
-      width: 14px;
-      height: 14px;
-      border-radius: 2px;
-      background: var(--bg-surface-elevated);
-      color: var(--text-secondary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 9px;
-    }
-
-    .select-industrial {
-      background: var(--bg-canvas);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-primary);
-      font-family: var(--font-mono);
+    label.field-label {
       font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    select.input-select {
+      background: var(--bg-app);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      font-size: 12px;
       padding: 6px 8px;
       border-radius: 3px;
       outline: none;
       width: 100%;
     }
 
-    .select-industrial:focus {
-      border-color: var(--state-accent);
+    select.input-select:focus {
+      border-color: var(--color-primary);
     }
 
-    /* Route Preview Box */
-    .route-preview-manifest {
-      background: var(--bg-canvas);
-      border: 1px solid var(--border-subtle);
-      border-radius: 4px;
-      padding: 10px;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .rpm-row {
-      display: flex;
-      justify-content: space-between;
-      color: var(--text-secondary);
-    }
-
-    .rpm-row strong {
-      color: var(--text-primary);
-      font-weight: 600;
-    }
-
-    .btn-dispatch-action {
-      background: #1f6feb;
-      border: 1px solid #388bfd;
+    .btn-action {
+      background: var(--color-primary);
+      border: 1px solid #2f81f7;
       color: #ffffff;
-      font-family: var(--font-mono);
-      font-weight: 600;
-      font-size: 11px;
-      letter-spacing: 0.5px;
+      font-size: 12px;
+      font-weight: 500;
       padding: 8px 12px;
       border-radius: 3px;
       cursor: pointer;
-      text-transform: uppercase;
-      margin-top: 4px;
-      transition: background 0.15s ease;
+      text-align: center;
+      width: 100%;
     }
 
-    .btn-dispatch-action:hover {
-      background: #388bfd;
+    .btn-action:hover {
+      background: var(--color-primary-hover);
     }
 
-    .btn-secondary-action {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-      font-family: var(--font-mono);
-      font-size: 10px;
+    .btn-secondary {
+      background: var(--bg-subpanel);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      font-size: 11px;
       padding: 5px 8px;
       border-radius: 3px;
       cursor: pointer;
     }
 
-    .btn-secondary-action:hover {
-      background: var(--bg-surface-elevated);
-      color: var(--text-primary);
-      border-color: var(--border-strong);
+    .btn-secondary:hover {
+      background: #313740;
     }
 
-    /* Timeline Structured Event Log */
-    .timeline-stream {
+    /* Technical Property Grid */
+    .prop-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .prop-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 2px 0;
+    }
+
+    .prop-name {
+      color: var(--text-secondary);
+    }
+
+    .prop-val {
+      color: var(--text-main);
+      font-weight: 500;
       font-family: var(--font-mono);
       font-size: 11px;
     }
 
-    .timeline-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      padding: 6px 8px;
-      background: var(--bg-canvas);
-      border: 1px solid var(--border-subtle);
+    /* Diagnostics Collapsible */
+    details.diagnostics-box {
+      margin-top: 8px;
+      background: var(--bg-app);
+      border: 1px solid var(--border-color);
       border-radius: 3px;
+      padding: 8px 10px;
+      font-size: 11px;
     }
 
-    .timeline-timestamp {
-      color: var(--text-muted);
-      font-size: 10px;
-      flex-shrink: 0;
-    }
-
-    .timeline-tag {
-      font-size: 9px;
-      font-weight: 600;
-      padding: 1px 4px;
-      border-radius: 2px;
-      text-transform: uppercase;
-      flex-shrink: 0;
-    }
-
-    .timeline-tag.info { background: var(--state-accent-subtle); color: var(--state-focus); }
-    .timeline-tag.cbs { background: rgba(163, 113, 247, 0.15); color: #bc8cff; }
-    .timeline-tag.warn { background: var(--state-warning-subtle); color: var(--state-warning); }
-    .timeline-tag.alert { background: var(--state-danger-subtle); color: var(--state-danger); }
-
-    .timeline-text {
+    details.diagnostics-box summary {
       color: var(--text-secondary);
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+    }
+
+    /* Fleet Table */
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    table.data-table th {
+      text-align: left;
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      padding: 6px 4px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    table.data-table td {
+      padding: 8px 4px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    tr.clickable-row {
+      cursor: pointer;
+    }
+
+    tr.clickable-row:hover {
+      background: var(--bg-subpanel);
+    }
+
+    tr.clickable-row.selected {
+      background: rgba(31, 111, 235, 0.12);
+    }
+
+    /* Status Text Pill */
+    .badge {
+      display: inline-block;
       font-size: 10px;
-      line-height: 1.4;
-      word-break: break-word;
+      padding: 1px 5px;
+      border-radius: 2px;
+      font-weight: 500;
+    }
+
+    .badge-idle { background: rgba(46, 160, 67, 0.15); color: #3fb950; }
+    .badge-nav { background: rgba(31, 111, 235, 0.15); color: #58a6ff; }
+    .badge-estop { background: rgba(218, 54, 51, 0.15); color: #f85149; }
+    .badge-chg { background: rgba(210, 153, 34, 0.15); color: #d29922; }
+
+    /* Operational Event Feed */
+    .activity-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .activity-item {
+      display: flex;
+      gap: 10px;
+      font-size: 11px;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .activity-time {
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      width: 36px;
+      flex-shrink: 0;
+    }
+
+    .activity-robot {
+      font-weight: 500;
+      color: var(--text-main);
+      width: 55px;
+      flex-shrink: 0;
+    }
+
+    .activity-msg {
+      color: var(--text-secondary);
+      flex: 1;
+    }
+
+    /* ------------------------------------------------------------- */
+    /* 4. BOTTOM STATUS STRIP                                        */
+    /* ------------------------------------------------------------- */
+    footer.status-strip {
+      height: 26px;
+      background: var(--bg-header);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .strip-left, .strip-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .strip-item strong {
+      color: var(--text-secondary);
+      font-weight: 500;
     }
   </style>
 </head>
 <body>
 
-  <!-- ----------------------------------------------------------- -->
-  <!-- 1. TOP COMMAND BAR                                          -->
-  <!-- ----------------------------------------------------------- -->
-  <header class="command-bar">
-    <div class="brand-cluster">
-      <div class="brand-mark">
-        <span class="brand-logo-badge">synQ</span>
-        <span class="brand-title">AUTONOMOUS ROBOTICS CONTROL</span>
-        <span class="brand-subtitle">Digital Twin Operations Cockpit</span>
+  <!-- 1. APPLICATION HEADER -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="app-brand">
+        <span class="brand-name">synQ</span>
+        <span class="brand-tag">Fleet Manager</span>
+      </div>
+      <div class="header-divider"></div>
+      <div class="site-selector">
+        <span>Site:</span>
+        <span class="site-name">Warehouse 01 — Austin Hub</span>
       </div>
     </div>
 
-    <!-- Subsystem Health Strip -->
-    <div class="system-health-strip">
-      <div class="subsystem-item" title="ROS 2 Jazzy Core Subsystem">
-        <div class="subsystem-dot" id="dot-ros2"></div>
-        <span>ROS 2</span>
+    <div class="header-center">
+      <div class="status-item">
+        <span class="dot-indicator" id="dot-fleet"></span>
+        <span>Fleet: <strong id="val-fleet-summary">3 online</strong></span>
       </div>
-      <div class="subsystem-item" title="Nav2 MPPI Holonomic Navigation">
-        <div class="subsystem-dot" id="dot-nav2"></div>
-        <span>NAV2</span>
+      <div class="status-item">
+        <span>Missions: <strong id="val-active-missions">0 active</strong></span>
       </div>
-      <div class="subsystem-item" title="AMCL & EKF Slip Rejection">
-        <div class="subsystem-dot" id="dot-loc"></div>
-        <span>LOCALIZATION</span>
-      </div>
-      <div class="subsystem-item" title="LiDAR & 6-DOF IMU Sensor Layer">
-        <div class="subsystem-dot" id="dot-sensors"></div>
-        <span>SENSORS</span>
-      </div>
-      <div class="subsystem-item" title="Fleet Management System (FMS)">
-        <div class="subsystem-dot" id="dot-fms"></div>
-        <span>FMS</span>
-      </div>
-      <div class="subsystem-item" title="Conflict-Based Search MAPF Engine">
-        <div class="subsystem-dot" id="dot-cbs"></div>
-        <span>ROUTER</span>
-      </div>
-      <div class="subsystem-item" title="VDA 5050 v2.0 MQTT Protocol Gateway">
-        <div class="subsystem-dot" id="dot-vda"></div>
-        <span>COMM</span>
+      <div class="status-item">
+        <span class="dot-indicator" id="dot-sys"></span>
+        <span>System: <strong id="val-sys-status">Normal</strong></span>
       </div>
     </div>
 
-    <!-- Metrics & Safety Controls -->
-    <div class="command-metrics">
-      <div class="metric-pair">
-        <span>FLEET:</span>
-        <span class="metric-val" id="metric-fleet-count">3 ACTIVE</span>
-      </div>
-      <div class="metric-pair">
-        <span>MISSIONS:</span>
-        <span class="metric-val" id="metric-active-missions">0 EN ROUTE</span>
-      </div>
-    </div>
-
-    <div class="estop-control-cluster">
-      <button class="btn-industrial-estop" id="btnGlobalEstop" onclick="toggleGlobalEstop()">
-        <div class="estop-indicator-lamp"></div>
-        <span id="estopBtnLabel">EMERGENCY STOP (ALL)</span>
+    <div class="header-right">
+      <button class="btn-estop" id="btnEstop" onclick="toggleGlobalEstop()">
+        <span id="estopLabel">Emergency Stop (All)</span>
       </button>
     </div>
   </header>
 
-  <!-- ----------------------------------------------------------- -->
-  <!-- 2. MAIN 3-ZONE LAYOUT                                       -->
-  <!-- ----------------------------------------------------------- -->
-  <main class="operations-workspace">
+  <!-- 2. MAIN WORKSPACE (MAP + RIGHT PANEL) -->
+  <main class="main-workspace">
 
-    <!-- Center Spatial Warehouse Floorplan Map -->
-    <section class="spatial-viewport-pane" id="viewportPane">
-      <canvas id="warehouseSpatialCanvas"></canvas>
+    <!-- Primary Warehouse Floor Plan Map -->
+    <section class="map-container" id="mapContainer">
+      <canvas id="warehouseCanvas"></canvas>
 
-      <!-- Viewport Controls & Simulation Tools -->
-      <div class="viewport-toolbar">
-        <button class="v-tool-btn active" id="btnLayerLanes" onclick="toggleLayer('lanes')">LANES</button>
-        <button class="v-tool-btn active" id="btnLayerRacks" onclick="toggleLayer('racks')">STORAGE RACKS</button>
-        <button class="v-tool-btn active" id="btnLayerNodes" onclick="toggleLayer('nodes')">NODES</button>
-        <button class="v-tool-btn active" id="btnLayerPaths" onclick="toggleLayer('paths')">CBS ROUTES</button>
-        <div class="v-tool-separator"></div>
-        <button class="v-tool-btn" id="btnSimObstacle" onclick="toggleObstaclePlacementMode()">
-          <span>+ INJECT OBSTACLE</span>
-        </button>
-        <button class="v-tool-btn" id="btnSimConflict" onclick="triggerConflictSimulationDemo()">
-          <span>DEMO CBS RESOLUTION</span>
-        </button>
-        <div class="v-tool-separator"></div>
-        <button class="v-tool-btn" onclick="resetViewportCamera()">RESET CAMERA</button>
+      <!-- Clean Map Controls -->
+      <div class="map-controls">
+        <button class="map-btn active" id="btnToggleLanes" onclick="toggleMapLayer('lanes')">Lanes</button>
+        <button class="map-btn active" id="btnToggleRacks" onclick="toggleMapLayer('racks')">Racks</button>
+        <button class="map-btn active" id="btnToggleRoutes" onclick="toggleMapLayer('routes')">Routes</button>
+        <div class="map-separator"></div>
+        <button class="map-btn" id="btnSimObstacle" onclick="toggleObstacleTool()">Place Obstacle</button>
+        <button class="map-btn" id="btnSimConflict" onclick="triggerCbsConflictDemo()">Resolve Conflict</button>
+        <div class="map-separator"></div>
+        <button class="map-btn" onclick="resetMapCamera()">Reset View</button>
       </div>
 
-      <!-- Spatial Alert Banner -->
-      <div class="spatial-alert-banner" id="spatialAlertBanner">
-        <span id="spatialAlertText">OBSTACLE DETECTED: REPLANNING CBS TRAJECTORY</span>
+      <!-- Operational Alert Toast -->
+      <div class="map-toast" id="mapToast">
+        <span id="mapToastText">Notice</span>
       </div>
 
-      <!-- Bottom Coordinate HUD -->
-      <div class="viewport-status-hud">
-        <div class="hud-metric">GRID: <strong>15.0m × 15.0m</strong></div>
-        <div class="hud-metric">COORDINATES: <strong id="hudCursorCoords">X: 0.00m, Y: 0.00m</strong></div>
-        <div class="hud-metric">ZOOM: <strong id="hudZoomVal">100%</strong></div>
-        <div class="hud-metric">ACTIVE PAYLOADS: <strong>LIFT / CONVEYOR / GRIPPER</strong></div>
+      <!-- Scale / Coordinates Legend -->
+      <div class="map-legend">
+        <span>Floor: 15m × 15m</span>
+        <span id="legendCoords">X: 0.00m, Y: 0.00m</span>
       </div>
     </section>
 
-    <!-- Contextual Right-Side Operations Sidebar -->
-    <aside class="operations-sidebar">
-      <!-- Tab Strip -->
-      <div class="sidebar-tab-strip">
-        <button class="sidebar-tab active" id="tabBtnInspector" onclick="switchSidebarTab('inspector')">INSPECTOR</button>
-        <button class="sidebar-tab" id="tabBtnDispatch" onclick="switchSidebarTab('dispatch')">DISPATCH</button>
-        <button class="sidebar-tab" id="tabBtnFleet" onclick="switchSidebarTab('fleet')">FLEET</button>
-        <button class="sidebar-tab" id="tabBtnTimeline" onclick="switchSidebarTab('timeline')">TIMELINE</button>
+    <!-- Contextual Operations Panel -->
+    <aside class="operations-panel">
+      <div class="panel-tabs">
+        <button class="tab-item active" id="tabBtnInspector" onclick="setPanelTab('inspector')">Inspector</button>
+        <button class="tab-item" id="tabBtnDispatch" onclick="setPanelTab('dispatch')">Dispatch</button>
+        <button class="tab-item" id="tabBtnFleet" onclick="setPanelTab('fleet')">Fleet</button>
+        <button class="tab-item" id="tabBtnActivity" onclick="setPanelTab('activity')">Activity</button>
       </div>
 
-      <div class="sidebar-content-area" id="sidebarContent">
-        <!-- Rendered dynamically by JavaScript -->
+      <div class="panel-content" id="panelContent">
+        <!-- Rendered dynamically -->
       </div>
     </aside>
+
   </main>
+
+  <!-- 3. BOTTOM STATUS STRIP -->
+  <footer class="status-strip">
+    <div class="strip-left">
+      <div class="strip-item">ROS 2: <strong>Connected</strong></div>
+      <div class="strip-item">Nav2 MPPI: <strong>Online</strong></div>
+      <div class="strip-item">CBS Router: <strong>Ready</strong></div>
+      <div class="strip-item">VDA 5050: <strong>v2.0.0</strong></div>
+    </div>
+    <div class="strip-right">
+      <div class="strip-item">Digital Twin: <strong>Synchronized</strong></div>
+      <div class="strip-item" id="stripTime">00:00:00</div>
+    </div>
+  </footer>
 
   <script>
     /* ============================================================= */
-    /* INDUSTRIAL FLEET STATE MODEL & GLOBAL DATA                    */
+    /* INDUSTRIAL FLEET STATE & REAL WAREHOUSE DATA                  */
     /* ============================================================= */
 
-    // Warehouse Floorplan Definition (Real metric dimensions in meters)
-    const WAREHOUSE_METRICS = {
-      widthMeters: 15.0,
-      heightMeters: 15.0,
+    // Physical Warehouse Definition
+    const WAREHOUSE = {
+      width: 15.0,
+      height: 15.0,
+      // Structural Racks (Realistic aisles)
       racks: [
-        // Racks Row 1 (between y=1.5 and y=3.5)
-        { id: "RACK-A", x: 2.0, y: 1.8, w: 4.5, h: 1.4, label: "BAY A01-A08 (PALLETS)" },
-        { id: "RACK-B", x: 8.5, y: 1.8, w: 4.5, h: 1.4, label: "BAY B01-B08 (PARTS)" },
-        // Racks Row 2 (between y=6.5 and y=8.5)
-        { id: "RACK-C", x: 2.0, y: 6.8, w: 4.5, h: 1.4, label: "BAY C01-C08 (FAST PICK)" },
-        { id: "RACK-D", x: 8.5, y: 6.8, w: 4.5, h: 1.4, label: "BAY D01-D08 (OVERSTOCK)" },
-        // Racks Row 3 (between y=11.5 and y=13.5)
-        { id: "RACK-E", x: 2.0, y: 11.8, w: 4.5, h: 1.4, label: "BAY E01-E08 (ASRS FEED)" },
-        { id: "RACK-F", x: 8.5, y: 11.8, w: 4.5, h: 1.4, label: "BAY F01-F08 (STAGING)" }
+        { id: "A1", x: 2.0, y: 1.8, w: 4.5, h: 1.4, name: "Rack A (01-08)" },
+        { id: "B1", x: 8.5, y: 1.8, w: 4.5, h: 1.4, name: "Rack B (01-08)" },
+        { id: "C1", x: 2.0, y: 6.8, w: 4.5, h: 1.4, name: "Rack C (01-08)" },
+        { id: "D1", x: 8.5, y: 6.8, w: 4.5, h: 1.4, name: "Rack D (01-08)" },
+        { id: "E1", x: 2.0, y: 11.8, w: 4.5, h: 1.4, name: "Rack E (01-08)" },
+        { id: "F1", x: 8.5, y: 11.8, w: 4.5, h: 1.4, name: "Rack F (01-08)" }
       ],
-      specialZones: [
-        { id: "P-1", type: "PICK", x: 0.0, y: 4.0, w: 1.8, h: 2.0, label: "PICK-1 (INFEED)" },
-        { id: "P-2", type: "PICK", x: 0.0, y: 9.0, w: 1.8, h: 2.0, label: "PICK-2 (CRATE)" },
-        { id: "D-1", type: "DROP", x: 13.2, y: 4.0, w: 1.8, h: 2.0, label: "DROP-1 (OUTBOUND)" },
-        { id: "D-2", type: "DROP", x: 13.2, y: 9.0, w: 1.8, h: 2.0, label: "DROP-2 (PACKING)" },
-        { id: "CHG-1", type: "CHARGE", x: 0.2, y: 0.2, w: 1.6, h: 1.6, label: "FAST DOCK C1" },
-        { id: "CHG-2", type: "CHARGE", x: 13.2, y: 13.2, w: 1.6, h: 1.6, label: "FAST DOCK C2" },
-        { id: "RESTRICTED", type: "RESTRICTED", x: 6.5, y: 0.2, w: 2.0, h: 1.0, label: "PEDESTRIAN AIRLOCK" }
+      // Designated Operational Zones
+      zones: [
+        { id: "PICK-1", type: "PICK", x: 0.0, y: 4.0, w: 1.8, h: 2.0, label: "Inbound P1" },
+        { id: "PICK-2", type: "PICK", x: 0.0, y: 9.0, w: 1.8, h: 2.0, label: "Inbound P2" },
+        { id: "DROP-1", type: "DROP", x: 13.2, y: 4.0, w: 1.8, h: 2.0, label: "Outbound D1" },
+        { id: "DROP-2", type: "DROP", x: 13.2, y: 9.0, w: 1.8, h: 2.0, label: "Outbound D2" },
+        { id: "CHG-1", type: "CHARGE", x: 0.2, y: 0.2, w: 1.6, h: 1.6, label: "Charger 1" },
+        { id: "CHG-2", type: "CHARGE", x: 13.2, y: 13.2, w: 1.6, h: 1.6, label: "Charger 2" },
+        { id: "PED", type: "RESTRICTED", x: 6.5, y: 0.2, w: 2.0, h: 1.0, label: "Walkway" }
       ]
     };
 
-    // Topological Roadmap Nodes (16 Standard Graph Nodes)
-    const GRAPH_NODES = {};
+    // Internal Roadmap Nodes (for CBS routing calculations)
+    const ROADMAP_NODES = {};
     for (let r = 0; r < 4; r++) {
       for (let c = 0; c < 4; c++) {
-        const nid = `N_${r}_${c}`;
-        let ntype = "TRANSIT";
-        if ((r === 0 && c === 0) || (r === 3 && c === 3)) ntype = "CHARGE";
-        else if (r === 1) ntype = "PICK";
-        else if (r === 2) ntype = "DROP";
-        GRAPH_NODES[nid] = {
-          id: nid,
-          row: r,
-          col: c,
-          x: c * 5.0,
-          y: r * 5.0,
-          type: ntype
-        };
+        const id = `N_${r}_${c}`;
+        ROADMAP_NODES[id] = { id, r, c, x: c * 5.0, y: r * 5.0 };
       }
     }
 
-    // Graph Edges
-    const GRAPH_EDGES = [];
+    const ROADMAP_EDGES = [];
     for (let r = 0; r < 4; r++) {
       for (let c = 0; c < 4; c++) {
         const cur = `N_${r}_${c}`;
-        if (c < 3) GRAPH_EDGES.push({ u: cur, v: `N_${r}_${c+1}` });
-        if (r < 3) GRAPH_EDGES.push({ u: cur, v: `N_${r+1}_${c}` });
+        if (c < 3) ROADMAP_EDGES.push({ u: cur, v: `N_${r}_${c+1}` });
+        if (r < 3) ROADMAP_EDGES.push({ u: cur, v: `N_${r+1}_${c}` });
       }
     }
 
-    // AMR Fleet Data (Single source of truth)
-    const FLEET_STATE = {
-      "synq-amr-01": {
-        id: "synq-amr-01",
-        model: "synQ-AMR v1.0",
-        serial: "SN-SYNQ-2026-001",
-        payloadType: "SCISSOR_LIFT",
-        payloadState: { positionPct: 0.0, locked: true, active: false },
-        status: "NOMINAL", // NOMINAL, NAVIGATING, CHARGING, ESTOP
-        batteryPct: 94.5,
-        batteryState: "NORMAL", // NORMAL, ATTENTION, RETURN TO CHARGE
-        voltage: 48.4,
+    // Physical Fleet State (Single Source of Truth)
+    const ROBOTS = {
+      "AMR-01": {
+        id: "AMR-01",
+        status: "Idle", // Idle, Navigating, Charging, Emergency Stop
+        battery: 94,
+        payload: "Scissor Lift",
+        payloadPosition: 0.0,
+        mission: "—",
+        pickup: "—",
+        destination: "—",
+        eta: "—",
+        speed: 0.0,
         x: 0.0,
         y: 0.0,
-        theta: 0.0,
+        heading: 0,
         targetNode: "N_0_0",
-        vx: 0.0,
-        vy: 0.0,
-        wz: 0.0,
-        currentMissionId: null,
-        destination: null,
-        etaSec: 0,
-        localizationState: "CONVERGED (EKF/AMCL)",
-        navigationState: "IDLE (MPPI STANDBY)",
-        recentTrail: [],
-        plannedRoute: []
+        route: [],
+        serial: "SN-SYNQ-2026-001",
+        rosState: "synq_amr_node (ACTIVE)",
+        ekfState: "Coverged, trace=0.014",
+        lidarRange: 12.0
       },
-      "synq-amr-02": {
-        id: "synq-amr-02",
-        model: "synQ-AMR v1.0",
-        serial: "SN-SYNQ-2026-002",
-        payloadType: "ROLLER_CONVEYOR",
-        payloadState: { positionPct: 0.0, locked: true, active: false },
-        status: "NOMINAL",
-        batteryPct: 88.0,
-        batteryState: "NORMAL",
-        voltage: 48.1,
+      "AMR-02": {
+        id: "AMR-02",
+        status: "Idle",
+        battery: 88,
+        payload: "Conveyor",
+        payloadPosition: 0.0,
+        mission: "—",
+        pickup: "—",
+        destination: "—",
+        eta: "—",
+        speed: 0.0,
         x: 15.0,
         y: 15.0,
-        theta: Math.PI,
+        heading: 180,
         targetNode: "N_3_3",
-        vx: 0.0,
-        vy: 0.0,
-        wz: 0.0,
-        currentMissionId: null,
-        destination: null,
-        etaSec: 0,
-        localizationState: "CONVERGED (EKF/AMCL)",
-        navigationState: "IDLE (MPPI STANDBY)",
-        recentTrail: [],
-        plannedRoute: []
+        route: [],
+        serial: "SN-SYNQ-2026-002",
+        rosState: "synq_amr_node (ACTIVE)",
+        ekfState: "Converged, trace=0.019",
+        lidarRange: 12.0
       },
-      "synq-amr-03": {
-        id: "synq-amr-03",
-        model: "synQ-AMR v1.0",
-        serial: "SN-SYNQ-2026-003",
-        payloadType: "TOTE_GRIPPER",
-        payloadState: { positionPct: 0.0, locked: false, active: false },
-        status: "NOMINAL",
-        batteryPct: 91.2,
-        batteryState: "NORMAL",
-        voltage: 48.3,
+      "AMR-03": {
+        id: "AMR-03",
+        status: "Idle",
+        battery: 91,
+        payload: "Tote Gripper",
+        payloadPosition: 0.0,
+        mission: "—",
+        pickup: "—",
+        destination: "—",
+        eta: "—",
+        speed: 0.0,
         x: 15.0,
         y: 0.0,
-        theta: Math.PI / 2,
+        heading: 90,
         targetNode: "N_0_3",
-        vx: 0.0,
-        vy: 0.0,
-        wz: 0.0,
-        currentMissionId: null,
-        destination: null,
-        etaSec: 0,
-        localizationState: "CONVERGED (EKF/AMCL)",
-        navigationState: "IDLE (MPPI STANDBY)",
-        recentTrail: [],
-        plannedRoute: []
+        route: [],
+        serial: "SN-SYNQ-2026-003",
+        rosState: "synq_amr_node (ACTIVE)",
+        ekfState: "Converged, trace=0.012",
+        lidarRange: 12.0
       }
     };
 
     // UI View State
-    let selectedRobotId = "synq-amr-01";
-    let activeSidebarTab = "inspector";
-    let isGlobalEstopActive = false;
-    let obstacleModeActive = false;
-    let dynamicObstacles = []; // List of {x, y, radius: 0.8}
+    let selectedRobotId = "AMR-01";
+    let activeTab = "inspector";
+    let isEstopActive = false;
+    let obstacleToolActive = false;
+    let placedObstacles = [];
 
-    // Viewport Layers
-    const VIEWPORT_LAYERS = {
+    const mapLayers = {
       lanes: true,
       racks: true,
-      nodes: true,
-      paths: true
+      routes: true
     };
 
-    // Camera Pan & Zoom
     let camera = {
-      panX: 0,
-      panY: 0,
+      x: 0,
+      y: 0,
       zoom: 1.0,
-      isDragging: false,
-      lastMouseX: 0,
-      lastMouseY: 0
+      dragging: false,
+      startX: 0,
+      startY: 0
     };
 
-    // Structured Event Timeline
-    const EVENT_TIMELINE = [];
-    function recordEvent(type, text) {
-      const d = new Date();
-      const timeStr = d.toTimeString().split(" ")[0];
-      EVENT_TIMELINE.unshift({ time: timeStr, type: type, text: text });
-      if (EVENT_TIMELINE.length > 50) EVENT_TIMELINE.pop();
-      if (activeSidebarTab === "timeline") {
-        renderSidebarContent();
-      }
+    // Operational Event Log
+    const ACTIVITIES = [
+      { time: "23:45", robot: "AMR-01", msg: "System ready. Standby at N_0_0" },
+      { time: "23:45", robot: "AMR-02", msg: "System ready. Standby at N_3_3" },
+      { time: "23:45", robot: "AMR-03", msg: "System ready. Standby at N_0_3" }
+    ];
+
+    function logActivity(robot, msg) {
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      ACTIVITIES.unshift({ time: timeStr, robot, msg });
+      if (ACTIVITIES.length > 40) ACTIVITIES.pop();
+      if (activeTab === "activity") renderPanel();
     }
 
     /* ============================================================= */
-    /* 2. SPATIAL MAP RENDERER                                       */
+    /* 2. REALISTIC TOP-DOWN MAP RENDERER                            */
     /* ============================================================= */
 
-    const canvas = document.getElementById("warehouseSpatialCanvas");
+    const canvas = document.getElementById("warehouseCanvas");
     const ctx = canvas.getContext("2d");
 
     function resizeCanvas() {
-      const pane = document.getElementById("viewportPane");
-      canvas.width = pane.clientWidth;
-      canvas.height = pane.clientHeight;
+      const container = document.getElementById("mapContainer");
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
     }
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
-    function resetViewportCamera() {
+    function resetMapCamera() {
+      camera.x = 0;
+      camera.y = 0;
       camera.zoom = 1.0;
-      camera.panX = 0;
-      camera.panY = 0;
-      document.getElementById("hudZoomVal").textContent = "100%";
     }
 
-    // Coordinate Conversion Functions (Meters <-> Screen Pixels)
-    function getTransform() {
-      const padding = 70;
-      const availableW = canvas.width - padding * 2;
-      const availableH = canvas.height - padding * 2;
-      const baseScale = Math.min(availableW / WAREHOUSE_METRICS.widthMeters, availableH / WAREHOUSE_METRICS.heightMeters);
-      const effectiveScale = baseScale * camera.zoom;
-
-      const originX = (canvas.width - WAREHOUSE_METRICS.widthMeters * effectiveScale) / 2 + camera.panX;
-      const originY = (canvas.height - WAREHOUSE_METRICS.heightMeters * effectiveScale) / 2 + camera.panY;
-
-      return { originX, originY, scale: effectiveScale };
+    function getMapTransform() {
+      const pad = 60;
+      const availW = canvas.width - pad * 2;
+      const availH = canvas.height - pad * 2;
+      const baseScale = Math.min(availW / WAREHOUSE.width, availH / WAREHOUSE.height);
+      const scale = baseScale * camera.zoom;
+      const originX = (canvas.width - WAREHOUSE.width * scale) / 2 + camera.x;
+      const originY = (canvas.height - WAREHOUSE.height * scale) / 2 + camera.y;
+      return { originX, originY, scale };
     }
 
-    function worldToScreen(wx, wy) {
-      const { originX, originY, scale } = getTransform();
-      return {
-        sx: originX + wx * scale,
-        sy: originY + wy * scale
-      };
+    function toScreen(wx, wy) {
+      const { originX, originY, scale } = getMapTransform();
+      return { x: originX + wx * scale, y: originY + wy * scale };
     }
 
-    function screenToWorld(sx, sy) {
-      const { originX, originY, scale } = getTransform();
-      return {
-        wx: (sx - originX) / scale,
-        wy: (sy - originY) / scale
-      };
+    function toWorld(sx, sy) {
+      const { originX, originY, scale } = getMapTransform();
+      return { x: (sx - originX) / scale, y: (sy - originY) / scale };
     }
 
-    // Render Loop
-    function renderSpatialMap() {
+    function renderMap() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const { originX, originY, scale } = getTransform();
+      const { originX, originY, scale } = getMapTransform();
 
-      // 1. Draw Subtle Warehouse Concrete Slab Background
-      ctx.fillStyle = "#0c1017";
-      ctx.fillRect(originX, originY, WAREHOUSE_METRICS.widthMeters * scale, WAREHOUSE_METRICS.heightMeters * scale);
-      ctx.strokeStyle = "#222a36";
+      // Warehouse Perimeter Floor
+      ctx.fillStyle = "#16191d";
+      ctx.fillRect(originX, originY, WAREHOUSE.width * scale, WAREHOUSE.height * scale);
+      ctx.strokeStyle = "#2e343b";
       ctx.lineWidth = 1;
-      ctx.strokeRect(originX, originY, WAREHOUSE_METRICS.widthMeters * scale, WAREHOUSE_METRICS.heightMeters * scale);
+      ctx.strokeRect(originX, originY, WAREHOUSE.width * scale, WAREHOUSE.height * scale);
 
-      // 2. Metric Coordinate Grid Lines (Every 1m subtle, every 5m bolder)
+      // Subtle Meter Grid
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.025)";
       ctx.lineWidth = 1;
-      for (let m = 0; m <= WAREHOUSE_METRICS.widthMeters; m += 1.0) {
-        const p1 = worldToScreen(m, 0);
-        const p2 = worldToScreen(m, WAREHOUSE_METRICS.heightMeters);
-        ctx.strokeStyle = (m % 5 === 0) ? "#1f2937" : "#121822";
+      for (let m = 1; m < WAREHOUSE.width; m++) {
+        const p1 = toScreen(m, 0);
+        const p2 = toScreen(m, WAREHOUSE.height);
         ctx.beginPath();
-        ctx.moveTo(p1.sx, p1.sy);
-        ctx.lineTo(p2.sx, p2.sy);
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
         ctx.stroke();
-
-        // Coordinate Header Marks
-        if (m % 5 === 0) {
-          ctx.fillStyle = "#485568";
-          ctx.font = "9px 'JetBrains Mono', monospace";
-          ctx.fillText(`${m}m`, p1.sx - 6, originY - 8);
-        }
+      }
+      for (let m = 1; m < WAREHOUSE.height; m++) {
+        const p1 = toScreen(0, m);
+        const p2 = toScreen(WAREHOUSE.width, m);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
       }
 
-      for (let m = 0; m <= WAREHOUSE_METRICS.heightMeters; m += 1.0) {
-        const p1 = worldToScreen(0, m);
-        const p2 = worldToScreen(WAREHOUSE_METRICS.widthMeters, m);
-        ctx.strokeStyle = (m % 5 === 0) ? "#1f2937" : "#121822";
-        ctx.beginPath();
-        ctx.moveTo(p1.sx, p1.sy);
-        ctx.lineTo(p2.sx, p2.sy);
-        ctx.stroke();
+      // Operational Zones
+      WAREHOUSE.zones.forEach(zone => {
+        const p = toScreen(zone.x, zone.y);
+        const w = zone.w * scale;
+        const h = zone.h * scale;
 
-        if (m % 5 === 0) {
-          ctx.fillStyle = "#485568";
-          ctx.font = "9px 'JetBrains Mono', monospace";
-          ctx.fillText(`${m}m`, originX - 26, p1.sy + 3);
+        if (zone.type === "PICK") {
+          ctx.fillStyle = "rgba(46, 160, 67, 0.08)";
+          ctx.strokeStyle = "rgba(46, 160, 67, 0.4)";
+        } else if (zone.type === "DROP") {
+          ctx.fillStyle = "rgba(31, 111, 235, 0.08)";
+          ctx.strokeStyle = "rgba(31, 111, 235, 0.4)";
+        } else if (zone.type === "CHARGE") {
+          ctx.fillStyle = "rgba(210, 153, 34, 0.08)";
+          ctx.strokeStyle = "rgba(210, 153, 34, 0.4)";
+        } else {
+          ctx.fillStyle = "rgba(218, 54, 51, 0.08)";
+          ctx.strokeStyle = "rgba(218, 54, 51, 0.3)";
         }
-      }
 
-      // 3. Navigation Lanes (Underlying Roadway)
-      if (VIEWPORT_LAYERS.lanes) {
-        ctx.strokeStyle = "rgba(47, 129, 247, 0.15)";
-        ctx.lineWidth = 14 * (scale / 40); // Proportional lane width (~0.6m physical)
+        ctx.lineWidth = 1;
+        ctx.fillRect(p.x, p.y, w, h);
+        ctx.strokeRect(p.x, p.y, w, h);
+
+        ctx.fillStyle = "#8b949e";
+        ctx.font = "10px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.fillText(zone.label, p.x + 6, p.y + 14);
+      });
+
+      // Navigation Lanes (Subtle transit corridors)
+      if (mapLayers.lanes) {
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+        ctx.lineWidth = 12 * (scale / 40);
         ctx.lineCap = "round";
-        GRAPH_EDGES.forEach(e => {
-          const n1 = GRAPH_NODES[e.u];
-          const n2 = GRAPH_NODES[e.v];
-          const p1 = worldToScreen(n1.x, n1.y);
-          const p2 = worldToScreen(n2.x, n2.y);
+        ROADMAP_EDGES.forEach(e => {
+          const n1 = ROADMAP_NODES[e.u];
+          const n2 = ROADMAP_NODES[e.v];
+          const p1 = toScreen(n1.x, n1.y);
+          const p2 = toScreen(n2.x, n2.y);
           ctx.beginPath();
-          ctx.moveTo(p1.sx, p1.sy);
-          ctx.lineTo(p2.sx, p2.sy);
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
           ctx.stroke();
         });
 
-        // Centerline dashed tracks
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
+        // Center line
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
         ctx.lineWidth = 1;
-        ctx.setLineDash([4, 6]);
-        GRAPH_EDGES.forEach(e => {
-          const n1 = GRAPH_NODES[e.u];
-          const n2 = GRAPH_NODES[e.v];
-          const p1 = worldToScreen(n1.x, n1.y);
-          const p2 = worldToScreen(n2.x, n2.y);
+        ctx.setLineDash([3, 5]);
+        ROADMAP_EDGES.forEach(e => {
+          const n1 = ROADMAP_NODES[e.u];
+          const n2 = ROADMAP_NODES[e.v];
+          const p1 = toScreen(n1.x, n1.y);
+          const p2 = toScreen(n2.x, n2.y);
           ctx.beginPath();
-          ctx.moveTo(p1.sx, p1.sy);
-          ctx.lineTo(p2.sx, p2.sy);
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
           ctx.stroke();
         });
         ctx.setLineDash([]);
       }
 
-      // 4. Special Facility Zones (Pick, Drop, Charging, Restricted)
-      WAREHOUSE_METRICS.specialZones.forEach(zone => {
-        const sp = worldToScreen(zone.x, zone.y);
-        const w = zone.w * scale;
-        const h = zone.h * scale;
-
-        if (zone.type === "PICK") {
-          ctx.fillStyle = "rgba(46, 160, 67, 0.12)";
-          ctx.strokeStyle = "rgba(46, 160, 67, 0.5)";
-        } else if (zone.type === "DROP") {
-          ctx.fillStyle = "rgba(56, 139, 253, 0.12)";
-          ctx.strokeStyle = "rgba(56, 139, 253, 0.5)";
-        } else if (zone.type === "CHARGE") {
-          ctx.fillStyle = "rgba(210, 153, 34, 0.15)";
-          ctx.strokeStyle = "rgba(210, 153, 34, 0.5)";
-        } else {
-          ctx.fillStyle = "rgba(218, 54, 51, 0.12)";
-          ctx.strokeStyle = "rgba(218, 54, 51, 0.4)";
-        }
-
-        ctx.lineWidth = 1.5;
-        ctx.fillRect(sp.sx, sp.sy, w, h);
-        ctx.strokeRect(sp.sx, sp.sy, w, h);
-
-        // Zone Badge
-        ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-        ctx.font = "bold 9px 'JetBrains Mono', monospace";
-        ctx.fillText(zone.label, sp.sx + 6, sp.sy + 14);
-      });
-
-      // 5. Storage Racks (High-bay warehouse racking with pallet slots)
-      if (VIEWPORT_LAYERS.racks) {
-        WAREHOUSE_METRICS.racks.forEach(rack => {
-          const sp = worldToScreen(rack.x, rack.y);
+      // Storage Racks
+      if (mapLayers.racks) {
+        WAREHOUSE.racks.forEach(rack => {
+          const p = toScreen(rack.x, rack.y);
           const w = rack.w * scale;
           const h = rack.h * scale;
 
-          // Outer rack frame
-          ctx.fillStyle = "#151b23";
-          ctx.strokeStyle = "#30363d";
-          ctx.lineWidth = 1.5;
-          ctx.fillRect(sp.sx, sp.sy, w, h);
-          ctx.strokeRect(sp.sx, sp.sy, w, h);
-
-          // Pallet slot subdivisions
-          const slots = 8;
-          const slotW = w / slots;
-          ctx.strokeStyle = "#21262d";
+          ctx.fillStyle = "#22272e";
+          ctx.strokeStyle = "#373e47";
           ctx.lineWidth = 1;
-          for (let i = 1; i < slots; i++) {
+          ctx.fillRect(p.x, p.y, w, h);
+          ctx.strokeRect(p.x, p.y, w, h);
+
+          // Pallet bays
+          const bays = 8;
+          const bayW = w / bays;
+          ctx.strokeStyle = "#2d333b";
+          for (let i = 1; i < bays; i++) {
             ctx.beginPath();
-            ctx.moveTo(sp.sx + i * slotW, sp.sy);
-            ctx.lineTo(sp.sx + i * slotW, sp.sy + h);
+            ctx.moveTo(p.x + i * bayW, p.y);
+            ctx.lineTo(p.x + i * bayW, p.y + h);
             ctx.stroke();
           }
 
-          // Rack Label
-          ctx.fillStyle = "#8b949e";
-          ctx.font = "9px 'JetBrains Mono', monospace";
-          ctx.fillText(rack.label, sp.sx + 4, sp.sy - 4);
+          ctx.fillStyle = "#768390";
+          ctx.font = "10px -apple-system, BlinkMacSystemFont, sans-serif";
+          ctx.fillText(rack.name, p.x + 6, p.y - 4);
         });
       }
 
-      // 6. Navigation Graph Nodes
-      if (VIEWPORT_LAYERS.nodes) {
-        Object.values(GRAPH_NODES).forEach(n => {
-          const sp = worldToScreen(n.x, n.y);
-          ctx.beginPath();
-          ctx.arc(sp.sx, sp.sy, 4, 0, Math.PI * 2);
-
-          if (n.type === "CHARGE") ctx.fillStyle = "#d29922";
-          else if (n.type === "PICK") ctx.fillStyle = "#2ea043";
-          else if (n.type === "DROP") ctx.fillStyle = "#388bfd";
-          else ctx.fillStyle = "#484f58";
-
-          ctx.fill();
-
-          ctx.fillStyle = "#6e7681";
-          ctx.font = "8px 'JetBrains Mono', monospace";
-          ctx.fillText(n.id, sp.sx + 6, sp.sy + 3);
-        });
-      }
-
-      // 7. Dynamic Injected Obstacles
-      dynamicObstacles.forEach(obs => {
-        const sp = worldToScreen(obs.x, obs.y);
-        const r = (obs.radius || 0.8) * scale;
+      // Placed Obstacles
+      placedObstacles.forEach(obs => {
+        const p = toScreen(obs.x, obs.y);
+        const r = (obs.radius || 0.7) * scale;
         ctx.beginPath();
-        ctx.arc(sp.sx, sp.sy, r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(218, 54, 51, 0.4)";
-        ctx.strokeStyle = "#f85149";
-        ctx.lineWidth = 2;
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(218, 54, 51, 0.25)";
+        ctx.strokeStyle = "#da3633";
+        ctx.lineWidth = 1.5;
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 9px 'JetBrains Mono', monospace";
-        ctx.fillText("! OBSTACLE", sp.sx - 24, sp.sy + 3);
+        ctx.fillStyle = "#f85149";
+        ctx.font = "10px var(--font-system)";
+        ctx.fillText("Obstacle", p.x - 20, p.y + 3);
       });
 
-      // 8. Planned CBS Routes
-      if (VIEWPORT_LAYERS.paths) {
-        Object.values(FLEET_STATE).forEach(bot => {
-          if (!bot.plannedRoute || bot.plannedRoute.length === 0) return;
-
+      // Robot Routes
+      if (mapLayers.routes) {
+        Object.values(ROBOTS).forEach(bot => {
+          if (!bot.route || bot.route.length === 0) return;
           const isSelected = (bot.id === selectedRobotId);
-          ctx.strokeStyle = isSelected ? "#388bfd" : "rgba(88, 166, 255, 0.35)";
-          ctx.lineWidth = isSelected ? 2.5 : 1.5;
 
+          ctx.strokeStyle = isSelected ? "#388bfd" : "rgba(88, 166, 255, 0.3)";
+          ctx.lineWidth = isSelected ? 2 : 1;
           ctx.beginPath();
-          const startPt = worldToScreen(bot.x, bot.y);
-          ctx.moveTo(startPt.sx, startPt.sy);
-
-          bot.plannedRoute.forEach(nodeId => {
-            const n = GRAPH_NODES[nodeId];
+          const start = toScreen(bot.x, bot.y);
+          ctx.moveTo(start.x, start.y);
+          bot.route.forEach(nid => {
+            const n = ROADMAP_NODES[nid];
             if (n) {
-              const pt = worldToScreen(n.x, n.y);
-              ctx.lineTo(pt.sx, pt.sy);
+              const pt = toScreen(n.x, n.y);
+              ctx.lineTo(pt.x, pt.y);
             }
           });
           ctx.stroke();
         });
       }
 
-      // 9. AMR Footprints (True 0.70m x 0.50m dimensions, realistic engineering renderer)
-      Object.values(FLEET_STATE).forEach(bot => {
-        const sp = worldToScreen(bot.x, bot.y);
+      // Top-Down AMRs (Physical scale 0.7m x 0.5m)
+      Object.values(ROBOTS).forEach(bot => {
+        const p = toScreen(bot.x, bot.y);
         const isSelected = (bot.id === selectedRobotId);
-
-        // Dimensions in pixels
-        const bodyLength = 0.70 * scale;
-        const bodyWidth = 0.50 * scale;
+        const lengthPx = 0.70 * scale;
+        const widthPx = 0.50 * scale;
 
         ctx.save();
-        ctx.translate(sp.sx, sp.sy);
-        ctx.rotate(bot.theta);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(bot.heading * Math.PI / 180);
 
-        // A. LiDAR Proximity Field Ring
-        ctx.beginPath();
-        ctx.arc(0, 0, (bodyLength / 2) * 1.5, 0, Math.PI * 2);
-        if (bot.status === "ESTOP") {
-          ctx.strokeStyle = "rgba(218, 54, 51, 0.7)";
-          ctx.fillStyle = "rgba(218, 54, 51, 0.1)";
-        } else if (bot.status === "NAVIGATING") {
-          ctx.strokeStyle = "rgba(56, 139, 253, 0.35)";
-          ctx.fillStyle = "rgba(56, 139, 253, 0.05)";
-        } else {
-          ctx.strokeStyle = "rgba(46, 160, 67, 0.25)";
-          ctx.fillStyle = "rgba(46, 160, 67, 0.04)";
-        }
-        ctx.lineWidth = 1;
-        ctx.fill();
-        ctx.stroke();
-
-        // B. Selection Highlight Box
+        // Safety Radius (Visible when selected)
         if (isSelected) {
-          ctx.strokeStyle = "#58a6ff";
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(-bodyLength / 2 - 4, -bodyWidth / 2 - 4, bodyLength + 8, bodyWidth + 8);
-        }
-
-        // C. Chassis Base
-        ctx.fillStyle = "#161b22";
-        ctx.strokeStyle = isSelected ? "#388bfd" : "#30363d";
-        ctx.lineWidth = 2;
-        ctx.fillRect(-bodyLength / 2, -bodyWidth / 2, bodyLength, bodyWidth);
-        ctx.strokeRect(-bodyLength / 2, -bodyWidth / 2, bodyLength, bodyWidth);
-
-        // D. Mecanum Wheels (4 corners)
-        ctx.fillStyle = "#2d333b";
-        const wheelL = bodyLength * 0.26;
-        const wheelW = 4;
-        ctx.fillRect(-bodyLength / 2, -bodyWidth / 2 - wheelW + 1, wheelL, wheelW);
-        ctx.fillRect(bodyLength / 2 - wheelL, -bodyWidth / 2 - wheelW + 1, wheelL, wheelW);
-        ctx.fillRect(-bodyLength / 2, bodyWidth / 2 - 1, wheelL, wheelW);
-        ctx.fillRect(bodyLength / 2 - wheelL, bodyWidth / 2 - 1, wheelL, wheelW);
-
-        // E. Specific Payload Geometry
-        if (bot.payloadType === "SCISSOR_LIFT") {
-          // X-cross pantograph scissor graphic
-          ctx.strokeStyle = "#8b949e";
-          ctx.lineWidth = 1.5;
           ctx.beginPath();
-          ctx.moveTo(-bodyLength * 0.25, -bodyWidth * 0.25);
-          ctx.lineTo(bodyLength * 0.25, bodyWidth * 0.25);
-          ctx.moveTo(-bodyLength * 0.25, bodyWidth * 0.25);
-          ctx.lineTo(bodyLength * 0.25, -bodyWidth * 0.25);
-          ctx.stroke();
-        } else if (bot.payloadType === "ROLLER_CONVEYOR") {
-          // Parallel motorized roller lines
-          ctx.strokeStyle = "#d29922";
-          ctx.lineWidth = 1.5;
-          for (let rx = -bodyLength * 0.25; rx <= bodyLength * 0.25; rx += bodyLength * 0.12) {
-            ctx.beginPath();
-            ctx.moveTo(rx, -bodyWidth * 0.3);
-            ctx.lineTo(rx, bodyWidth * 0.3);
-            ctx.stroke();
-          }
-        } else if (bot.payloadType === "TOTE_GRIPPER") {
-          // Front gripping clamp fingers
-          ctx.strokeStyle = "#2ea043";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(bodyLength * 0.2, -bodyWidth * 0.35);
-          ctx.lineTo(bodyLength * 0.45, -bodyWidth * 0.35);
-          ctx.moveTo(bodyLength * 0.2, bodyWidth * 0.35);
-          ctx.lineTo(bodyLength * 0.45, bodyWidth * 0.35);
+          ctx.arc(0, 0, (lengthPx / 2) * 1.4, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(31, 111, 235, 0.35)";
+          ctx.lineWidth = 1;
           ctx.stroke();
         }
 
-        // F. Center LiDAR Scanner Turret
-        ctx.fillStyle = bot.status === "ESTOP" ? "#f85149" : "#388bfd";
-        ctx.beginPath();
-        ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
-        ctx.fill();
+        // Robot Chassis
+        ctx.fillStyle = isSelected ? "#27303f" : "#22272e";
+        ctx.strokeStyle = isSelected ? "#388bfd" : "#444c56";
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(-lengthPx / 2, -widthPx / 2, lengthPx, widthPx);
+        ctx.strokeRect(-lengthPx / 2, -widthPx / 2, lengthPx, widthPx);
 
-        // G. Forward Heading Vector
+        // Wheels
+        ctx.fillStyle = "#1b1f24";
+        const wL = lengthPx * 0.25;
+        const wW = 3;
+        ctx.fillRect(-lengthPx / 2, -widthPx / 2 - wW, wL, wW);
+        ctx.fillRect(lengthPx / 2 - wL, -widthPx / 2 - wW, wL, wW);
+        ctx.fillRect(-lengthPx / 2, widthPx / 2, wL, wW);
+        ctx.fillRect(lengthPx / 2 - wL, widthPx / 2, wL, wW);
+
+        // Heading Indicator (Direction tick)
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(bodyLength / 2 + 5, 0);
+        ctx.lineTo(lengthPx / 2 + 4, 0);
         ctx.stroke();
 
         ctx.restore();
 
-        // Label above robot
-        ctx.fillStyle = isSelected ? "#ffffff" : "#c9d1d9";
-        ctx.font = "bold 10px 'JetBrains Mono', monospace";
-        ctx.fillText(bot.id, sp.sx - 26, sp.sy - bodyWidth / 2 - 8);
+        // Label
+        ctx.fillStyle = isSelected ? "#ffffff" : "#adb5bd";
+        ctx.font = "11px var(--font-system)";
+        ctx.fillText(bot.id, p.x - 18, p.y - widthPx / 2 - 6);
 
-        // SoC percentage indicator
-        ctx.fillStyle = bot.batteryPct < 20 ? "#f85149" : (bot.batteryPct < 40 ? "#d29922" : "#2ea043");
-        ctx.font = "9px 'JetBrains Mono', monospace";
-        ctx.fillText(`${Math.round(bot.batteryPct)}%`, sp.sx + 24, sp.sy - bodyWidth / 2 - 8);
+        ctx.fillStyle = bot.battery < 20 ? "#f85149" : (bot.battery < 40 ? "#d29922" : "#3fb950");
+        ctx.font = "10px var(--font-mono)";
+        ctx.fillText(`${bot.battery}%`, p.x + 16, p.y - widthPx / 2 - 6);
       });
 
-      requestAnimationFrame(renderSpatialMap);
+      requestAnimationFrame(renderMap);
     }
-
-    // Start render loop
-    requestAnimationFrame(renderSpatialMap);
+    requestAnimationFrame(renderMap);
 
     /* ============================================================= */
-    /* 3. MOUSE INTERACTION, PAN, ZOOM, AND CLICK SELECTION          */
+    /* 3. MOUSE INTERACTION & PAN/ZOOM                               */
     /* ============================================================= */
 
-    canvas.addEventListener("mousedown", (e) => {
-      camera.isDragging = true;
-      camera.lastMouseX = e.clientX;
-      camera.lastMouseY = e.clientY;
+    canvas.addEventListener("mousedown", e => {
+      camera.dragging = true;
+      camera.startX = e.clientX;
+      camera.startY = e.clientY;
 
       const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      const worldPos = screenToWorld(mouseX, mouseY);
+      const wPos = toWorld(e.clientX - rect.left, e.clientY - rect.top);
 
-      // If in Obstacle Placement Mode: Inject obstacle on clicked coordinates!
-      if (obstacleModeActive) {
-        injectDynamicObstacle(worldPos.wx, worldPos.wy);
+      // Handle Obstacle Placement
+      if (obstacleToolActive) {
+        placedObstacles.push({ x: wPos.x, y: wPos.y, radius: 0.75 });
+        obstacleToolActive = false;
+        document.getElementById("btnSimObstacle").classList.remove("active");
+        showToast("Obstacle placed. Replanning intersecting routes...");
+        logActivity("System", `Obstacle placed at (${wPos.x.toFixed(1)}m, ${wPos.y.toFixed(1)}m)`);
+
+        // Check if any robot is blocked
+        Object.values(ROBOTS).forEach(bot => {
+          if (bot.status === "Navigating" && bot.route.length > 0) {
+            setTimeout(() => {
+              bot.route = ["N_2_1", "N_2_2", "N_1_2"];
+              logActivity(bot.id, "Route replanned around obstacle");
+              showToast(`${bot.id}: Diverting around obstacle`);
+            }, 600);
+          }
+        });
         return;
       }
 
-      // Check if user clicked an AMR
-      let clickedRobot = null;
-      for (const bot of Object.values(FLEET_STATE)) {
-        const dist = Math.hypot(bot.x - worldPos.wx, bot.y - worldPos.wy);
-        if (dist <= 0.6) { // 0.6m click radius
-          clickedRobot = bot.id;
+      // Check if user clicked a robot
+      let clicked = null;
+      for (const bot of Object.values(ROBOTS)) {
+        if (Math.hypot(bot.x - wPos.x, bot.y - wPos.y) <= 0.6) {
+          clicked = bot.id;
           break;
         }
       }
 
-      if (clickedRobot) {
-        selectedRobotId = clickedRobot;
-        switchSidebarTab("inspector");
-        recordEvent("INFO", `Selected AMR: ${clickedRobot}`);
+      if (clicked) {
+        selectedRobotId = clicked;
+        setPanelTab("inspector");
       }
     });
 
-    window.addEventListener("mousemove", (e) => {
+    window.addEventListener("mousemove", e => {
       const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      const worldPos = screenToWorld(mouseX, mouseY);
+      const wPos = toWorld(e.clientX - rect.left, e.clientY - rect.top);
+      document.getElementById("legendCoords").textContent =
+        `X: ${Math.max(0, Math.min(15, wPos.x)).toFixed(2)}m, Y: ${Math.max(0, Math.min(15, wPos.y)).toFixed(2)}m`;
 
-      document.getElementById("hudCursorCoords").textContent =
-        `X: ${Math.max(0, Math.min(15, worldPos.wx)).toFixed(2)}m, Y: ${Math.max(0, Math.min(15, worldPos.wy)).toFixed(2)}m`;
-
-      if (camera.isDragging && !obstacleModeActive) {
-        camera.panX += e.clientX - camera.lastMouseX;
-        camera.panY += e.clientY - camera.lastMouseY;
-        camera.lastMouseX = e.clientX;
-        camera.lastMouseY = e.clientY;
+      if (camera.dragging && !obstacleToolActive) {
+        camera.x += e.clientX - camera.startX;
+        camera.y += e.clientY - camera.startY;
+        camera.startX = e.clientX;
+        camera.startY = e.clientY;
       }
     });
 
     window.addEventListener("mouseup", () => {
-      camera.isDragging = false;
+      camera.dragging = false;
     });
 
-    canvas.addEventListener("wheel", (e) => {
+    canvas.addEventListener("wheel", e => {
       e.preventDefault();
-      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-      camera.zoom = Math.max(0.6, Math.min(3.0, camera.zoom * zoomFactor));
-      document.getElementById("hudZoomVal").textContent = `${Math.round(camera.zoom * 100)}%`;
+      const factor = e.deltaY < 0 ? 1.08 : 0.92;
+      camera.zoom = Math.max(0.6, Math.min(2.5, camera.zoom * factor));
     });
 
-    function toggleLayer(layerKey) {
-      VIEWPORT_LAYERS[layerKey] = !VIEWPORT_LAYERS[layerKey];
+    function toggleMapLayer(layer) {
+      mapLayers[layer] = !mapLayers[layer];
       const btnMap = {
-        lanes: "btnLayerLanes",
-        racks: "btnLayerRacks",
-        nodes: "btnLayerNodes",
-        paths: "btnLayerPaths"
+        lanes: "btnToggleLanes",
+        racks: "btnToggleRacks",
+        routes: "btnToggleRoutes"
       };
-      const btn = document.getElementById(btnMap[layerKey]);
-      if (btn) {
-        btn.classList.toggle("active", VIEWPORT_LAYERS[layerKey]);
-      }
+      document.getElementById(btnMap[layer]).classList.toggle("active", mapLayers[layer]);
     }
 
-    /* ============================================================= */
-    /* 4. CONFLICT-BASED SEARCH & DYNAMIC OBSTACLE SIMULATION        */
-    /* ============================================================= */
-
-    function toggleObstaclePlacementMode() {
-      obstacleModeActive = !obstacleModeActive;
-      const btn = document.getElementById("btnSimObstacle");
-      btn.classList.toggle("active", obstacleModeActive);
-      if (obstacleModeActive) {
-        showSpatialAlert("CLICK ON ANY TRANSIT LANE TO INTRODUCE OBSTACLE");
+    function toggleObstacleTool() {
+      obstacleToolActive = !obstacleToolActive;
+      document.getElementById("btnSimObstacle").classList.toggle("active", obstacleToolActive);
+      if (obstacleToolActive) {
+        showToast("Click on any lane to place an obstacle");
       } else {
-        hideSpatialAlert();
+        hideToast();
       }
     }
 
-    function injectDynamicObstacle(wx, wy) {
-      dynamicObstacles.push({ x: wx, y: wy, radius: 0.75 });
-      obstacleModeActive = false;
-      document.getElementById("btnSimObstacle").classList.remove("active");
+    function triggerCbsConflictDemo() {
+      showToast("Simulating two AMRs on intersecting crossing paths...");
+      logActivity("CBS", "Simulating head-on trajectory conflict");
 
-      showSpatialAlert("OBSTACLE DETECTED → REPLANNING CBS TRAJECTORY");
-      recordEvent("WARN", `Dynamic Obstacle spawned at (${wx.toFixed(1)}m, ${wy.toFixed(1)}m)`);
+      ROBOTS["AMR-01"].status = "Navigating";
+      ROBOTS["AMR-01"].x = 0.0;
+      ROBOTS["AMR-01"].y = 0.0;
+      ROBOTS["AMR-01"].route = ["N_0_1", "N_0_2"];
 
-      // Check if any AMR path intersects this obstacle
-      Object.values(FLEET_STATE).forEach(bot => {
-        if (bot.status === "NAVIGATING" && bot.plannedRoute.length > 0) {
-          setTimeout(() => {
-            recordEvent("CBS", `${bot.id}: Path blocked by obstacle. Invoking Space-Time A* replanning...`);
-            // Dynamic detour
-            bot.plannedRoute = ["N_2_1", "N_2_2", "N_1_2"];
-            recordEvent("CBS", `${bot.id}: Detour trajectory calculated. Collision-free path resumed.`);
-            showSpatialAlert(`${bot.id}: REPLAN COMPLETE — DIVERTED AROUND OBSTACLE`);
-            setTimeout(hideSpatialAlert, 3500);
-          }, 800);
-        }
-      });
-    }
-
-    function triggerConflictSimulationDemo() {
-      recordEvent("CBS", "Initiating Multi-AMR Crossing Conflict Simulation...");
-      showSpatialAlert("CBS DEMO: DISPATCHING CROSSING AMRs TO TEST CONFLICT RESOLUTION");
-
-      // Set AMR-01 at N_0_0 aiming for N_0_2
-      FLEET_STATE["synq-amr-01"].x = 0.0;
-      FLEET_STATE["synq-amr-01"].y = 0.0;
-      FLEET_STATE["synq-amr-01"].status = "NAVIGATING";
-      FLEET_STATE["synq-amr-01"].plannedRoute = ["N_0_1", "N_0_2"];
-
-      // Set AMR-03 at N_0_3 aiming for N_0_1
-      FLEET_STATE["synq-amr-03"].x = 15.0;
-      FLEET_STATE["synq-amr-03"].y = 0.0;
-      FLEET_STATE["synq-amr-03"].status = "NAVIGATING";
-      FLEET_STATE["synq-amr-03"].plannedRoute = ["N_0_2", "N_0_1", "N_0_0"];
+      ROBOTS["AMR-03"].status = "Navigating";
+      ROBOTS["AMR-03"].x = 15.0;
+      ROBOTS["AMR-03"].y = 0.0;
+      ROBOTS["AMR-03"].route = ["N_0_2", "N_0_1", "N_0_0"];
 
       setTimeout(() => {
-        recordEvent("CBS", "Conflict Detected at Node N_0_1 at t=1. Branching Constraint Tree...");
-        showSpatialAlert("CBS DETECTED HEAD-ON CONFLICT: synq-amr-03 RESERVES DETOUR");
-
-        // CBS resolves by yielding AMR-03 down to N_1_2
-        setTimeout(() => {
-          FLEET_STATE["synq-amr-03"].plannedRoute = ["N_0_2", "N_1_2", "N_1_1", "N_0_1"];
-          recordEvent("CBS", "Constraint resolved! AMR-03 assigned bypass corridor via N_1_2.");
-          setTimeout(hideSpatialAlert, 3500);
-        }, 1000);
+        showToast("CBS conflict detected at N_0_1. AMR-03 assigned bypass corridor.");
+        ROBOTS["AMR-03"].route = ["N_0_2", "N_1_2", "N_1_1", "N_0_1"];
+        logActivity("CBS", "AMR-03 routed via bypass corridor. Zero collisions.");
       }, 1000);
     }
 
-    function showSpatialAlert(text) {
-      const banner = document.getElementById("spatialAlertBanner");
-      document.getElementById("spatialAlertText").textContent = text;
-      banner.style.display = "flex";
+    function showToast(msg) {
+      const toast = document.getElementById("mapToast");
+      document.getElementById("mapToastText").textContent = msg;
+      toast.style.display = "flex";
+      setTimeout(hideToast, 4000);
     }
 
-    function hideSpatialAlert() {
-      document.getElementById("spatialAlertBanner").style.display = "none";
+    function hideToast() {
+      document.getElementById("mapToast").style.display = "none";
     }
 
     /* ============================================================= */
-    /* 5. SIDEBAR TAB CONTROLLER & TECHNICAL INFORMATION PANELS      */
+    /* 4. CONTEXTUAL OPERATIONS PANEL                                */
     /* ============================================================= */
 
-    function switchSidebarTab(tabName) {
-      activeSidebarTab = tabName;
-      ["inspector", "dispatch", "fleet", "timeline"].forEach(t => {
+    function setPanelTab(tab) {
+      activeTab = tab;
+      ["inspector", "dispatch", "fleet", "activity"].forEach(t => {
         const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
-        if (btn) btn.classList.toggle("active", t === tabName);
+        if (btn) btn.classList.toggle("active", t === tab);
       });
-      renderSidebarContent();
+      renderPanel();
     }
 
-    function renderSidebarContent() {
-      const container = document.getElementById("sidebarContent");
+    function renderPanel() {
+      const container = document.getElementById("panelContent");
       container.innerHTML = "";
 
-      if (activeSidebarTab === "inspector") {
-        renderInspectorTab(container);
-      } else if (activeSidebarTab === "dispatch") {
-        renderDispatchTab(container);
-      } else if (activeSidebarTab === "fleet") {
-        renderFleetTab(container);
-      } else if (activeSidebarTab === "timeline") {
-        renderTimelineTab(container);
+      if (activeTab === "inspector") {
+        renderInspector(container);
+      } else if (activeTab === "dispatch") {
+        renderDispatch(container);
+      } else if (activeTab === "fleet") {
+        renderFleet(container);
+      } else if (activeTab === "activity") {
+        renderActivity(container);
       }
     }
 
-    // A. Inspector Tab (Contextual Robot Inspector)
-    function renderInspectorTab(container) {
-      const bot = FLEET_STATE[selectedRobotId] || FLEET_STATE["synq-amr-01"];
+    // Inspector View (Relevant Operational Data + Diagnostics Collapsible)
+    function renderInspector(container) {
+      const bot = ROBOTS[selectedRobotId] || ROBOTS["AMR-01"];
 
-      let statusBadgeClass = "nominal";
-      if (bot.status === "NAVIGATING") statusBadgeClass = "active";
-      if (bot.status === "ESTOP") statusBadgeClass = "estop";
-
-      // Contextual Battery State
-      let batteryDesc = "NORMAL";
-      if (bot.batteryPct < 20) batteryDesc = "RETURN TO CHARGE";
-      else if (bot.batteryPct < 40) batteryDesc = "ATTENTION";
+      let badgeClass = "badge-idle";
+      if (bot.status === "Navigating") badgeClass = "badge-nav";
+      if (bot.status === "Charging") badgeClass = "badge-chg";
+      if (bot.status === "Emergency Stop") badgeClass = "badge-estop";
 
       container.innerHTML = `
         <div>
-          <div class="pane-section-header">
-            <span class="pane-section-title">ROBOT INSPECTOR</span>
-            <span class="status-badge ${statusBadgeClass}">${bot.status}</span>
+          <div class="section-title">
+            <span>${bot.id}</span>
+            <span class="badge ${badgeClass}">${bot.status}</span>
           </div>
 
-          <div class="data-key-value-grid">
-            <div class="dk-label">UNIT IDENTIFIER</div>
-            <div class="dk-value">${bot.id} (${bot.model})</div>
-
-            <div class="dk-label">SERIAL NUMBER</div>
-            <div class="dk-value">${bot.serial}</div>
-
-            <div class="dk-label">PAYLOAD MODULE</div>
-            <div class="dk-value">${bot.payloadType.replace("_", " ")}</div>
-
-            <div class="dk-label">PAYLOAD STATE</div>
-            <div class="dk-value">${bot.payloadState.locked ? "LOCKED & SECURED" : "UNLOCKED"} (${bot.payloadState.positionPct.toFixed(1)}%)</div>
-
-            <div class="dk-label">ENERGY / SOC</div>
-            <div class="dk-value">${bot.batteryPct.toFixed(1)}% (${batteryDesc}) | ${bot.voltage.toFixed(1)}V</div>
-
-            <div class="dk-label">POSITION (X, Y)</div>
-            <div class="dk-value">X: ${bot.x.toFixed(3)}m, Y: ${bot.y.toFixed(3)}m</div>
-
-            <div class="dk-label">ORIENTATION</div>
-            <div class="dk-value">${(bot.theta * 180 / Math.PI).toFixed(1)}° (${bot.theta.toFixed(3)} rad)</div>
-
-            <div class="dk-label">VELOCITY (VX, VY)</div>
-            <div class="dk-value">Vx: ${bot.vx.toFixed(2)} m/s, Vy: ${bot.vy.toFixed(2)} m/s</div>
-
-            <div class="dk-label">ANGULAR (WZ)</div>
-            <div class="dk-value">Wz: ${bot.wz.toFixed(2)} rad/s</div>
-
-            <div class="dk-label">LOCALIZATION</div>
-            <div class="dk-value">${bot.localizationState}</div>
-
-            <div class="dk-label">NAV2 PLANNER</div>
-            <div class="dk-value">${bot.navigationState}</div>
-
-            <div class="dk-label">ACTIVE MISSION</div>
-            <div class="dk-value">${bot.currentMissionId || "NONE (AWAITING TASK)"}</div>
-
-            <div class="dk-label">DESTINATION / ETA</div>
-            <div class="dk-value">${bot.destination || "N/A"} (${bot.etaSec}s)</div>
+          <div class="prop-list">
+            <div class="prop-row"><span class="prop-name">Battery</span><span class="prop-val">${bot.battery}%</span></div>
+            <div class="prop-row"><span class="prop-name">Payload</span><span class="prop-val">${bot.payload}</span></div>
+            <div class="prop-row"><span class="prop-name">Current Mission</span><span class="prop-val">${bot.mission}</span></div>
+            <div class="prop-row"><span class="prop-name">Pickup</span><span class="prop-val">${bot.pickup}</span></div>
+            <div class="prop-row"><span class="prop-name">Destination</span><span class="prop-val">${bot.destination}</span></div>
+            <div class="prop-row"><span class="prop-name">ETA</span><span class="prop-val">${bot.eta}</span></div>
+            <div class="prop-row"><span class="prop-name">Speed</span><span class="prop-val">${bot.speed.toFixed(2)} m/s</span></div>
+            <div class="prop-row"><span class="prop-name">Position</span><span class="prop-val">X: ${bot.x.toFixed(2)}m, Y: ${bot.y.toFixed(2)}m</span></div>
+            <div class="prop-row"><span class="prop-name">Heading</span><span class="prop-val">${bot.heading.toFixed(0)}°</span></div>
           </div>
-        </div>
 
-        <div>
-          <div class="pane-section-header">
-            <span class="pane-section-title">DIRECT OPERATOR OVERRIDES</span>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <button class="btn-secondary-action" onclick="cyclePayloadForSelected('${bot.id}')">ACTUATE PAYLOAD</button>
-            <button class="btn-secondary-action" onclick="dockRobotForCharging('${bot.id}')">DOCK & CHARGE</button>
-            <button class="btn-secondary-action" onclick="holdSelectedRobot('${bot.id}')">${bot.status === 'NAVIGATING' ? 'HOLD POSITION' : 'RESUME PATH'}</button>
-            <button class="btn-secondary-action" style="color: var(--state-danger);" onclick="estopSingleRobot('${bot.id}')">HALT UNIT</button>
+          <details class="diagnostics-box">
+            <summary>System Diagnostics</summary>
+            <div class="prop-list" style="margin-top: 8px;">
+              <div class="prop-row"><span class="prop-name">Serial</span><span class="prop-val">${bot.serial}</span></div>
+              <div class="prop-row"><span class="prop-name">ROS Node</span><span class="prop-val">${bot.rosState}</span></div>
+              <div class="prop-row"><span class="prop-name">EKF Localization</span><span class="prop-val">${bot.ekfState}</span></div>
+              <div class="prop-row"><span class="prop-name">LiDAR</span><span class="prop-val">Range ${bot.lidarRange}m, Clear</span></div>
+            </div>
+          </details>
+
+          <div style="display: flex; gap: 8px; margin-top: 16px;">
+            <button class="btn-secondary" style="flex: 1;" onclick="dockRobot('${bot.id}')">Send to Charger</button>
+            <button class="btn-secondary" style="flex: 1;" onclick="toggleHoldRobot('${bot.id}')">${bot.status === 'Navigating' ? 'Pause' : 'Resume'}</button>
           </div>
         </div>
       `;
     }
 
-    // B. Dispatch Tab (Professional Step-by-Step Dispatch Workflow)
-    function renderDispatchTab(container) {
+    // Dispatch Workflow (Operational Step-by-Step)
+    function renderDispatch(container) {
       container.innerHTML = `
-        <div class="pane-section-header">
-          <span class="pane-section-title">INDUSTRIAL MISSION DISPATCH</span>
-          <span class="pane-section-tag">CBS MAPF</span>
-        </div>
+        <div>
+          <div class="section-title">Mission Dispatch</div>
 
-        <div class="dispatch-step-cluster">
-          <!-- Step 1: Pickup -->
-          <div class="dispatch-step">
-            <div class="dispatch-step-label">
-              <span class="dispatch-step-num">1</span>
-              <span>PICKUP STATION</span>
-            </div>
-            <select class="select-industrial" id="dispatchPickSelect" onchange="updateRoutePreview()">
-              <option value="N_1_0">Station P1 (N_1_0: Infeed Aisle)</option>
-              <option value="N_1_1" selected>Station P2 (N_1_1: Crate Rack)</option>
-              <option value="N_1_2">Station P3 (N_1_2: ASRS Buffer)</option>
-              <option value="N_1_3">Station P4 (N_1_3: Tote Feeder)</option>
+          <div class="field-group">
+            <label class="field-label">1. Pickup Location</label>
+            <select class="input-select" id="pickSelect" onchange="updateDispatchPreview()">
+              <option value="N_1_0">Infeed Aisle (N_1_0)</option>
+              <option value="N_1_1" selected>Rack Bay B (N_1_1)</option>
+              <option value="N_1_2">Rack Bay C (N_1_2)</option>
+              <option value="N_1_3">Feeder Station (N_1_3)</option>
             </select>
           </div>
 
-          <!-- Step 2: Payload Requirement -->
-          <div class="dispatch-step">
-            <div class="dispatch-step-label">
-              <span class="dispatch-step-num">2</span>
-              <span>REQUIRED PAYLOAD MODULE</span>
-            </div>
-            <select class="select-industrial" id="dispatchPayloadSelect" onchange="updateRoutePreview()">
-              <option value="SCISSOR_LIFT">Scissor Lift (Pallet Transport)</option>
-              <option value="ROLLER_CONVEYOR">Roller Conveyor (Conveyor Transfer)</option>
-              <option value="TOTE_GRIPPER">Tote Gripper (Bin Picking)</option>
+          <div class="field-group">
+            <label class="field-label">2. Payload Required</label>
+            <select class="input-select" id="payloadSelect" onchange="updateDispatchPreview()">
+              <option value="Scissor Lift">Scissor Lift (Pallets)</option>
+              <option value="Conveyor">Conveyor (Carton transfer)</option>
+              <option value="Tote Gripper">Tote Gripper (Bins)</option>
             </select>
           </div>
 
-          <!-- Step 3: Destination -->
-          <div class="dispatch-step">
-            <div class="dispatch-step-label">
-              <span class="dispatch-step-num">3</span>
-              <span>OUTBOUND DESTINATION</span>
-            </div>
-            <select class="select-industrial" id="dispatchDropSelect" onchange="updateRoutePreview()">
-              <option value="N_2_0">Drop Dock D1 (N_2_0)</option>
-              <option value="N_2_1">Drop Dock D2 (N_2_1)</option>
-              <option value="N_2_2" selected>Drop Dock D3 (N_2_2)</option>
-              <option value="N_2_3">Drop Dock D4 (N_2_3)</option>
+          <div class="field-group">
+            <label class="field-label">3. Destination</label>
+            <select class="input-select" id="dropSelect" onchange="updateDispatchPreview()">
+              <option value="N_2_0">Outbound Dock D1 (N_2_0)</option>
+              <option value="N_2_1">Outbound Dock D2 (N_2_1)</option>
+              <option value="N_2_2" selected>Packing Station (N_2_2)</option>
+              <option value="N_2_3">Staging Area (N_2_3)</option>
             </select>
           </div>
 
-          <!-- Step 4: Route Preview & Conflict Verification -->
-          <div class="dispatch-step">
-            <div class="dispatch-step-label">
-              <span class="dispatch-step-num">4</span>
-              <span>CBS ROUTE & CONFLICT MANIFEST</span>
-            </div>
-            <div class="route-preview-manifest" id="routePreviewManifest">
-              <!-- Dynamically populated -->
-            </div>
+          <div class="section-title" style="margin-top: 14px;">Route & Assignment Preview</div>
+          <div class="prop-list" id="dispatchPreview" style="margin-bottom: 14px;">
+            <!-- Dynamically populated -->
           </div>
 
-          <!-- Step 5: Dispatch Execution -->
-          <button class="btn-dispatch-action" onclick="executeMissionDispatch()">
-            DISPATCH VIA CBS ROUTER
-          </button>
+          <button class="btn-action" onclick="confirmDispatch()">Dispatch Mission</button>
         </div>
       `;
-      updateRoutePreview();
+      updateDispatchPreview();
     }
 
-    function updateRoutePreview() {
-      const pick = document.getElementById("dispatchPickSelect")?.value || "N_1_1";
-      const payload = document.getElementById("dispatchPayloadSelect")?.value || "SCISSOR_LIFT";
-      const drop = document.getElementById("dispatchDropSelect")?.value || "N_2_2";
-      const manifest = document.getElementById("routePreviewManifest");
-      if (!manifest) return;
+    function updateDispatchPreview() {
+      const payload = document.getElementById("payloadSelect")?.value || "Scissor Lift";
+      const preview = document.getElementById("dispatchPreview");
+      if (!preview) return;
 
-      // Find best matching candidate
-      let candidate = Object.values(FLEET_STATE).find(b => b.status !== "ESTOP" && b.payloadType === payload);
-      if (!candidate) candidate = FLEET_STATE["synq-amr-01"];
+      let candidate = Object.values(ROBOTS).find(b => b.status !== "Emergency Stop" && b.payload === payload);
+      if (!candidate) candidate = ROBOTS["AMR-01"];
 
-      const distEst = 12.5; // meters
-      const etaEst = Math.round(distEst / 1.0); // 1 m/s nominal
-      const postBatt = (candidate.batteryPct - 1.2).toFixed(1);
-
-      manifest.innerHTML = `
-        <div class="rpm-row"><span>ASSIGNED AMR:</span><strong>${candidate.id}</strong></div>
-        <div class="rpm-row"><span>ESTIMATED DISTANCE:</span><strong>${distEst.toFixed(1)} m</strong></div>
-        <div class="rpm-row"><span>CALCULATED ETA:</span><strong>${etaEst} seconds</strong></div>
-        <div class="rpm-row"><span>PROJECTED SOC:</span><strong>${postBatt}%</strong></div>
-        <div class="rpm-row"><span>CBS TRAFFIC STATUS:</span><strong style="color: var(--state-online);">0 CONFLICTS DETECTED</strong></div>
+      preview.innerHTML = `
+        <div class="prop-row"><span class="prop-name">Selected Robot</span><span class="prop-val">${candidate.id} (${candidate.payload})</span></div>
+        <div class="prop-row"><span class="prop-name">Distance</span><span class="prop-val">12.5 m</span></div>
+        <div class="prop-row"><span class="prop-name">Estimated Time</span><span class="prop-val">14 sec</span></div>
+        <div class="prop-row"><span class="prop-name">Battery After Mission</span><span class="prop-val">${candidate.battery - 1}%</span></div>
+        <div class="prop-row"><span class="prop-name">Route Conflicts</span><span class="prop-val" style="color: var(--color-success);">0 Detected</span></div>
       `;
     }
 
-    function executeMissionDispatch() {
-      const pick = document.getElementById("dispatchPickSelect").value;
-      const drop = document.getElementById("dispatchDropSelect").value;
-      const payload = document.getElementById("dispatchPayloadSelect").value;
+    function confirmDispatch() {
+      const pick = document.getElementById("pickSelect").value;
+      const drop = document.getElementById("dropSelect").value;
+      const payload = document.getElementById("payloadSelect").value;
 
-      const candidate = Object.values(FLEET_STATE).find(b => b.status !== "ESTOP" && b.payloadType === payload);
-      if (!candidate) {
-        alert("No operational AMR available matching the requested payload!");
-        return;
-      }
+      let candidate = Object.values(ROBOTS).find(b => b.status !== "Emergency Stop" && b.payload === payload);
+      if (!candidate) candidate = ROBOTS["AMR-01"];
 
-      candidate.status = "NAVIGATING";
-      candidate.currentMissionId = `TASK-${Math.floor(1000 + Math.random() * 9000)}`;
+      candidate.status = "Navigating";
+      candidate.mission = `TASK-${Math.floor(1000 + Math.random() * 9000)}`;
+      candidate.pickup = pick;
       candidate.destination = drop;
-      candidate.etaSec = 14;
-      candidate.plannedRoute = [pick, drop];
+      candidate.eta = "14s";
+      candidate.route = [pick, drop];
 
-      recordEvent("DISPATCH", `Order ${candidate.currentMissionId} -> Assigned ${candidate.id} | Pick: ${pick} | Drop: ${drop}`);
-      switchSidebarTab("inspector");
-      showSpatialAlert(`MISSION DISPATCHED: ${candidate.id} EN ROUTE VIA CBS ROUTE`);
-      setTimeout(hideSpatialAlert, 3000);
+      logActivity(candidate.id, `Mission ${candidate.mission} dispatched to ${drop}`);
+      showToast(`Mission dispatched: ${candidate.id}`);
+      setPanelTab("inspector");
     }
 
-    // C. Fleet Overview Tab (Dense Industrial Fleet Table)
-    function renderFleetTab(container) {
+    // Fleet List View (Compact table)
+    function renderFleet(container) {
       container.innerHTML = `
-        <div class="pane-section-header">
-          <span class="pane-section-title">ACTIVE AMR FLEET (3 REGISTERED)</span>
-          <span class="pane-section-tag">100% HEALTH</span>
-        </div>
-
-        <table class="fleet-summary-table">
+        <div class="section-title">Fleet Overview</div>
+        <table class="data-table">
           <thead>
             <tr>
               <th>ID</th>
-              <th>PAYLOAD</th>
-              <th>SOC</th>
-              <th>STATUS</th>
-              <th>NODE</th>
+              <th>Status</th>
+              <th>Battery</th>
+              <th>Payload</th>
+              <th>Mission</th>
             </tr>
           </thead>
           <tbody>
-            ${Object.values(FLEET_STATE).map(bot => {
-              const isSelected = (bot.id === selectedRobotId);
-              let statusClass = bot.status === "NAVIGATING" ? "active" : (bot.status === "ESTOP" ? "estop" : "nominal");
+            ${Object.values(ROBOTS).map(bot => {
+              const isSel = (bot.id === selectedRobotId);
+              let bClass = "badge-idle";
+              if (bot.status === "Navigating") bClass = "badge-nav";
+              if (bot.status === "Charging") bClass = "badge-chg";
+              if (bot.status === "Emergency Stop") bClass = "badge-estop";
+
               return `
-                <tr class="fleet-row ${isSelected ? 'selected' : ''}" onclick="selectRobotFromTable('${bot.id}')">
+                <tr class="clickable-row ${isSel ? 'selected' : ''}" onclick="selectRobot('${bot.id}')">
                   <td><strong>${bot.id}</strong></td>
-                  <td>${bot.payloadType.replace("_", " ")}</td>
-                  <td style="color: ${bot.batteryPct < 20 ? 'var(--state-danger)' : 'inherit'}">${bot.batteryPct.toFixed(0)}%</td>
-                  <td><span class="status-badge ${statusClass}">${bot.status}</span></td>
-                  <td>${bot.targetNode}</td>
+                  <td><span class="badge ${bClass}">${bot.status}</span></td>
+                  <td>${bot.battery}%</td>
+                  <td>${bot.payload}</td>
+                  <td style="font-family: var(--font-mono); font-size: 11px;">${bot.mission}</td>
                 </tr>
               `;
             }).join("")}
@@ -1765,25 +1395,21 @@
       `;
     }
 
-    function selectRobotFromTable(botId) {
-      selectedRobotId = botId;
-      switchSidebarTab("inspector");
+    function selectRobot(id) {
+      selectedRobotId = id;
+      setPanelTab("inspector");
     }
 
-    // D. Timeline Tab (Structured Event Log)
-    function renderTimelineTab(container) {
+    // Activity Feed (Operational Log)
+    function renderActivity(container) {
       container.innerHTML = `
-        <div class="pane-section-header">
-          <span class="pane-section-title">STRUCTURED MISSION AUDIT LOG</span>
-          <span class="pane-section-tag">VDA 5050 AUDIT</span>
-        </div>
-
-        <div class="timeline-stream">
-          ${EVENT_TIMELINE.map(ev => `
-            <div class="timeline-item">
-              <span class="timeline-timestamp">${ev.time}</span>
-              <span class="timeline-tag ${ev.type.toLowerCase()}">${ev.type}</span>
-              <span class="timeline-text">${ev.text}</span>
+        <div class="section-title">Operational Events</div>
+        <div class="activity-feed">
+          ${ACTIVITIES.map(ev => `
+            <div class="activity-item">
+              <span class="activity-time">${ev.time}</span>
+              <span class="activity-robot">${ev.robot}</span>
+              <span class="activity-msg">${ev.msg}</span>
             </div>
           `).join("")}
         </div>
@@ -1791,96 +1417,81 @@
     }
 
     /* ============================================================= */
-    /* 6. OPERATIONAL CONTROLS & SAFETY OVERRIDES                    */
+    /* 5. SAFETY & OPERATIONAL COMMANDS                              */
     /* ============================================================= */
 
     function toggleGlobalEstop() {
-      isGlobalEstopActive = !isGlobalEstopActive;
-      const btn = document.getElementById("btnGlobalEstop");
-      const label = document.getElementById("estopBtnLabel");
+      isEstopActive = !isEstopActive;
+      const btn = document.getElementById("btnEstop");
+      const label = document.getElementById("estopLabel");
 
-      if (isGlobalEstopActive) {
+      if (isEstopActive) {
         btn.classList.add("active");
-        label.textContent = "RESET EMERGENCY STOP";
-        Object.values(FLEET_STATE).forEach(bot => {
-          bot.status = "ESTOP";
-          bot.vx = 0;
-          bot.vy = 0;
-          bot.wz = 0;
-          bot.plannedRoute = [];
+        label.textContent = "Reset Emergency Stop";
+        Object.values(ROBOTS).forEach(b => {
+          b.status = "Emergency Stop";
+          b.speed = 0.0;
+          b.route = [];
         });
-        recordEvent("ALERT", "GLOBAL E-STOP ENGAGED: ALL FLEET DRIVES DE-ENERGIZED");
-        showSpatialAlert("GLOBAL EMERGENCY STOP ACTIVE — ALL UNITS FROZEN");
+        document.getElementById("dot-sys").className = "dot-indicator danger";
+        document.getElementById("val-sys-status").textContent = "Emergency Stop";
+        logActivity("Safety", "Global Emergency Stop engaged");
+        showToast("Global Emergency Stop engaged — All AMRs halted");
       } else {
         btn.classList.remove("active");
-        label.textContent = "EMERGENCY STOP (ALL)";
-        Object.values(FLEET_STATE).forEach(bot => {
-          bot.status = "NOMINAL";
+        label.textContent = "Emergency Stop (All)";
+        Object.values(ROBOTS).forEach(b => {
+          b.status = "Idle";
         });
-        recordEvent("INFO", "Global E-Stop cleared by operator. Standby mode resumed.");
-        hideSpatialAlert();
+        document.getElementById("dot-sys").className = "dot-indicator";
+        document.getElementById("val-sys-status").textContent = "Normal";
+        logActivity("Safety", "Emergency Stop reset by operator");
+        hideToast();
       }
-      renderSidebarContent();
+      renderPanel();
 
-      // Broadcast to FastAPI backend if connected
       fetch("/api/v1/robots/ALL/estop", { method: "POST" }).catch(() => {});
     }
 
-    function estopSingleRobot(botId) {
-      const bot = FLEET_STATE[botId];
+    function toggleHoldRobot(id) {
+      const bot = ROBOTS[id];
       if (!bot) return;
-      bot.status = "ESTOP";
-      bot.vx = 0;
-      bot.vy = 0;
-      bot.wz = 0;
-      bot.plannedRoute = [];
-      recordEvent("ALERT", `${botId}: Individual E-Stop triggered by operator.`);
-      renderSidebarContent();
-    }
-
-    function holdSelectedRobot(botId) {
-      const bot = FLEET_STATE[botId];
-      if (!bot) return;
-      if (bot.status === "NAVIGATING") {
-        bot.status = "NOMINAL";
-        recordEvent("INFO", `${botId}: Motion paused by operator.`);
+      if (bot.status === "Navigating") {
+        bot.status = "Idle";
+        logActivity(id, "Motion paused");
       } else {
-        bot.status = "NAVIGATING";
-        recordEvent("INFO", `${botId}: Motion resumed.`);
+        bot.status = "Navigating";
+        logActivity(id, "Motion resumed");
       }
-      renderSidebarContent();
+      renderPanel();
     }
 
-    function dockRobotForCharging(botId) {
-      const bot = FLEET_STATE[botId];
+    function dockRobot(id) {
+      const bot = ROBOTS[id];
       if (!bot) return;
-      bot.status = "NAVIGATING";
-      bot.destination = "CHG-1 (N_0_0)";
-      bot.plannedRoute = ["N_0_0"];
-      recordEvent("INFO", `${botId}: Commanded return to fast charging dock.`);
-      renderSidebarContent();
-    }
-
-    function cyclePayloadForSelected(botId) {
-      const bot = FLEET_STATE[botId];
-      if (!bot) return;
-      bot.payloadState.positionPct = (bot.payloadState.positionPct === 0) ? 80.0 : 0.0;
-      recordEvent("INFO", `${botId}: Payload actuated to ${bot.payloadState.positionPct.toFixed(0)}%`);
-      renderSidebarContent();
+      bot.status = "Navigating";
+      bot.destination = "Charger 1";
+      bot.route = ["N_0_0"];
+      logActivity(id, "Returning to charging dock");
+      renderPanel();
     }
 
     /* ============================================================= */
-    /* 7. KINEMATICS SIMULATION LOOP & BACKEND SYNCHRONIZATION       */
+    /* 6. DISCRETE SIMULATION & CLOCK LOOP                           */
     /* ============================================================= */
 
     setInterval(() => {
-      // Simulate real AMR transit along route if active
+      // Clock
+      const now = new Date();
+      document.getElementById("stripTime").textContent = now.toTimeString().split(" ")[0];
+
+      // Step robot transit along planned routes
       let activeCount = 0;
-      Object.values(FLEET_STATE).forEach(bot => {
-        if (bot.status === "NAVIGATING" && bot.plannedRoute.length > 0) {
+      Object.values(ROBOTS).forEach(bot => {
+        if (bot.status === "Navigating" && bot.route.length > 0) {
           activeCount++;
-          const nextNodeId = bot.plannedRoute[0];
-          const node = GRAPH_NODES[nextNodeId];
+          const targetId = bot.route[0];
+          const node = ROADMAP_NODES[targetId];
           if (node) {
             const dx = node.x - bot.x;
             const dy = node.y - bot.y;
@@ -1889,44 +1500,40 @@
             if (dist < 0.15) {
               bot.x = node.x;
               bot.y = node.y;
-              bot.targetNode = nextNodeId;
-              bot.plannedRoute.shift();
-              if (bot.plannedRoute.length === 0) {
-                bot.status = "NOMINAL";
-                bot.destination = null;
-                recordEvent("INFO", `${bot.id}: Reached waypoint ${nextNodeId}. Mission complete.`);
+              bot.targetNode = targetId;
+              bot.route.shift();
+              if (bot.route.length === 0) {
+                bot.status = "Idle";
+                bot.mission = "—";
+                bot.pickup = "—";
+                bot.destination = "—";
+                bot.eta = "—";
+                bot.speed = 0.0;
+                logActivity(bot.id, `Arrived at destination (${targetId})`);
+                renderPanel();
               }
             } else {
-              const speed = 0.08; // smooth step
-              bot.x += (dx / dist) * speed;
-              bot.y += (dy / dist) * speed;
-              bot.theta = Math.atan2(dy, dx);
-              bot.vx = (dx / dist) * 1.0;
-              bot.vy = (dy / dist) * 1.0;
+              bot.speed = 0.8;
+              bot.x += (dx / dist) * 0.06;
+              bot.y += (dy / dist) * 0.06;
+              bot.heading = Math.atan2(dy, dx) * 180 / Math.PI;
             }
           }
         }
       });
 
-      document.getElementById("metric-active-missions").textContent = `${activeCount} EN ROUTE`;
+      document.getElementById("val-active-missions").textContent = `${activeCount} active`;
 
-      // Synchronize with backend API if available
+      // Sync with backend API if running
       fetch("/api/v1/fleet")
         .then(res => res.json())
-        .then(data => {
-          document.getElementById("dot-fms").className = "subsystem-dot";
-          document.getElementById("dot-ros2").className = "subsystem-dot";
+        .then(() => {
+          document.getElementById("dot-fleet").className = "dot-indicator";
         })
-        .catch(() => {
-          // Pure simulation mode - all features intact
-        });
+        .catch(() => {});
     }, 50);
 
-    // Initial audit events
-    recordEvent("INFO", "synQ Autonomous Robotics Operations Control initialized.");
-    recordEvent("INFO", "Topological warehouse roadmap synchronized: 16 nodes, 24 edges.");
-    recordEvent("CBS", "Conflict-Based Search MAPF routing engine standing by.");
-    renderSidebarContent();
+    renderPanel();
   </script>
 </body>
 </html>
