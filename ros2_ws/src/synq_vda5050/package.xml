@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>synq_vda5050</name>
+  <version>1.0.0</version>
+  <description>VDA 5050 v2.0.0 MQTT bridge and message serializer for synQ-AMR</description>
+  <maintainer email="subhamsagar282006@gmail.com">Team synQ</maintainer>
+  <license>Apache-2.0</license>
+
+  <depend>rclpy</depend>
+  <depend>synq_interfaces</depend>
+  <depend>synq_executive</depend>
+
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
