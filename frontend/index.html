@@ -3,711 +3,1930 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>synQ — Modular AMR Digital Twin & Fleet Control Center</title>
+  <title>synQ — Autonomous Robotics Control & Industrial Digital Twin</title>
   <style>
     :root {
-      --bg-dark: #070a12;
-      --panel-bg: rgba(14, 20, 36, 0.85);
-      --panel-border: rgba(0, 243, 255, 0.2);
-      --accent-cyan: #00f3ff;
-      --accent-blue: #0066ff;
-      --accent-green: #00ff88;
-      --accent-amber: #ffb800;
-      --accent-red: #ff3366;
-      --text-main: #e6f1ff;
-      --text-muted: #8899b7;
-      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      /* Industrial Command Center Color System */
+      --bg-canvas: #090c10;
+      --bg-panel: #0d1117;
+      --bg-surface: #161b22;
+      --bg-surface-elevated: #21262d;
+      --border-subtle: #30363d;
+      --border-strong: #484f58;
+
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+
+      /* Semantic Status Colors (Strict Industrial Usage) */
+      --state-online: #2ea043;
+      --state-online-subtle: rgba(46, 160, 67, 0.15);
+      --state-warning: #d29922;
+      --state-warning-subtle: rgba(210, 153, 34, 0.15);
+      --state-danger: #da3633;
+      --state-danger-subtle: rgba(218, 54, 51, 0.18);
+      --state-accent: #388bfd;
+      --state-accent-subtle: rgba(56, 139, 253, 0.15);
+      --state-focus: #58a6ff;
+
+      /* Spatial Floorplan Colors */
+      --floor-grid: #131922;
+      --aisle-lane: #161d28;
+      --rack-border: #2d3848;
+      --rack-fill: #1a2230;
+      --rack-slot: #242d3c;
+      --zone-pick: #17362a;
+      --zone-drop: #192f3d;
+      --zone-charge: #362917;
+      --zone-restricted: #3b1e22;
+
+      /* Technical Typography */
+      --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", Menlo, monospace;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      user-select: none;
     }
 
     body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      font-family: var(--font-sans);
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      height: 100vh;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      height: 100vh;
     }
 
-    /* Top Navigation Header */
-    header {
-      height: 56px;
-      background: rgba(10, 15, 28, 0.95);
-      border-bottom: 1px solid var(--panel-border);
+    /* ------------------------------------------------------------- */
+    /* 1. TOP COMMAND BAR                                            */
+    /* ------------------------------------------------------------- */
+    header.command-bar {
+      height: 48px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
-      z-index: 100;
+      padding: 0 16px;
+      z-index: 1000;
+      flex-shrink: 0;
     }
 
-    .brand {
+    .brand-cluster {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .brand-logo {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      border-radius: 6px;
+    .brand-mark {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-weight: 900;
-      color: #000;
-      font-size: 18px;
+      gap: 8px;
+    }
+
+    .brand-logo-badge {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 13px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      letter-spacing: 0.5px;
     }
 
     .brand-title {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text-primary);
     }
 
     .brand-subtitle {
-      font-size: 11px;
-      color: var(--accent-cyan);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-    }
-
-    .system-status-pills {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      font-size: 12px;
+      font-size: 10px;
       font-family: var(--font-mono);
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border-left: 1px solid var(--border-subtle);
+      padding-left: 10px;
+      margin-left: 2px;
     }
 
-    .status-pill {
+    /* Subsystem Status Strip */
+    .system-health-strip {
       display: flex;
       align-items: center;
       gap: 6px;
+      background: var(--bg-canvas);
       padding: 4px 10px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
     }
 
-    .status-dot {
+    .subsystem-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 6px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .subsystem-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--state-online);
+    }
+
+    .subsystem-dot.degraded { background: var(--state-warning); }
+    .subsystem-dot.offline { background: var(--state-danger); }
+
+    /* Operational Summary Metrics */
+    .command-metrics {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .metric-pair {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .metric-val {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Tactile Industrial E-Stop */
+    .estop-control-cluster {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-industrial-estop {
+      background: #b62324;
+      border: 2px solid #f85149;
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(0, 0, 0, 0.4);
+      transition: background 0.15s ease, transform 0.05s ease;
+    }
+
+    .btn-industrial-estop:hover {
+      background: #da3633;
+    }
+
+    .btn-industrial-estop:active {
+      background: #8e1b1c;
+      transform: translateY(1px);
+    }
+
+    .btn-industrial-estop.active {
+      background: #388bfd;
+      border-color: #58a6ff;
+    }
+
+    .estop-indicator-lamp {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--accent-green);
-      box-shadow: 0 0 8px var(--accent-green);
+      background: #ffffff;
     }
 
-    .btn-estop-global {
-      background: linear-gradient(180deg, #ff4466, #cc0033);
-      border: 1px solid #ff7799;
-      color: #fff;
-      font-weight: 800;
-      font-size: 12px;
-      letter-spacing: 1px;
-      padding: 6px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      box-shadow: 0 0 12px rgba(255, 51, 102, 0.4);
-      transition: all 0.2s ease;
-    }
-
-    .btn-estop-global:hover {
-      background: #ff1144;
-      transform: scale(1.05);
-      box-shadow: 0 0 20px rgba(255, 51, 102, 0.8);
-    }
-
-    /* Main Content Layout */
-    .main-container {
+    /* ------------------------------------------------------------- */
+    /* 2. MAIN 3-ZONE LAYOUT                                         */
+    /* ------------------------------------------------------------- */
+    .operations-workspace {
       display: flex;
       flex: 1;
-      height: calc(100vh - 56px);
+      height: calc(100vh - 48px);
       position: relative;
     }
 
-    /* Left Side Canvas Area */
-    .viewport-container {
+    /* Center Spatial Map Zone (Occupies 75%) */
+    .spatial-viewport-pane {
       flex: 1;
       position: relative;
-      background: radial-gradient(circle at center, #0e1526 0%, #070a12 100%);
+      background: var(--bg-canvas);
+      overflow: hidden;
+      cursor: crosshair;
     }
 
-    canvas#digitalTwinCanvas {
+    canvas#warehouseSpatialCanvas {
       width: 100%;
       height: 100%;
       display: block;
     }
 
-    .viewport-overlay {
+    /* Floating Viewport Overlays */
+    .viewport-toolbar {
       position: absolute;
-      top: 16px;
-      left: 16px;
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      border-radius: 8px;
-      padding: 12px 16px;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      pointer-events: none;
-      backdrop-filter: blur(8px);
-    }
-
-    /* Right Sidebar Control Panel */
-    .control-sidebar {
-      width: 440px;
-      background: var(--panel-bg);
-      border-left: 1px solid var(--panel-border);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      backdrop-filter: blur(12px);
-    }
-
-    .sidebar-section {
-      padding: 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .section-title {
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--accent-cyan);
-      margin-bottom: 12px;
+      top: 12px;
+      left: 12px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 6px;
+      background: rgba(13, 17, 23, 0.92);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      z-index: 50;
+      backdrop-filter: blur(4px);
     }
 
-    /* Robot Card */
-    .robot-cards-grid {
+    .v-tool-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .v-tool-btn:hover {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      border-color: var(--border-subtle);
+    }
+
+    .v-tool-btn.active {
+      background: var(--state-accent-subtle);
+      border-color: var(--state-accent);
+      color: var(--state-focus);
+    }
+
+    .v-tool-separator {
+      width: 1px;
+      height: 14px;
+      background: var(--border-subtle);
+    }
+
+    .viewport-status-hud {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(13, 17, 23, 0.9);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-secondary);
+      z-index: 50;
+      pointer-events: none;
+      display: flex;
+      gap: 16px;
+    }
+
+    .hud-metric strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* Interactive Conflict & Obstacle Banner */
+    .spatial-alert-banner {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(218, 54, 51, 0.15);
+      border: 1px solid var(--state-danger);
+      color: #f85149;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 60;
+    }
+
+    /* ------------------------------------------------------------- */
+    /* 3. RIGHT-SIDE OPERATIONS PANEL                                */
+    /* ------------------------------------------------------------- */
+    aside.operations-sidebar {
+      width: 380px;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border-subtle);
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      flex-shrink: 0;
+      z-index: 80;
     }
 
-    .robot-card {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-      padding: 12px;
-      transition: all 0.2s ease;
+    /* Tab Header */
+    .sidebar-tab-strip {
+      display: flex;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-panel);
+    }
+
+    .sidebar-tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px 4px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
       cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease;
     }
 
-    .robot-card:hover, .robot-card.active {
-      border-color: var(--accent-cyan);
-      background: rgba(0, 243, 255, 0.05);
+    .sidebar-tab:hover {
+      color: var(--text-primary);
     }
 
-    .robot-card-header {
+    .sidebar-tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--state-accent);
+      background: var(--bg-surface);
+      font-weight: 600;
+    }
+
+    .sidebar-content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Section Headings */
+    .pane-section-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
-    .robot-id {
-      font-weight: 700;
+    .pane-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-secondary);
+    }
+
+    .pane-section-tag {
       font-family: var(--font-mono);
-      font-size: 13px;
+      font-size: 9px;
+      padding: 1px 5px;
+      background: var(--bg-surface-elevated);
+      color: var(--text-muted);
+      border-radius: 2px;
     }
 
-    .payload-badge {
+    /* Dense Data Grid Layout */
+    .data-key-value-grid {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      row-gap: 6px;
+      column-gap: 8px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+    }
+
+    .dk-label {
+      color: var(--text-muted);
+      text-transform: uppercase;
       font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: 700;
+      display: flex;
+      align-items: center;
+    }
+
+    .dk-value {
+      color: var(--text-primary);
+      font-weight: 500;
+      word-break: break-all;
+    }
+
+    /* Fleet Table */
+    .fleet-summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .fleet-summary-table th {
+      text-align: left;
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      padding: 6px 4px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .fleet-summary-table td {
+      padding: 7px 4px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    .fleet-row {
+      cursor: pointer;
+    }
+
+    .fleet-row:hover {
+      background: var(--bg-surface);
+    }
+
+    .fleet-row.selected {
+      background: var(--state-accent-subtle);
+      color: var(--text-primary);
+    }
+
+    .fleet-row.selected td {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* Status Badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 2px;
       text-transform: uppercase;
     }
 
-    .payload-lift { background: rgba(0, 243, 255, 0.2); color: var(--accent-cyan); }
-    .payload-conv { background: rgba(255, 184, 0, 0.2); color: var(--accent-amber); }
-    .payload-grip { background: rgba(0, 255, 136, 0.2); color: var(--accent-green); }
-
-    .robot-metrics {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      font-size: 11px;
-      font-family: var(--font-mono);
-      color: var(--text-muted);
+    .status-badge.nominal {
+      background: var(--state-online-subtle);
+      color: var(--state-online);
+      border: 1px solid rgba(46, 160, 67, 0.4);
     }
 
-    .battery-bar-container {
-      width: 100%;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 2px;
-      overflow: hidden;
-      margin-top: 4px;
+    .status-badge.active {
+      background: var(--state-accent-subtle);
+      color: var(--state-focus);
+      border: 1px solid rgba(56, 139, 253, 0.4);
     }
 
-    .battery-bar-fill {
-      height: 100%;
-      background: var(--accent-green);
-      transition: width 0.3s ease;
+    .status-badge.warning {
+      background: var(--state-warning-subtle);
+      color: var(--state-warning);
+      border: 1px solid rgba(210, 153, 34, 0.4);
     }
 
-    /* Form Elements */
-    .form-group {
+    .status-badge.estop {
+      background: var(--state-danger-subtle);
+      color: var(--state-danger);
+      border: 1px solid rgba(218, 54, 51, 0.4);
+    }
+
+    /* Dispatch Workflow Controls */
+    .dispatch-step-cluster {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-bottom: 12px;
+      gap: 12px;
     }
 
-    label {
-      font-size: 11px;
+    .dispatch-step {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .dispatch-step-label {
       font-family: var(--font-mono);
+      font-size: 10px;
       color: var(--text-muted);
       text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    select, input {
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 6px;
-      padding: 8px 10px;
-      color: #fff;
+    .dispatch-step-num {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+    }
+
+    .select-industrial {
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
       font-family: var(--font-mono);
-      font-size: 12px;
+      font-size: 11px;
+      padding: 6px 8px;
+      border-radius: 3px;
       outline: none;
-    }
-
-    select:focus, input:focus {
-      border-color: var(--accent-cyan);
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      border: none;
-      color: #000;
-      font-weight: 700;
-      font-size: 12px;
-      padding: 10px;
-      border-radius: 6px;
-      cursor: pointer;
       width: 100%;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      transition: all 0.2s ease;
     }
 
-    .btn-primary:hover {
-      filter: brightness(1.2);
+    .select-industrial:focus {
+      border-color: var(--state-accent);
     }
 
-    /* Telemetry Log Terminal */
-    .terminal-window {
-      background: #04060a;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
+    /* Route Preview Box */
+    .route-preview-manifest {
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
       padding: 10px;
       font-family: var(--font-mono);
       font-size: 10px;
-      height: 140px;
-      overflow-y: auto;
-      color: #00ff88;
-      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
     }
 
-    .terminal-line-time {
-      color: #8899b7;
-      margin-right: 6px;
+    .rpm-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-secondary);
+    }
+
+    .rpm-row strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .btn-dispatch-action {
+      background: #1f6feb;
+      border: 1px solid #388bfd;
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      padding: 8px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      text-transform: uppercase;
+      margin-top: 4px;
+      transition: background 0.15s ease;
+    }
+
+    .btn-dispatch-action:hover {
+      background: #388bfd;
+    }
+
+    .btn-secondary-action {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 5px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .btn-secondary-action:hover {
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    /* Timeline Structured Event Log */
+    .timeline-stream {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 8px;
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 3px;
+    }
+
+    .timeline-timestamp {
+      color: var(--text-muted);
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+
+    .timeline-tag {
+      font-size: 9px;
+      font-weight: 600;
+      padding: 1px 4px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .timeline-tag.info { background: var(--state-accent-subtle); color: var(--state-focus); }
+    .timeline-tag.cbs { background: rgba(163, 113, 247, 0.15); color: #bc8cff; }
+    .timeline-tag.warn { background: var(--state-warning-subtle); color: var(--state-warning); }
+    .timeline-tag.alert { background: var(--state-danger-subtle); color: var(--state-danger); }
+
+    .timeline-text {
+      color: var(--text-secondary);
+      font-size: 10px;
+      line-height: 1.4;
+      word-break: break-word;
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation -->
-  <header>
-    <div class="brand">
-      <div class="brand-logo">Q</div>
-      <div>
-        <div class="brand-title">synQ</div>
-        <div class="brand-subtitle">Smart AMR Platform & FMS</div>
+  <!-- ----------------------------------------------------------- -->
+  <!-- 1. TOP COMMAND BAR                                          -->
+  <!-- ----------------------------------------------------------- -->
+  <header class="command-bar">
+    <div class="brand-cluster">
+      <div class="brand-mark">
+        <span class="brand-logo-badge">synQ</span>
+        <span class="brand-title">AUTONOMOUS ROBOTICS CONTROL</span>
+        <span class="brand-subtitle">Digital Twin Operations Cockpit</span>
       </div>
     </div>
 
-    <div class="system-status-pills">
-      <div class="status-pill">
-        <div class="status-dot"></div>
-        <span>CBS ROUTER: ACTIVE</span>
+    <!-- Subsystem Health Strip -->
+    <div class="system-health-strip">
+      <div class="subsystem-item" title="ROS 2 Jazzy Core Subsystem">
+        <div class="subsystem-dot" id="dot-ros2"></div>
+        <span>ROS 2</span>
       </div>
-      <div class="status-pill">
-        <div class="status-dot"></div>
-        <span>VDA 5050: v2.0.0</span>
+      <div class="subsystem-item" title="Nav2 MPPI Holonomic Navigation">
+        <div class="subsystem-dot" id="dot-nav2"></div>
+        <span>NAV2</span>
       </div>
-      <div class="status-pill">
-        <div class="status-dot"></div>
-        <span>FLEET: 3 ONLINE</span>
+      <div class="subsystem-item" title="AMCL & EKF Slip Rejection">
+        <div class="subsystem-dot" id="dot-loc"></div>
+        <span>LOCALIZATION</span>
       </div>
-      <button class="btn-estop-global" onclick="triggerGlobalEstop()">EMERGENCY STOP (ALL)</button>
+      <div class="subsystem-item" title="LiDAR & 6-DOF IMU Sensor Layer">
+        <div class="subsystem-dot" id="dot-sensors"></div>
+        <span>SENSORS</span>
+      </div>
+      <div class="subsystem-item" title="Fleet Management System (FMS)">
+        <div class="subsystem-dot" id="dot-fms"></div>
+        <span>FMS</span>
+      </div>
+      <div class="subsystem-item" title="Conflict-Based Search MAPF Engine">
+        <div class="subsystem-dot" id="dot-cbs"></div>
+        <span>ROUTER</span>
+      </div>
+      <div class="subsystem-item" title="VDA 5050 v2.0 MQTT Protocol Gateway">
+        <div class="subsystem-dot" id="dot-vda"></div>
+        <span>COMM</span>
+      </div>
+    </div>
+
+    <!-- Metrics & Safety Controls -->
+    <div class="command-metrics">
+      <div class="metric-pair">
+        <span>FLEET:</span>
+        <span class="metric-val" id="metric-fleet-count">3 ACTIVE</span>
+      </div>
+      <div class="metric-pair">
+        <span>MISSIONS:</span>
+        <span class="metric-val" id="metric-active-missions">0 EN ROUTE</span>
+      </div>
+    </div>
+
+    <div class="estop-control-cluster">
+      <button class="btn-industrial-estop" id="btnGlobalEstop" onclick="toggleGlobalEstop()">
+        <div class="estop-indicator-lamp"></div>
+        <span id="estopBtnLabel">EMERGENCY STOP (ALL)</span>
+      </button>
     </div>
   </header>
 
-  <!-- Main Viewport and Sidebar -->
-  <div class="main-container">
-    <div class="viewport-container">
-      <canvas id="digitalTwinCanvas"></canvas>
-      <div class="viewport-overlay">
-        <div>WAREHOUSE: SMART LOGISTICS HUB [15m x 15m]</div>
-        <div style="color: var(--accent-cyan); margin-top: 4px;">COORDINATION: SPATIO-TEMPORAL CBS</div>
-      </div>
-    </div>
+  <!-- ----------------------------------------------------------- -->
+  <!-- 2. MAIN 3-ZONE LAYOUT                                       -->
+  <!-- ----------------------------------------------------------- -->
+  <main class="operations-workspace">
 
-    <div class="control-sidebar">
-      <!-- Active Fleet -->
-      <div class="sidebar-section">
-        <div class="section-title">
-          <span>Active Fleet Telemetry</span>
-          <span style="font-size: 10px; color: var(--accent-green);">100% HEALTH</span>
-        </div>
-        <div class="robot-cards-grid" id="robotCards">
-          <!-- Dynamically populated -->
-        </div>
-      </div>
+    <!-- Center Spatial Warehouse Floorplan Map -->
+    <section class="spatial-viewport-pane" id="viewportPane">
+      <canvas id="warehouseSpatialCanvas"></canvas>
 
-      <!-- Order Dispatch -->
-      <div class="sidebar-section">
-        <div class="section-title">Dispatch Warehouse Mission</div>
-        <div class="form-group">
-          <label>Pick Location</label>
-          <select id="pickNodeSelect">
-            <option value="N_1_0">Aisle 1-A (N_1_0)</option>
-            <option value="N_1_1" selected>Aisle 1-B (N_1_1)</option>
-            <option value="N_1_2">Aisle 1-C (N_1_2)</option>
-            <option value="N_1_3">Aisle 1-D (N_1_3)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Drop Location</label>
-          <select id="dropNodeSelect">
-            <option value="N_2_0">Drop Dock 1 (N_2_0)</option>
-            <option value="N_2_1">Drop Dock 2 (N_2_1)</option>
-            <option value="N_2_2" selected>Drop Dock 3 (N_2_2)</option>
-            <option value="N_2_3">Drop Dock 4 (N_2_3)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Required Payload</label>
-          <select id="payloadSelect">
-            <option value="SCISSOR_LIFT">Scissor Lift (Pallet Transport)</option>
-            <option value="ROLLER_CONVEYOR">Roller Conveyor (ASRS Transfer)</option>
-            <option value="TOTE_GRIPPER">Tote Gripper (Bin Picking)</option>
-          </select>
-        </div>
-
-        <button class="btn-primary" onclick="dispatchOrder()">Dispatch via CBS Router</button>
+      <!-- Viewport Controls & Simulation Tools -->
+      <div class="viewport-toolbar">
+        <button class="v-tool-btn active" id="btnLayerLanes" onclick="toggleLayer('lanes')">LANES</button>
+        <button class="v-tool-btn active" id="btnLayerRacks" onclick="toggleLayer('racks')">STORAGE RACKS</button>
+        <button class="v-tool-btn active" id="btnLayerNodes" onclick="toggleLayer('nodes')">NODES</button>
+        <button class="v-tool-btn active" id="btnLayerPaths" onclick="toggleLayer('paths')">CBS ROUTES</button>
+        <div class="v-tool-separator"></div>
+        <button class="v-tool-btn" id="btnSimObstacle" onclick="toggleObstaclePlacementMode()">
+          <span>+ INJECT OBSTACLE</span>
+        </button>
+        <button class="v-tool-btn" id="btnSimConflict" onclick="triggerConflictSimulationDemo()">
+          <span>DEMO CBS RESOLUTION</span>
+        </button>
+        <div class="v-tool-separator"></div>
+        <button class="v-tool-btn" onclick="resetViewportCamera()">RESET CAMERA</button>
       </div>
 
-      <!-- Live VDA 5050 MQTT Stream -->
-      <div class="sidebar-section" style="flex: 1; border-bottom: none;">
-        <div class="section-title">VDA 5050 State & Telemetry Log</div>
-        <div class="terminal-window" id="telemetryLog">
-          <div><span class="terminal-line-time">[00:00:00]</span>synQ FMS Connected to uagv/v2/synQ/synq-amr-01/state</div>
-          <div><span class="terminal-line-time">[00:00:01]</span>Topological roadmap synchronized (16 nodes, 48 directed edges)</div>
-          <div><span class="terminal-line-time">[00:00:02]</span>CBS Spatio-temporal reservation engine standing by.</div>
-        </div>
+      <!-- Spatial Alert Banner -->
+      <div class="spatial-alert-banner" id="spatialAlertBanner">
+        <span id="spatialAlertText">OBSTACLE DETECTED: REPLANNING CBS TRAJECTORY</span>
       </div>
-    </div>
-  </div>
+
+      <!-- Bottom Coordinate HUD -->
+      <div class="viewport-status-hud">
+        <div class="hud-metric">GRID: <strong>15.0m × 15.0m</strong></div>
+        <div class="hud-metric">COORDINATES: <strong id="hudCursorCoords">X: 0.00m, Y: 0.00m</strong></div>
+        <div class="hud-metric">ZOOM: <strong id="hudZoomVal">100%</strong></div>
+        <div class="hud-metric">ACTIVE PAYLOADS: <strong>LIFT / CONVEYOR / GRIPPER</strong></div>
+      </div>
+    </section>
+
+    <!-- Contextual Right-Side Operations Sidebar -->
+    <aside class="operations-sidebar">
+      <!-- Tab Strip -->
+      <div class="sidebar-tab-strip">
+        <button class="sidebar-tab active" id="tabBtnInspector" onclick="switchSidebarTab('inspector')">INSPECTOR</button>
+        <button class="sidebar-tab" id="tabBtnDispatch" onclick="switchSidebarTab('dispatch')">DISPATCH</button>
+        <button class="sidebar-tab" id="tabBtnFleet" onclick="switchSidebarTab('fleet')">FLEET</button>
+        <button class="sidebar-tab" id="tabBtnTimeline" onclick="switchSidebarTab('timeline')">TIMELINE</button>
+      </div>
+
+      <div class="sidebar-content-area" id="sidebarContent">
+        <!-- Rendered dynamically by JavaScript -->
+      </div>
+    </aside>
+  </main>
 
   <script>
-    // Warehouse Graph Representation
-    const nodes = [];
+    /* ============================================================= */
+    /* INDUSTRIAL FLEET STATE MODEL & GLOBAL DATA                    */
+    /* ============================================================= */
+
+    // Warehouse Floorplan Definition (Real metric dimensions in meters)
+    const WAREHOUSE_METRICS = {
+      widthMeters: 15.0,
+      heightMeters: 15.0,
+      racks: [
+        // Racks Row 1 (between y=1.5 and y=3.5)
+        { id: "RACK-A", x: 2.0, y: 1.8, w: 4.5, h: 1.4, label: "BAY A01-A08 (PALLETS)" },
+        { id: "RACK-B", x: 8.5, y: 1.8, w: 4.5, h: 1.4, label: "BAY B01-B08 (PARTS)" },
+        // Racks Row 2 (between y=6.5 and y=8.5)
+        { id: "RACK-C", x: 2.0, y: 6.8, w: 4.5, h: 1.4, label: "BAY C01-C08 (FAST PICK)" },
+        { id: "RACK-D", x: 8.5, y: 6.8, w: 4.5, h: 1.4, label: "BAY D01-D08 (OVERSTOCK)" },
+        // Racks Row 3 (between y=11.5 and y=13.5)
+        { id: "RACK-E", x: 2.0, y: 11.8, w: 4.5, h: 1.4, label: "BAY E01-E08 (ASRS FEED)" },
+        { id: "RACK-F", x: 8.5, y: 11.8, w: 4.5, h: 1.4, label: "BAY F01-F08 (STAGING)" }
+      ],
+      specialZones: [
+        { id: "P-1", type: "PICK", x: 0.0, y: 4.0, w: 1.8, h: 2.0, label: "PICK-1 (INFEED)" },
+        { id: "P-2", type: "PICK", x: 0.0, y: 9.0, w: 1.8, h: 2.0, label: "PICK-2 (CRATE)" },
+        { id: "D-1", type: "DROP", x: 13.2, y: 4.0, w: 1.8, h: 2.0, label: "DROP-1 (OUTBOUND)" },
+        { id: "D-2", type: "DROP", x: 13.2, y: 9.0, w: 1.8, h: 2.0, label: "DROP-2 (PACKING)" },
+        { id: "CHG-1", type: "CHARGE", x: 0.2, y: 0.2, w: 1.6, h: 1.6, label: "FAST DOCK C1" },
+        { id: "CHG-2", type: "CHARGE", x: 13.2, y: 13.2, w: 1.6, h: 1.6, label: "FAST DOCK C2" },
+        { id: "RESTRICTED", type: "RESTRICTED", x: 6.5, y: 0.2, w: 2.0, h: 1.0, label: "PEDESTRIAN AIRLOCK" }
+      ]
+    };
+
+    // Topological Roadmap Nodes (16 Standard Graph Nodes)
+    const GRAPH_NODES = {};
     for (let r = 0; r < 4; r++) {
       for (let c = 0; c < 4; c++) {
-        nodes.push({
-          id: `N_${r}_${c}`,
-          r: r,
-          c: c,
+        const nid = `N_${r}_${c}`;
+        let ntype = "TRANSIT";
+        if ((r === 0 && c === 0) || (r === 3 && c === 3)) ntype = "CHARGE";
+        else if (r === 1) ntype = "PICK";
+        else if (r === 2) ntype = "DROP";
+        GRAPH_NODES[nid] = {
+          id: nid,
+          row: r,
+          col: c,
           x: c * 5.0,
           y: r * 5.0,
-          type: (r===0 && c===0) || (r===3 && c===3) ? "CHARGE" : (r===1 ? "PICK" : (r===2 ? "DROP" : "TRANSIT"))
-        });
+          type: ntype
+        };
       }
     }
 
-    // Simulated AMR Fleet
-    const fleet = [
-      {
-        id: "synq-amr-01",
-        payload: "SCISSOR_LIFT",
-        battery: 94.5,
-        r: 0, c: 0,
-        x: 0.0, y: 0.0,
-        targetR: 0, targetC: 0,
-        theta: 0,
-        busy: false,
-        path: []
-      },
-      {
-        id: "synq-amr-02",
-        payload: "ROLLER_CONVEYOR",
-        battery: 88.0,
-        r: 3, c: 3,
-        x: 15.0, y: 15.0,
-        targetR: 3, targetC: 3,
-        theta: Math.PI,
-        busy: false,
-        path: []
-      },
-      {
-        id: "synq-amr-03",
-        payload: "TOTE_GRIPPER",
-        battery: 91.2,
-        r: 0, c: 3,
-        x: 15.0, y: 0.0,
-        targetR: 0, targetC: 3,
-        theta: Math.PI / 2,
-        busy: false,
-        path: []
+    // Graph Edges
+    const GRAPH_EDGES = [];
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        const cur = `N_${r}_${c}`;
+        if (c < 3) GRAPH_EDGES.push({ u: cur, v: `N_${r}_${c+1}` });
+        if (r < 3) GRAPH_EDGES.push({ u: cur, v: `N_${r+1}_${c}` });
       }
-    ];
+    }
 
+    // AMR Fleet Data (Single source of truth)
+    const FLEET_STATE = {
+      "synq-amr-01": {
+        id: "synq-amr-01",
+        model: "synQ-AMR v1.0",
+        serial: "SN-SYNQ-2026-001",
+        payloadType: "SCISSOR_LIFT",
+        payloadState: { positionPct: 0.0, locked: true, active: false },
+        status: "NOMINAL", // NOMINAL, NAVIGATING, CHARGING, ESTOP
+        batteryPct: 94.5,
+        batteryState: "NORMAL", // NORMAL, ATTENTION, RETURN TO CHARGE
+        voltage: 48.4,
+        x: 0.0,
+        y: 0.0,
+        theta: 0.0,
+        targetNode: "N_0_0",
+        vx: 0.0,
+        vy: 0.0,
+        wz: 0.0,
+        currentMissionId: null,
+        destination: null,
+        etaSec: 0,
+        localizationState: "CONVERGED (EKF/AMCL)",
+        navigationState: "IDLE (MPPI STANDBY)",
+        recentTrail: [],
+        plannedRoute: []
+      },
+      "synq-amr-02": {
+        id: "synq-amr-02",
+        model: "synQ-AMR v1.0",
+        serial: "SN-SYNQ-2026-002",
+        payloadType: "ROLLER_CONVEYOR",
+        payloadState: { positionPct: 0.0, locked: true, active: false },
+        status: "NOMINAL",
+        batteryPct: 88.0,
+        batteryState: "NORMAL",
+        voltage: 48.1,
+        x: 15.0,
+        y: 15.0,
+        theta: Math.PI,
+        targetNode: "N_3_3",
+        vx: 0.0,
+        vy: 0.0,
+        wz: 0.0,
+        currentMissionId: null,
+        destination: null,
+        etaSec: 0,
+        localizationState: "CONVERGED (EKF/AMCL)",
+        navigationState: "IDLE (MPPI STANDBY)",
+        recentTrail: [],
+        plannedRoute: []
+      },
+      "synq-amr-03": {
+        id: "synq-amr-03",
+        model: "synQ-AMR v1.0",
+        serial: "SN-SYNQ-2026-003",
+        payloadType: "TOTE_GRIPPER",
+        payloadState: { positionPct: 0.0, locked: false, active: false },
+        status: "NOMINAL",
+        batteryPct: 91.2,
+        batteryState: "NORMAL",
+        voltage: 48.3,
+        x: 15.0,
+        y: 0.0,
+        theta: Math.PI / 2,
+        targetNode: "N_0_3",
+        vx: 0.0,
+        vy: 0.0,
+        wz: 0.0,
+        currentMissionId: null,
+        destination: null,
+        etaSec: 0,
+        localizationState: "CONVERGED (EKF/AMCL)",
+        navigationState: "IDLE (MPPI STANDBY)",
+        recentTrail: [],
+        plannedRoute: []
+      }
+    };
+
+    // UI View State
     let selectedRobotId = "synq-amr-01";
+    let activeSidebarTab = "inspector";
+    let isGlobalEstopActive = false;
+    let obstacleModeActive = false;
+    let dynamicObstacles = []; // List of {x, y, radius: 0.8}
 
-    function logMsg(msg) {
-      const log = document.getElementById("telemetryLog");
+    // Viewport Layers
+    const VIEWPORT_LAYERS = {
+      lanes: true,
+      racks: true,
+      nodes: true,
+      paths: true
+    };
+
+    // Camera Pan & Zoom
+    let camera = {
+      panX: 0,
+      panY: 0,
+      zoom: 1.0,
+      isDragging: false,
+      lastMouseX: 0,
+      lastMouseY: 0
+    };
+
+    // Structured Event Timeline
+    const EVENT_TIMELINE = [];
+    function recordEvent(type, text) {
       const d = new Date();
       const timeStr = d.toTimeString().split(" ")[0];
-      const div = document.createElement("div");
-      div.innerHTML = `<span class="terminal-line-time">[${timeStr}]</span>${msg}`;
-      log.appendChild(div);
-      log.scrollTop = log.scrollHeight;
-    }
-
-    function renderFleetCards() {
-      const container = document.getElementById("robotCards");
-      container.innerHTML = "";
-      fleet.forEach(bot => {
-        let badgeClass = "payload-lift";
-        if (bot.payload === "ROLLER_CONVEYOR") badgeClass = "payload-conv";
-        if (bot.payload === "TOTE_GRIPPER") badgeClass = "payload-grip";
-
-        const card = document.createElement("div");
-        card.className = `robot-card ${bot.id === selectedRobotId ? "active" : ""}`;
-        card.onclick = () => { selectedRobotId = bot.id; renderFleetCards(); };
-        card.innerHTML = `
-          <div class="robot-card-header">
-            <span class="robot-id">${bot.id}</span>
-            <span class="payload-badge ${badgeClass}">${bot.payload.replace("_", " ")}</span>
-          </div>
-          <div class="robot-metrics">
-            <div>STATUS: <span style="color: ${bot.busy ? 'var(--accent-amber)' : 'var(--accent-green)'}">${bot.busy ? 'EN ROUTE' : 'IDLE'}</span></div>
-            <div>SOC: ${bot.battery.toFixed(1)}%</div>
-            <div>POS: (${bot.x.toFixed(1)}m, ${bot.y.toFixed(1)}m)</div>
-            <div>NODE: N_${bot.r}_${bot.c}</div>
-          </div>
-          <div class="battery-bar-container">
-            <div class="battery-bar-fill" style="width: ${bot.battery}%"></div>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function dispatchOrder() {
-      const pick = document.getElementById("pickNodeSelect").value;
-      const drop = document.getElementById("dropNodeSelect").value;
-      const payload = document.getElementById("payloadSelect").value;
-
-      // Find best idle matching robot
-      const candidate = fleet.find(b => !b.busy && b.payload === payload);
-      if (!candidate) {
-        logMsg(`<span style="color: var(--accent-red)">DISPATCH ERROR: No idle AMR matching ${payload}</span>`);
-        return;
+      EVENT_TIMELINE.unshift({ time: timeStr, type: type, text: text });
+      if (EVENT_TIMELINE.length > 50) EVENT_TIMELINE.pop();
+      if (activeSidebarTab === "timeline") {
+        renderSidebarContent();
       }
-
-      candidate.busy = true;
-      logMsg(`Order Dispatched: [${candidate.id}] assigned -> Pick: ${pick} | Drop: ${drop}`);
-
-      // Simple animated path progression
-      const pickNode = nodes.find(n => n.id === pick);
-      const dropNode = nodes.find(n => n.id === drop);
-
-      candidate.path = [
-        { x: candidate.x, y: candidate.y },
-        { x: pickNode.x, y: pickNode.y },
-        { x: dropNode.x, y: dropNode.y }
-      ];
-
-      renderFleetCards();
     }
 
-    function triggerGlobalEstop() {
-      fleet.forEach(b => {
-        b.busy = false;
-        b.path = [];
-      });
-      logMsg(`<span style="color: var(--accent-red)">EMERGENCY STOP ENGAGED: ALL 3 AMRs HALTED</span>`);
-      renderFleetCards();
-    }
+    /* ============================================================= */
+    /* 2. SPATIAL MAP RENDERER                                       */
+    /* ============================================================= */
 
-    // Canvas 2D Digital Twin Renderer
-    const canvas = document.getElementById("digitalTwinCanvas");
+    const canvas = document.getElementById("warehouseSpatialCanvas");
     const ctx = canvas.getContext("2d");
 
     function resizeCanvas() {
-      canvas.width = canvas.parentElement.clientWidth;
-      canvas.height = canvas.parentElement.clientHeight;
+      const pane = document.getElementById("viewportPane");
+      canvas.width = pane.clientWidth;
+      canvas.height = pane.clientHeight;
     }
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
-    function draw() {
+    function resetViewportCamera() {
+      camera.zoom = 1.0;
+      camera.panX = 0;
+      camera.panY = 0;
+      document.getElementById("hudZoomVal").textContent = "100%";
+    }
+
+    // Coordinate Conversion Functions (Meters <-> Screen Pixels)
+    function getTransform() {
+      const padding = 70;
+      const availableW = canvas.width - padding * 2;
+      const availableH = canvas.height - padding * 2;
+      const baseScale = Math.min(availableW / WAREHOUSE_METRICS.widthMeters, availableH / WAREHOUSE_METRICS.heightMeters);
+      const effectiveScale = baseScale * camera.zoom;
+
+      const originX = (canvas.width - WAREHOUSE_METRICS.widthMeters * effectiveScale) / 2 + camera.panX;
+      const originY = (canvas.height - WAREHOUSE_METRICS.heightMeters * effectiveScale) / 2 + camera.panY;
+
+      return { originX, originY, scale: effectiveScale };
+    }
+
+    function worldToScreen(wx, wy) {
+      const { originX, originY, scale } = getTransform();
+      return {
+        sx: originX + wx * scale,
+        sy: originY + wy * scale
+      };
+    }
+
+    function screenToWorld(sx, sy) {
+      const { originX, originY, scale } = getTransform();
+      return {
+        wx: (sx - originX) / scale,
+        wy: (sy - originY) / scale
+      };
+    }
+
+    // Render Loop
+    function renderSpatialMap() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const { originX, originY, scale } = getTransform();
 
-      const margin = 80;
-      const scaleX = (canvas.width - margin * 2) / 15.0;
-      const scaleY = (canvas.height - margin * 2) / 15.0;
-      const scale = Math.min(scaleX, scaleY);
+      // 1. Draw Subtle Warehouse Concrete Slab Background
+      ctx.fillStyle = "#0c1017";
+      ctx.fillRect(originX, originY, WAREHOUSE_METRICS.widthMeters * scale, WAREHOUSE_METRICS.heightMeters * scale);
+      ctx.strokeStyle = "#222a36";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(originX, originY, WAREHOUSE_METRICS.widthMeters * scale, WAREHOUSE_METRICS.heightMeters * scale);
 
-      const offsetX = (canvas.width - 15.0 * scale) / 2;
-      const offsetY = (canvas.height - 15.0 * scale) / 2;
-
-      function toScreen(x, y) {
-        return {
-          sx: offsetX + x * scale,
-          sy: offsetY + y * scale
-        };
-      }
-
-      // Draw Warehouse Grid Edges
-      ctx.strokeStyle = "rgba(0, 243, 255, 0.15)";
-      ctx.lineWidth = 2;
-      for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 4; c++) {
-          const p1 = toScreen(c * 5.0, r * 5.0);
-          if (c < 3) {
-            const p2 = toScreen((c + 1) * 5.0, r * 5.0);
-            ctx.beginPath();
-            ctx.moveTo(p1.sx, p1.sy);
-            ctx.lineTo(p2.sx, p2.sy);
-            ctx.stroke();
-          }
-          if (r < 3) {
-            const p3 = toScreen(c * 5.0, (r + 1) * 5.0);
-            ctx.beginPath();
-            ctx.moveTo(p1.sx, p1.sy);
-            ctx.lineTo(p3.sx, p3.sy);
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Draw Nodes
-      nodes.forEach(n => {
-        const pt = toScreen(n.x, n.y);
+      // 2. Metric Coordinate Grid Lines (Every 1m subtle, every 5m bolder)
+      ctx.lineWidth = 1;
+      for (let m = 0; m <= WAREHOUSE_METRICS.widthMeters; m += 1.0) {
+        const p1 = worldToScreen(m, 0);
+        const p2 = worldToScreen(m, WAREHOUSE_METRICS.heightMeters);
+        ctx.strokeStyle = (m % 5 === 0) ? "#1f2937" : "#121822";
         ctx.beginPath();
-        ctx.arc(pt.sx, pt.sy, 6, 0, Math.PI * 2);
-        if (n.type === "CHARGE") {
-          ctx.fillStyle = "#ffb800";
-        } else if (n.type === "PICK") {
-          ctx.fillStyle = "#00f3ff";
-        } else if (n.type === "DROP") {
-          ctx.fillStyle = "#00ff88";
-        } else {
-          ctx.fillStyle = "#4a6080";
-        }
-        ctx.fill();
+        ctx.moveTo(p1.sx, p1.sy);
+        ctx.lineTo(p2.sx, p2.sy);
+        ctx.stroke();
 
-        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-        ctx.font = "10px monospace";
-        ctx.fillText(n.id, pt.sx + 10, pt.sy + 4);
+        // Coordinate Header Marks
+        if (m % 5 === 0) {
+          ctx.fillStyle = "#485568";
+          ctx.font = "9px 'JetBrains Mono', monospace";
+          ctx.fillText(`${m}m`, p1.sx - 6, originY - 8);
+        }
+      }
+
+      for (let m = 0; m <= WAREHOUSE_METRICS.heightMeters; m += 1.0) {
+        const p1 = worldToScreen(0, m);
+        const p2 = worldToScreen(WAREHOUSE_METRICS.widthMeters, m);
+        ctx.strokeStyle = (m % 5 === 0) ? "#1f2937" : "#121822";
+        ctx.beginPath();
+        ctx.moveTo(p1.sx, p1.sy);
+        ctx.lineTo(p2.sx, p2.sy);
+        ctx.stroke();
+
+        if (m % 5 === 0) {
+          ctx.fillStyle = "#485568";
+          ctx.font = "9px 'JetBrains Mono', monospace";
+          ctx.fillText(`${m}m`, originX - 26, p1.sy + 3);
+        }
+      }
+
+      // 3. Navigation Lanes (Underlying Roadway)
+      if (VIEWPORT_LAYERS.lanes) {
+        ctx.strokeStyle = "rgba(47, 129, 247, 0.15)";
+        ctx.lineWidth = 14 * (scale / 40); // Proportional lane width (~0.6m physical)
+        ctx.lineCap = "round";
+        GRAPH_EDGES.forEach(e => {
+          const n1 = GRAPH_NODES[e.u];
+          const n2 = GRAPH_NODES[e.v];
+          const p1 = worldToScreen(n1.x, n1.y);
+          const p2 = worldToScreen(n2.x, n2.y);
+          ctx.beginPath();
+          ctx.moveTo(p1.sx, p1.sy);
+          ctx.lineTo(p2.sx, p2.sy);
+          ctx.stroke();
+        });
+
+        // Centerline dashed tracks
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 6]);
+        GRAPH_EDGES.forEach(e => {
+          const n1 = GRAPH_NODES[e.u];
+          const n2 = GRAPH_NODES[e.v];
+          const p1 = worldToScreen(n1.x, n1.y);
+          const p2 = worldToScreen(n2.x, n2.y);
+          ctx.beginPath();
+          ctx.moveTo(p1.sx, p1.sy);
+          ctx.lineTo(p2.sx, p2.sy);
+          ctx.stroke();
+        });
+        ctx.setLineDash([]);
+      }
+
+      // 4. Special Facility Zones (Pick, Drop, Charging, Restricted)
+      WAREHOUSE_METRICS.specialZones.forEach(zone => {
+        const sp = worldToScreen(zone.x, zone.y);
+        const w = zone.w * scale;
+        const h = zone.h * scale;
+
+        if (zone.type === "PICK") {
+          ctx.fillStyle = "rgba(46, 160, 67, 0.12)";
+          ctx.strokeStyle = "rgba(46, 160, 67, 0.5)";
+        } else if (zone.type === "DROP") {
+          ctx.fillStyle = "rgba(56, 139, 253, 0.12)";
+          ctx.strokeStyle = "rgba(56, 139, 253, 0.5)";
+        } else if (zone.type === "CHARGE") {
+          ctx.fillStyle = "rgba(210, 153, 34, 0.15)";
+          ctx.strokeStyle = "rgba(210, 153, 34, 0.5)";
+        } else {
+          ctx.fillStyle = "rgba(218, 54, 51, 0.12)";
+          ctx.strokeStyle = "rgba(218, 54, 51, 0.4)";
+        }
+
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(sp.sx, sp.sy, w, h);
+        ctx.strokeRect(sp.sx, sp.sy, w, h);
+
+        // Zone Badge
+        ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+        ctx.font = "bold 9px 'JetBrains Mono', monospace";
+        ctx.fillText(zone.label, sp.sx + 6, sp.sy + 14);
       });
 
-      // Update & Draw AMRs
-      fleet.forEach(bot => {
-        // Move towards path waypoint if active
-        if (bot.path && bot.path.length > 0) {
-          const target = bot.path[0];
-          const dx = target.x - bot.x;
-          const dy = target.y - bot.y;
-          const dist = Math.hypot(dx, dy);
-          if (dist < 0.1) {
-            bot.path.shift();
-            if (bot.path.length === 0) {
-              bot.busy = false;
-              logMsg(`[${bot.id}] Completed order and arrived at destination.`);
-              renderFleetCards();
-            }
-          } else {
-            bot.x += (dx / dist) * 0.05;
-            bot.y += (dy / dist) * 0.05;
-            bot.theta = Math.atan2(dy, dx);
+      // 5. Storage Racks (High-bay warehouse racking with pallet slots)
+      if (VIEWPORT_LAYERS.racks) {
+        WAREHOUSE_METRICS.racks.forEach(rack => {
+          const sp = worldToScreen(rack.x, rack.y);
+          const w = rack.w * scale;
+          const h = rack.h * scale;
+
+          // Outer rack frame
+          ctx.fillStyle = "#151b23";
+          ctx.strokeStyle = "#30363d";
+          ctx.lineWidth = 1.5;
+          ctx.fillRect(sp.sx, sp.sy, w, h);
+          ctx.strokeRect(sp.sx, sp.sy, w, h);
+
+          // Pallet slot subdivisions
+          const slots = 8;
+          const slotW = w / slots;
+          ctx.strokeStyle = "#21262d";
+          ctx.lineWidth = 1;
+          for (let i = 1; i < slots; i++) {
+            ctx.beginPath();
+            ctx.moveTo(sp.sx + i * slotW, sp.sy);
+            ctx.lineTo(sp.sx + i * slotW, sp.sy + h);
+            ctx.stroke();
           }
-        }
 
-        const pt = toScreen(bot.x, bot.y);
+          // Rack Label
+          ctx.fillStyle = "#8b949e";
+          ctx.font = "9px 'JetBrains Mono', monospace";
+          ctx.fillText(rack.label, sp.sx + 4, sp.sy - 4);
+        });
+      }
 
-        // Draw AMR Chassis Body (0.7m x 0.5m scaled)
-        const w = 0.7 * scale;
-        const h = 0.5 * scale;
+      // 6. Navigation Graph Nodes
+      if (VIEWPORT_LAYERS.nodes) {
+        Object.values(GRAPH_NODES).forEach(n => {
+          const sp = worldToScreen(n.x, n.y);
+          ctx.beginPath();
+          ctx.arc(sp.sx, sp.sy, 4, 0, Math.PI * 2);
+
+          if (n.type === "CHARGE") ctx.fillStyle = "#d29922";
+          else if (n.type === "PICK") ctx.fillStyle = "#2ea043";
+          else if (n.type === "DROP") ctx.fillStyle = "#388bfd";
+          else ctx.fillStyle = "#484f58";
+
+          ctx.fill();
+
+          ctx.fillStyle = "#6e7681";
+          ctx.font = "8px 'JetBrains Mono', monospace";
+          ctx.fillText(n.id, sp.sx + 6, sp.sy + 3);
+        });
+      }
+
+      // 7. Dynamic Injected Obstacles
+      dynamicObstacles.forEach(obs => {
+        const sp = worldToScreen(obs.x, obs.y);
+        const r = (obs.radius || 0.8) * scale;
+        ctx.beginPath();
+        ctx.arc(sp.sx, sp.sy, r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(218, 54, 51, 0.4)";
+        ctx.strokeStyle = "#f85149";
+        ctx.lineWidth = 2;
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 9px 'JetBrains Mono', monospace";
+        ctx.fillText("! OBSTACLE", sp.sx - 24, sp.sy + 3);
+      });
+
+      // 8. Planned CBS Routes
+      if (VIEWPORT_LAYERS.paths) {
+        Object.values(FLEET_STATE).forEach(bot => {
+          if (!bot.plannedRoute || bot.plannedRoute.length === 0) return;
+
+          const isSelected = (bot.id === selectedRobotId);
+          ctx.strokeStyle = isSelected ? "#388bfd" : "rgba(88, 166, 255, 0.35)";
+          ctx.lineWidth = isSelected ? 2.5 : 1.5;
+
+          ctx.beginPath();
+          const startPt = worldToScreen(bot.x, bot.y);
+          ctx.moveTo(startPt.sx, startPt.sy);
+
+          bot.plannedRoute.forEach(nodeId => {
+            const n = GRAPH_NODES[nodeId];
+            if (n) {
+              const pt = worldToScreen(n.x, n.y);
+              ctx.lineTo(pt.sx, pt.sy);
+            }
+          });
+          ctx.stroke();
+        });
+      }
+
+      // 9. AMR Footprints (True 0.70m x 0.50m dimensions, realistic engineering renderer)
+      Object.values(FLEET_STATE).forEach(bot => {
+        const sp = worldToScreen(bot.x, bot.y);
+        const isSelected = (bot.id === selectedRobotId);
+
+        // Dimensions in pixels
+        const bodyLength = 0.70 * scale;
+        const bodyWidth = 0.50 * scale;
 
         ctx.save();
-        ctx.translate(pt.sx, pt.sy);
+        ctx.translate(sp.sx, sp.sy);
         ctx.rotate(bot.theta);
 
-        // Halo glow
-        ctx.shadowColor = bot.id === selectedRobotId ? "rgba(0, 243, 255, 0.8)" : "rgba(0, 102, 255, 0.4)";
-        ctx.shadowBlur = bot.id === selectedRobotId ? 16 : 8;
-
-        // Base Chassis
-        ctx.fillStyle = "#162238";
-        ctx.strokeStyle = bot.id === selectedRobotId ? "var(--accent-cyan)" : "#0066ff";
-        ctx.lineWidth = 2;
-        ctx.fillRect(-w/2, -h/2, w, h);
-        ctx.strokeRect(-w/2, -h/2, w, h);
-
-        // Mecanum Wheels (4 corners)
-        ctx.fillStyle = "#334460";
-        ctx.fillRect(-w/2, -h/2 - 3, w/3, 4);
-        ctx.fillRect(w/2 - w/3, -h/2 - 3, w/3, 4);
-        ctx.fillRect(-w/2, h/2 - 1, w/3, 4);
-        ctx.fillRect(w/2 - w/3, h/2 - 1, w/3, 4);
-
-        // LiDAR dome
-        ctx.fillStyle = "#ff3366";
+        // A. LiDAR Proximity Field Ring
         ctx.beginPath();
-        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.arc(0, 0, (bodyLength / 2) * 1.5, 0, Math.PI * 2);
+        if (bot.status === "ESTOP") {
+          ctx.strokeStyle = "rgba(218, 54, 51, 0.7)";
+          ctx.fillStyle = "rgba(218, 54, 51, 0.1)";
+        } else if (bot.status === "NAVIGATING") {
+          ctx.strokeStyle = "rgba(56, 139, 253, 0.35)";
+          ctx.fillStyle = "rgba(56, 139, 253, 0.05)";
+        } else {
+          ctx.strokeStyle = "rgba(46, 160, 67, 0.25)";
+          ctx.fillStyle = "rgba(46, 160, 67, 0.04)";
+        }
+        ctx.lineWidth = 1;
+        ctx.fill();
+        ctx.stroke();
+
+        // B. Selection Highlight Box
+        if (isSelected) {
+          ctx.strokeStyle = "#58a6ff";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(-bodyLength / 2 - 4, -bodyWidth / 2 - 4, bodyLength + 8, bodyWidth + 8);
+        }
+
+        // C. Chassis Base
+        ctx.fillStyle = "#161b22";
+        ctx.strokeStyle = isSelected ? "#388bfd" : "#30363d";
+        ctx.lineWidth = 2;
+        ctx.fillRect(-bodyLength / 2, -bodyWidth / 2, bodyLength, bodyWidth);
+        ctx.strokeRect(-bodyLength / 2, -bodyWidth / 2, bodyLength, bodyWidth);
+
+        // D. Mecanum Wheels (4 corners)
+        ctx.fillStyle = "#2d333b";
+        const wheelL = bodyLength * 0.26;
+        const wheelW = 4;
+        ctx.fillRect(-bodyLength / 2, -bodyWidth / 2 - wheelW + 1, wheelL, wheelW);
+        ctx.fillRect(bodyLength / 2 - wheelL, -bodyWidth / 2 - wheelW + 1, wheelL, wheelW);
+        ctx.fillRect(-bodyLength / 2, bodyWidth / 2 - 1, wheelL, wheelW);
+        ctx.fillRect(bodyLength / 2 - wheelL, bodyWidth / 2 - 1, wheelL, wheelW);
+
+        // E. Specific Payload Geometry
+        if (bot.payloadType === "SCISSOR_LIFT") {
+          // X-cross pantograph scissor graphic
+          ctx.strokeStyle = "#8b949e";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(-bodyLength * 0.25, -bodyWidth * 0.25);
+          ctx.lineTo(bodyLength * 0.25, bodyWidth * 0.25);
+          ctx.moveTo(-bodyLength * 0.25, bodyWidth * 0.25);
+          ctx.lineTo(bodyLength * 0.25, -bodyWidth * 0.25);
+          ctx.stroke();
+        } else if (bot.payloadType === "ROLLER_CONVEYOR") {
+          // Parallel motorized roller lines
+          ctx.strokeStyle = "#d29922";
+          ctx.lineWidth = 1.5;
+          for (let rx = -bodyLength * 0.25; rx <= bodyLength * 0.25; rx += bodyLength * 0.12) {
+            ctx.beginPath();
+            ctx.moveTo(rx, -bodyWidth * 0.3);
+            ctx.lineTo(rx, bodyWidth * 0.3);
+            ctx.stroke();
+          }
+        } else if (bot.payloadType === "TOTE_GRIPPER") {
+          // Front gripping clamp fingers
+          ctx.strokeStyle = "#2ea043";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(bodyLength * 0.2, -bodyWidth * 0.35);
+          ctx.lineTo(bodyLength * 0.45, -bodyWidth * 0.35);
+          ctx.moveTo(bodyLength * 0.2, bodyWidth * 0.35);
+          ctx.lineTo(bodyLength * 0.45, bodyWidth * 0.35);
+          ctx.stroke();
+        }
+
+        // F. Center LiDAR Scanner Turret
+        ctx.fillStyle = bot.status === "ESTOP" ? "#f85149" : "#388bfd";
+        ctx.beginPath();
+        ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Forward heading tick
-        ctx.strokeStyle = "#fff";
+        // G. Forward Heading Vector
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(w/2 + 4, 0);
+        ctx.lineTo(bodyLength / 2 + 5, 0);
         ctx.stroke();
 
         ctx.restore();
 
         // Label above robot
-        ctx.fillStyle = "#fff";
-        ctx.font = "bold 11px monospace";
-        ctx.fillText(bot.id, pt.sx - 24, pt.sy - 22);
+        ctx.fillStyle = isSelected ? "#ffffff" : "#c9d1d9";
+        ctx.font = "bold 10px 'JetBrains Mono', monospace";
+        ctx.fillText(bot.id, sp.sx - 26, sp.sy - bodyWidth / 2 - 8);
+
+        // SoC percentage indicator
+        ctx.fillStyle = bot.batteryPct < 20 ? "#f85149" : (bot.batteryPct < 40 ? "#d29922" : "#2ea043");
+        ctx.font = "9px 'JetBrains Mono', monospace";
+        ctx.fillText(`${Math.round(bot.batteryPct)}%`, sp.sx + 24, sp.sy - bodyWidth / 2 - 8);
       });
 
-      requestAnimationFrame(draw);
+      requestAnimationFrame(renderSpatialMap);
     }
 
-    renderFleetCards();
-    requestAnimationFrame(draw);
+    // Start render loop
+    requestAnimationFrame(renderSpatialMap);
+
+    /* ============================================================= */
+    /* 3. MOUSE INTERACTION, PAN, ZOOM, AND CLICK SELECTION          */
+    /* ============================================================= */
+
+    canvas.addEventListener("mousedown", (e) => {
+      camera.isDragging = true;
+      camera.lastMouseX = e.clientX;
+      camera.lastMouseY = e.clientY;
+
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const worldPos = screenToWorld(mouseX, mouseY);
+
+      // If in Obstacle Placement Mode: Inject obstacle on clicked coordinates!
+      if (obstacleModeActive) {
+        injectDynamicObstacle(worldPos.wx, worldPos.wy);
+        return;
+      }
+
+      // Check if user clicked an AMR
+      let clickedRobot = null;
+      for (const bot of Object.values(FLEET_STATE)) {
+        const dist = Math.hypot(bot.x - worldPos.wx, bot.y - worldPos.wy);
+        if (dist <= 0.6) { // 0.6m click radius
+          clickedRobot = bot.id;
+          break;
+        }
+      }
+
+      if (clickedRobot) {
+        selectedRobotId = clickedRobot;
+        switchSidebarTab("inspector");
+        recordEvent("INFO", `Selected AMR: ${clickedRobot}`);
+      }
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const worldPos = screenToWorld(mouseX, mouseY);
+
+      document.getElementById("hudCursorCoords").textContent =
+        `X: ${Math.max(0, Math.min(15, worldPos.wx)).toFixed(2)}m, Y: ${Math.max(0, Math.min(15, worldPos.wy)).toFixed(2)}m`;
+
+      if (camera.isDragging && !obstacleModeActive) {
+        camera.panX += e.clientX - camera.lastMouseX;
+        camera.panY += e.clientY - camera.lastMouseY;
+        camera.lastMouseX = e.clientX;
+        camera.lastMouseY = e.clientY;
+      }
+    });
+
+    window.addEventListener("mouseup", () => {
+      camera.isDragging = false;
+    });
+
+    canvas.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      camera.zoom = Math.max(0.6, Math.min(3.0, camera.zoom * zoomFactor));
+      document.getElementById("hudZoomVal").textContent = `${Math.round(camera.zoom * 100)}%`;
+    });
+
+    function toggleLayer(layerKey) {
+      VIEWPORT_LAYERS[layerKey] = !VIEWPORT_LAYERS[layerKey];
+      const btnMap = {
+        lanes: "btnLayerLanes",
+        racks: "btnLayerRacks",
+        nodes: "btnLayerNodes",
+        paths: "btnLayerPaths"
+      };
+      const btn = document.getElementById(btnMap[layerKey]);
+      if (btn) {
+        btn.classList.toggle("active", VIEWPORT_LAYERS[layerKey]);
+      }
+    }
+
+    /* ============================================================= */
+    /* 4. CONFLICT-BASED SEARCH & DYNAMIC OBSTACLE SIMULATION        */
+    /* ============================================================= */
+
+    function toggleObstaclePlacementMode() {
+      obstacleModeActive = !obstacleModeActive;
+      const btn = document.getElementById("btnSimObstacle");
+      btn.classList.toggle("active", obstacleModeActive);
+      if (obstacleModeActive) {
+        showSpatialAlert("CLICK ON ANY TRANSIT LANE TO INTRODUCE OBSTACLE");
+      } else {
+        hideSpatialAlert();
+      }
+    }
+
+    function injectDynamicObstacle(wx, wy) {
+      dynamicObstacles.push({ x: wx, y: wy, radius: 0.75 });
+      obstacleModeActive = false;
+      document.getElementById("btnSimObstacle").classList.remove("active");
+
+      showSpatialAlert("OBSTACLE DETECTED → REPLANNING CBS TRAJECTORY");
+      recordEvent("WARN", `Dynamic Obstacle spawned at (${wx.toFixed(1)}m, ${wy.toFixed(1)}m)`);
+
+      // Check if any AMR path intersects this obstacle
+      Object.values(FLEET_STATE).forEach(bot => {
+        if (bot.status === "NAVIGATING" && bot.plannedRoute.length > 0) {
+          setTimeout(() => {
+            recordEvent("CBS", `${bot.id}: Path blocked by obstacle. Invoking Space-Time A* replanning...`);
+            // Dynamic detour
+            bot.plannedRoute = ["N_2_1", "N_2_2", "N_1_2"];
+            recordEvent("CBS", `${bot.id}: Detour trajectory calculated. Collision-free path resumed.`);
+            showSpatialAlert(`${bot.id}: REPLAN COMPLETE — DIVERTED AROUND OBSTACLE`);
+            setTimeout(hideSpatialAlert, 3500);
+          }, 800);
+        }
+      });
+    }
+
+    function triggerConflictSimulationDemo() {
+      recordEvent("CBS", "Initiating Multi-AMR Crossing Conflict Simulation...");
+      showSpatialAlert("CBS DEMO: DISPATCHING CROSSING AMRs TO TEST CONFLICT RESOLUTION");
+
+      // Set AMR-01 at N_0_0 aiming for N_0_2
+      FLEET_STATE["synq-amr-01"].x = 0.0;
+      FLEET_STATE["synq-amr-01"].y = 0.0;
+      FLEET_STATE["synq-amr-01"].status = "NAVIGATING";
+      FLEET_STATE["synq-amr-01"].plannedRoute = ["N_0_1", "N_0_2"];
+
+      // Set AMR-03 at N_0_3 aiming for N_0_1
+      FLEET_STATE["synq-amr-03"].x = 15.0;
+      FLEET_STATE["synq-amr-03"].y = 0.0;
+      FLEET_STATE["synq-amr-03"].status = "NAVIGATING";
+      FLEET_STATE["synq-amr-03"].plannedRoute = ["N_0_2", "N_0_1", "N_0_0"];
+
+      setTimeout(() => {
+        recordEvent("CBS", "Conflict Detected at Node N_0_1 at t=1. Branching Constraint Tree...");
+        showSpatialAlert("CBS DETECTED HEAD-ON CONFLICT: synq-amr-03 RESERVES DETOUR");
+
+        // CBS resolves by yielding AMR-03 down to N_1_2
+        setTimeout(() => {
+          FLEET_STATE["synq-amr-03"].plannedRoute = ["N_0_2", "N_1_2", "N_1_1", "N_0_1"];
+          recordEvent("CBS", "Constraint resolved! AMR-03 assigned bypass corridor via N_1_2.");
+          setTimeout(hideSpatialAlert, 3500);
+        }, 1000);
+      }, 1000);
+    }
+
+    function showSpatialAlert(text) {
+      const banner = document.getElementById("spatialAlertBanner");
+      document.getElementById("spatialAlertText").textContent = text;
+      banner.style.display = "flex";
+    }
+
+    function hideSpatialAlert() {
+      document.getElementById("spatialAlertBanner").style.display = "none";
+    }
+
+    /* ============================================================= */
+    /* 5. SIDEBAR TAB CONTROLLER & TECHNICAL INFORMATION PANELS      */
+    /* ============================================================= */
+
+    function switchSidebarTab(tabName) {
+      activeSidebarTab = tabName;
+      ["inspector", "dispatch", "fleet", "timeline"].forEach(t => {
+        const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (btn) btn.classList.toggle("active", t === tabName);
+      });
+      renderSidebarContent();
+    }
+
+    function renderSidebarContent() {
+      const container = document.getElementById("sidebarContent");
+      container.innerHTML = "";
+
+      if (activeSidebarTab === "inspector") {
+        renderInspectorTab(container);
+      } else if (activeSidebarTab === "dispatch") {
+        renderDispatchTab(container);
+      } else if (activeSidebarTab === "fleet") {
+        renderFleetTab(container);
+      } else if (activeSidebarTab === "timeline") {
+        renderTimelineTab(container);
+      }
+    }
+
+    // A. Inspector Tab (Contextual Robot Inspector)
+    function renderInspectorTab(container) {
+      const bot = FLEET_STATE[selectedRobotId] || FLEET_STATE["synq-amr-01"];
+
+      let statusBadgeClass = "nominal";
+      if (bot.status === "NAVIGATING") statusBadgeClass = "active";
+      if (bot.status === "ESTOP") statusBadgeClass = "estop";
+
+      // Contextual Battery State
+      let batteryDesc = "NORMAL";
+      if (bot.batteryPct < 20) batteryDesc = "RETURN TO CHARGE";
+      else if (bot.batteryPct < 40) batteryDesc = "ATTENTION";
+
+      container.innerHTML = `
+        <div>
+          <div class="pane-section-header">
+            <span class="pane-section-title">ROBOT INSPECTOR</span>
+            <span class="status-badge ${statusBadgeClass}">${bot.status}</span>
+          </div>
+
+          <div class="data-key-value-grid">
+            <div class="dk-label">UNIT IDENTIFIER</div>
+            <div class="dk-value">${bot.id} (${bot.model})</div>
+
+            <div class="dk-label">SERIAL NUMBER</div>
+            <div class="dk-value">${bot.serial}</div>
+
+            <div class="dk-label">PAYLOAD MODULE</div>
+            <div class="dk-value">${bot.payloadType.replace("_", " ")}</div>
+
+            <div class="dk-label">PAYLOAD STATE</div>
+            <div class="dk-value">${bot.payloadState.locked ? "LOCKED & SECURED" : "UNLOCKED"} (${bot.payloadState.positionPct.toFixed(1)}%)</div>
+
+            <div class="dk-label">ENERGY / SOC</div>
+            <div class="dk-value">${bot.batteryPct.toFixed(1)}% (${batteryDesc}) | ${bot.voltage.toFixed(1)}V</div>
+
+            <div class="dk-label">POSITION (X, Y)</div>
+            <div class="dk-value">X: ${bot.x.toFixed(3)}m, Y: ${bot.y.toFixed(3)}m</div>
+
+            <div class="dk-label">ORIENTATION</div>
+            <div class="dk-value">${(bot.theta * 180 / Math.PI).toFixed(1)}° (${bot.theta.toFixed(3)} rad)</div>
+
+            <div class="dk-label">VELOCITY (VX, VY)</div>
+            <div class="dk-value">Vx: ${bot.vx.toFixed(2)} m/s, Vy: ${bot.vy.toFixed(2)} m/s</div>
+
+            <div class="dk-label">ANGULAR (WZ)</div>
+            <div class="dk-value">Wz: ${bot.wz.toFixed(2)} rad/s</div>
+
+            <div class="dk-label">LOCALIZATION</div>
+            <div class="dk-value">${bot.localizationState}</div>
+
+            <div class="dk-label">NAV2 PLANNER</div>
+            <div class="dk-value">${bot.navigationState}</div>
+
+            <div class="dk-label">ACTIVE MISSION</div>
+            <div class="dk-value">${bot.currentMissionId || "NONE (AWAITING TASK)"}</div>
+
+            <div class="dk-label">DESTINATION / ETA</div>
+            <div class="dk-value">${bot.destination || "N/A"} (${bot.etaSec}s)</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="pane-section-header">
+            <span class="pane-section-title">DIRECT OPERATOR OVERRIDES</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <button class="btn-secondary-action" onclick="cyclePayloadForSelected('${bot.id}')">ACTUATE PAYLOAD</button>
+            <button class="btn-secondary-action" onclick="dockRobotForCharging('${bot.id}')">DOCK & CHARGE</button>
+            <button class="btn-secondary-action" onclick="holdSelectedRobot('${bot.id}')">${bot.status === 'NAVIGATING' ? 'HOLD POSITION' : 'RESUME PATH'}</button>
+            <button class="btn-secondary-action" style="color: var(--state-danger);" onclick="estopSingleRobot('${bot.id}')">HALT UNIT</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // B. Dispatch Tab (Professional Step-by-Step Dispatch Workflow)
+    function renderDispatchTab(container) {
+      container.innerHTML = `
+        <div class="pane-section-header">
+          <span class="pane-section-title">INDUSTRIAL MISSION DISPATCH</span>
+          <span class="pane-section-tag">CBS MAPF</span>
+        </div>
+
+        <div class="dispatch-step-cluster">
+          <!-- Step 1: Pickup -->
+          <div class="dispatch-step">
+            <div class="dispatch-step-label">
+              <span class="dispatch-step-num">1</span>
+              <span>PICKUP STATION</span>
+            </div>
+            <select class="select-industrial" id="dispatchPickSelect" onchange="updateRoutePreview()">
+              <option value="N_1_0">Station P1 (N_1_0: Infeed Aisle)</option>
+              <option value="N_1_1" selected>Station P2 (N_1_1: Crate Rack)</option>
+              <option value="N_1_2">Station P3 (N_1_2: ASRS Buffer)</option>
+              <option value="N_1_3">Station P4 (N_1_3: Tote Feeder)</option>
+            </select>
+          </div>
+
+          <!-- Step 2: Payload Requirement -->
+          <div class="dispatch-step">
+            <div class="dispatch-step-label">
+              <span class="dispatch-step-num">2</span>
+              <span>REQUIRED PAYLOAD MODULE</span>
+            </div>
+            <select class="select-industrial" id="dispatchPayloadSelect" onchange="updateRoutePreview()">
+              <option value="SCISSOR_LIFT">Scissor Lift (Pallet Transport)</option>
+              <option value="ROLLER_CONVEYOR">Roller Conveyor (Conveyor Transfer)</option>
+              <option value="TOTE_GRIPPER">Tote Gripper (Bin Picking)</option>
+            </select>
+          </div>
+
+          <!-- Step 3: Destination -->
+          <div class="dispatch-step">
+            <div class="dispatch-step-label">
+              <span class="dispatch-step-num">3</span>
+              <span>OUTBOUND DESTINATION</span>
+            </div>
+            <select class="select-industrial" id="dispatchDropSelect" onchange="updateRoutePreview()">
+              <option value="N_2_0">Drop Dock D1 (N_2_0)</option>
+              <option value="N_2_1">Drop Dock D2 (N_2_1)</option>
+              <option value="N_2_2" selected>Drop Dock D3 (N_2_2)</option>
+              <option value="N_2_3">Drop Dock D4 (N_2_3)</option>
+            </select>
+          </div>
+
+          <!-- Step 4: Route Preview & Conflict Verification -->
+          <div class="dispatch-step">
+            <div class="dispatch-step-label">
+              <span class="dispatch-step-num">4</span>
+              <span>CBS ROUTE & CONFLICT MANIFEST</span>
+            </div>
+            <div class="route-preview-manifest" id="routePreviewManifest">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Step 5: Dispatch Execution -->
+          <button class="btn-dispatch-action" onclick="executeMissionDispatch()">
+            DISPATCH VIA CBS ROUTER
+          </button>
+        </div>
+      `;
+      updateRoutePreview();
+    }
+
+    function updateRoutePreview() {
+      const pick = document.getElementById("dispatchPickSelect")?.value || "N_1_1";
+      const payload = document.getElementById("dispatchPayloadSelect")?.value || "SCISSOR_LIFT";
+      const drop = document.getElementById("dispatchDropSelect")?.value || "N_2_2";
+      const manifest = document.getElementById("routePreviewManifest");
+      if (!manifest) return;
+
+      // Find best matching candidate
+      let candidate = Object.values(FLEET_STATE).find(b => b.status !== "ESTOP" && b.payloadType === payload);
+      if (!candidate) candidate = FLEET_STATE["synq-amr-01"];
+
+      const distEst = 12.5; // meters
+      const etaEst = Math.round(distEst / 1.0); // 1 m/s nominal
+      const postBatt = (candidate.batteryPct - 1.2).toFixed(1);
+
+      manifest.innerHTML = `
+        <div class="rpm-row"><span>ASSIGNED AMR:</span><strong>${candidate.id}</strong></div>
+        <div class="rpm-row"><span>ESTIMATED DISTANCE:</span><strong>${distEst.toFixed(1)} m</strong></div>
+        <div class="rpm-row"><span>CALCULATED ETA:</span><strong>${etaEst} seconds</strong></div>
+        <div class="rpm-row"><span>PROJECTED SOC:</span><strong>${postBatt}%</strong></div>
+        <div class="rpm-row"><span>CBS TRAFFIC STATUS:</span><strong style="color: var(--state-online);">0 CONFLICTS DETECTED</strong></div>
+      `;
+    }
+
+    function executeMissionDispatch() {
+      const pick = document.getElementById("dispatchPickSelect").value;
+      const drop = document.getElementById("dispatchDropSelect").value;
+      const payload = document.getElementById("dispatchPayloadSelect").value;
+
+      const candidate = Object.values(FLEET_STATE).find(b => b.status !== "ESTOP" && b.payloadType === payload);
+      if (!candidate) {
+        alert("No operational AMR available matching the requested payload!");
+        return;
+      }
+
+      candidate.status = "NAVIGATING";
+      candidate.currentMissionId = `TASK-${Math.floor(1000 + Math.random() * 9000)}`;
+      candidate.destination = drop;
+      candidate.etaSec = 14;
+      candidate.plannedRoute = [pick, drop];
+
+      recordEvent("DISPATCH", `Order ${candidate.currentMissionId} -> Assigned ${candidate.id} | Pick: ${pick} | Drop: ${drop}`);
+      switchSidebarTab("inspector");
+      showSpatialAlert(`MISSION DISPATCHED: ${candidate.id} EN ROUTE VIA CBS ROUTE`);
+      setTimeout(hideSpatialAlert, 3000);
+    }
+
+    // C. Fleet Overview Tab (Dense Industrial Fleet Table)
+    function renderFleetTab(container) {
+      container.innerHTML = `
+        <div class="pane-section-header">
+          <span class="pane-section-title">ACTIVE AMR FLEET (3 REGISTERED)</span>
+          <span class="pane-section-tag">100% HEALTH</span>
+        </div>
+
+        <table class="fleet-summary-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>PAYLOAD</th>
+              <th>SOC</th>
+              <th>STATUS</th>
+              <th>NODE</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${Object.values(FLEET_STATE).map(bot => {
+              const isSelected = (bot.id === selectedRobotId);
+              let statusClass = bot.status === "NAVIGATING" ? "active" : (bot.status === "ESTOP" ? "estop" : "nominal");
+              return `
+                <tr class="fleet-row ${isSelected ? 'selected' : ''}" onclick="selectRobotFromTable('${bot.id}')">
+                  <td><strong>${bot.id}</strong></td>
+                  <td>${bot.payloadType.replace("_", " ")}</td>
+                  <td style="color: ${bot.batteryPct < 20 ? 'var(--state-danger)' : 'inherit'}">${bot.batteryPct.toFixed(0)}%</td>
+                  <td><span class="status-badge ${statusClass}">${bot.status}</span></td>
+                  <td>${bot.targetNode}</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function selectRobotFromTable(botId) {
+      selectedRobotId = botId;
+      switchSidebarTab("inspector");
+    }
+
+    // D. Timeline Tab (Structured Event Log)
+    function renderTimelineTab(container) {
+      container.innerHTML = `
+        <div class="pane-section-header">
+          <span class="pane-section-title">STRUCTURED MISSION AUDIT LOG</span>
+          <span class="pane-section-tag">VDA 5050 AUDIT</span>
+        </div>
+
+        <div class="timeline-stream">
+          ${EVENT_TIMELINE.map(ev => `
+            <div class="timeline-item">
+              <span class="timeline-timestamp">${ev.time}</span>
+              <span class="timeline-tag ${ev.type.toLowerCase()}">${ev.type}</span>
+              <span class="timeline-text">${ev.text}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    /* ============================================================= */
+    /* 6. OPERATIONAL CONTROLS & SAFETY OVERRIDES                    */
+    /* ============================================================= */
+
+    function toggleGlobalEstop() {
+      isGlobalEstopActive = !isGlobalEstopActive;
+      const btn = document.getElementById("btnGlobalEstop");
+      const label = document.getElementById("estopBtnLabel");
+
+      if (isGlobalEstopActive) {
+        btn.classList.add("active");
+        label.textContent = "RESET EMERGENCY STOP";
+        Object.values(FLEET_STATE).forEach(bot => {
+          bot.status = "ESTOP";
+          bot.vx = 0;
+          bot.vy = 0;
+          bot.wz = 0;
+          bot.plannedRoute = [];
+        });
+        recordEvent("ALERT", "GLOBAL E-STOP ENGAGED: ALL FLEET DRIVES DE-ENERGIZED");
+        showSpatialAlert("GLOBAL EMERGENCY STOP ACTIVE — ALL UNITS FROZEN");
+      } else {
+        btn.classList.remove("active");
+        label.textContent = "EMERGENCY STOP (ALL)";
+        Object.values(FLEET_STATE).forEach(bot => {
+          bot.status = "NOMINAL";
+        });
+        recordEvent("INFO", "Global E-Stop cleared by operator. Standby mode resumed.");
+        hideSpatialAlert();
+      }
+      renderSidebarContent();
+
+      // Broadcast to FastAPI backend if connected
+      fetch("/api/v1/robots/ALL/estop", { method: "POST" }).catch(() => {});
+    }
+
+    function estopSingleRobot(botId) {
+      const bot = FLEET_STATE[botId];
+      if (!bot) return;
+      bot.status = "ESTOP";
+      bot.vx = 0;
+      bot.vy = 0;
+      bot.wz = 0;
+      bot.plannedRoute = [];
+      recordEvent("ALERT", `${botId}: Individual E-Stop triggered by operator.`);
+      renderSidebarContent();
+    }
+
+    function holdSelectedRobot(botId) {
+      const bot = FLEET_STATE[botId];
+      if (!bot) return;
+      if (bot.status === "NAVIGATING") {
+        bot.status = "NOMINAL";
+        recordEvent("INFO", `${botId}: Motion paused by operator.`);
+      } else {
+        bot.status = "NAVIGATING";
+        recordEvent("INFO", `${botId}: Motion resumed.`);
+      }
+      renderSidebarContent();
+    }
+
+    function dockRobotForCharging(botId) {
+      const bot = FLEET_STATE[botId];
+      if (!bot) return;
+      bot.status = "NAVIGATING";
+      bot.destination = "CHG-1 (N_0_0)";
+      bot.plannedRoute = ["N_0_0"];
+      recordEvent("INFO", `${botId}: Commanded return to fast charging dock.`);
+      renderSidebarContent();
+    }
+
+    function cyclePayloadForSelected(botId) {
+      const bot = FLEET_STATE[botId];
+      if (!bot) return;
+      bot.payloadState.positionPct = (bot.payloadState.positionPct === 0) ? 80.0 : 0.0;
+      recordEvent("INFO", `${botId}: Payload actuated to ${bot.payloadState.positionPct.toFixed(0)}%`);
+      renderSidebarContent();
+    }
+
+    /* ============================================================= */
+    /* 7. KINEMATICS SIMULATION LOOP & BACKEND SYNCHRONIZATION       */
+    /* ============================================================= */
+
+    setInterval(() => {
+      // Simulate real AMR transit along route if active
+      let activeCount = 0;
+      Object.values(FLEET_STATE).forEach(bot => {
+        if (bot.status === "NAVIGATING" && bot.plannedRoute.length > 0) {
+          activeCount++;
+          const nextNodeId = bot.plannedRoute[0];
+          const node = GRAPH_NODES[nextNodeId];
+          if (node) {
+            const dx = node.x - bot.x;
+            const dy = node.y - bot.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist < 0.15) {
+              bot.x = node.x;
+              bot.y = node.y;
+              bot.targetNode = nextNodeId;
+              bot.plannedRoute.shift();
+              if (bot.plannedRoute.length === 0) {
+                bot.status = "NOMINAL";
+                bot.destination = null;
+                recordEvent("INFO", `${bot.id}: Reached waypoint ${nextNodeId}. Mission complete.`);
+              }
+            } else {
+              const speed = 0.08; // smooth step
+              bot.x += (dx / dist) * speed;
+              bot.y += (dy / dist) * speed;
+              bot.theta = Math.atan2(dy, dx);
+              bot.vx = (dx / dist) * 1.0;
+              bot.vy = (dy / dist) * 1.0;
+            }
+          }
+        }
+      });
+
+      document.getElementById("metric-active-missions").textContent = `${activeCount} EN ROUTE`;
+
+      // Synchronize with backend API if available
+      fetch("/api/v1/fleet")
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("dot-fms").className = "subsystem-dot";
+          document.getElementById("dot-ros2").className = "subsystem-dot";
+        })
+        .catch(() => {
+          // Pure simulation mode - all features intact
+        });
+    }, 50);
+
+    // Initial audit events
+    recordEvent("INFO", "synQ Autonomous Robotics Operations Control initialized.");
+    recordEvent("INFO", "Topological warehouse roadmap synchronized: 16 nodes, 24 edges.");
+    recordEvent("CBS", "Conflict-Based Search MAPF routing engine standing by.");
+    renderSidebarContent();
   </script>
 </body>
 </html>
