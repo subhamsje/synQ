@@ -196,12 +196,14 @@ class SensorDataStream:
                     dy = math.sin(angle)
 
                     closest_dist = 12.0  # Max LiDAR range
+                    hit_obj_h = 2.5
 
                     # Intersect perimeter walls
                     for (wx1, wy1, wx2, wy2) in walls:
                         d = self._ray_segment_intersect(cx, cy, dx, dy, wx1, wy1, wx2, wy2)
                         if d is not None and d < closest_dist:
                             closest_dist = d
+                            hit_obj_h = 3.5
 
                     # Intersect objects
                     for obj in objects:
@@ -214,12 +216,17 @@ class SensorDataStream:
                             d = self._ray_segment_intersect(cx, cy, dx, dy, ox1, oy1, ox2, oy2)
                             if d is not None and d < closest_dist:
                                 closest_dist = d
+                                hit_obj_h = obj.get("h", 2.5)
 
                     if closest_dist < 11.5:
                         hit_x = cx + closest_dist * dx
                         hit_y = cy + closest_dist * dy
-                        # Sample 3D vertical layers (LiDAR reflection + Depth camera elevation)
-                        for z in [0.0, 0.35, 1.0, 1.8, 2.5]:
+                        # Sample 3D vertical layers (LiDAR reflection + Depth camera elevation up to actual height)
+                        z_samples = [0.0]
+                        for z_val in [0.25, 0.5, 0.8, 1.2, 1.8, 2.5, 3.0]:
+                            if z_val <= hit_obj_h:
+                                z_samples.append(z_val)
+                        for z in z_samples:
                             kf_points.append((hit_x, hit_y, z, 0.85))
 
                 kf = ScanKeyframe(

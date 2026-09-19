@@ -35,6 +35,7 @@ from fms.observation.observation_loop import observation_loop
 from backend.recovery.recovery_engine import recovery_engine
 from fms.models.domain_models import TaskStatus, PayloadType
 from backend.automap.automap_service import automap_service
+from backend.automap.world_model import unified_world_model
 
 app = FastAPI(
     title="FLTX Autonomous Operations Platform API",
@@ -55,7 +56,7 @@ seed_operational_memory(db)
 
 # Global State
 graph = WarehouseGraph.create_standard_warehouse_grid()
-fms = FleetManager(graph)
+fms = FleetManager(graph, world_model=unified_world_model)
 
 # Initialize standard multi-AMR warehouse fleet
 fms.register_robot(RobotAgent(robot_id="synq-amr-01", current_node="N_0_0", battery_pct=95.0, payload_type="SCISSOR_LIFT"))
@@ -529,6 +530,23 @@ def automap_export(rep_type: str):
     if not data:
         raise HTTPException(status_code=404, detail=f"Representation '{rep_type}' not available")
     return data
+
+
+@app.get("/api/v1/world-model/summary")
+def get_world_model_summary():
+    return unified_world_model.get_summary()
+
+
+@app.get("/api/v1/world-model/resolve/{entity_id}")
+def resolve_entity_approach_node(entity_id: str):
+    node_id = unified_world_model.resolve_entity_approach(entity_id)
+    return {"entity_id": entity_id, "approach_node_id": node_id}
+
+
+@app.get("/api/v1/world-model/capabilities/{capability}")
+def get_entities_by_capability(capability: str):
+    entities = unified_world_model.get_entities_by_capability(capability)
+    return {"capability": capability, "entities": entities, "count": len(entities)}
 
 
 @app.websocket("/ws/telemetry")

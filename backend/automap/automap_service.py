@@ -10,6 +10,8 @@ from backend.automap.sensors import SensorDataStream, ScanKeyframe
 from backend.automap.reconstruction import PointCloudReconstructor, BoundingBox3D
 from backend.automap.semantic_detector import SemanticObjectDetector, SemanticObject
 from backend.automap.generator import RepresentationGenerator
+from backend.automap.world_model import unified_world_model
+from fms.traffic.cbs_router import CBSRouter
 
 
 class AutoMapService:
@@ -159,12 +161,25 @@ class AutoMapService:
         # 4. Navigation Topology Graph
         topo_graph = self.generator.generate_navigation_graph(self.detections)
 
+        # 5. Build live WarehouseGraph
+        wh_graph = self.generator.topology_engine.build_warehouse_graph(self.detections)
+
         self.generated_outputs = {
             "digital_twin_3d": dt_3d,
             "nav2_occupancy_2d": nav2_grid,
             "semantic_map": sem_map,
             "topology_graph": topo_graph
         }
+
+        # Atomically update Unified World Model
+        unified_world_model.update_world_model(
+            digital_twin_3d=dt_3d,
+            nav2_occupancy_2d=nav2_grid,
+            semantic_map=sem_map,
+            topology_graph=topo_graph,
+            confirmed_objects=self.detections,
+            warehouse_graph=wh_graph
+        )
 
         return {
             "stage": self.current_stage,
@@ -186,14 +201,21 @@ class AutoMapService:
         self.current_stage = "READY_FOR_AUTONOMOUS_OPERATION"
         self.is_active_in_fms = True
 
+        # Build fresh dynamic graph from topology engine
+        wh_graph = self.generator.topology_engine.build_warehouse_graph(self.detections)
+
         # If live FMS is provided, update its topology graph directly
-        if fms_instance and hasattr(fms_instance, "router"):
-            topo = self.generated_outputs.get("topology_graph")
-            if topo and hasattr(fms_instance.router, "graph"):
-                for n in topo.get("nodes", []):
-                    nid = n["node_id"]
-                    if nid not in fms_instance.router.graph.nodes:
-                        fms_instance.router.graph.add_node(nid, n["x"], n["y"], n.get("node_type", "TRANSIT"))
+        if fms_instance:
+            if hasattr(fms_instance, "graph"):
+                # Retain existing registered nodes if any
+                for nid, n in wh_graph.nodes.items():
+                    fms_instance.graph.nodes[nid] = n
+                for src, edge_list in wh_graph.edges.items():
+                    fms_instance.graph.edges[src] = edge_list
+            if hasattr(fms_instance, "router"):
+                fms_instance.router = CBSRouter(fms_instance.graph if hasattr(fms_instance, "graph") else wh_graph)
+            if hasattr(fms_instance, "world_model"):
+                fms_instance.world_model = unified_world_model
 
         return {
             "stage": self.current_stage,

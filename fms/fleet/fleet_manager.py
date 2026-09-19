@@ -23,20 +23,24 @@ class WarehouseOrder:
     drop_node: str
     required_payload: str = "ANY"  # "SCISSOR_LIFT", "ROLLER_CONVEYOR", "TOTE_GRIPPER", "ANY"
     priority: int = 1
+    pick_entity: Optional[str] = None
+    drop_entity: Optional[str] = None
 
 
 class FleetManager:
     """
     synQ Fleet Management System (FMS) Coordinator.
-    Allocates warehouse orders to suitable AMRs and orchestrates
+    Allocates warehouse orders to suitable AMRs, resolves semantic entities
+    from the Unified World Model, monitors battery/energy state, and orchestrates
     multi-robot Conflict-Based Search routing.
     """
 
-    def __init__(self, graph: WarehouseGraph):
+    def __init__(self, graph: WarehouseGraph, world_model: Optional[Any] = None):
         self.graph = graph
         self.router = CBSRouter(graph)
         self.robots: Dict[str, RobotAgent] = {}
         self.active_orders: Dict[str, WarehouseOrder] = {}
+        self.world_model = world_model
 
     def register_robot(self, robot: RobotAgent):
         self.robots[robot.robot_id] = robot
@@ -44,8 +48,21 @@ class FleetManager:
     def submit_order(self, order: WarehouseOrder) -> Optional[str]:
         """
         Assigns order to the best matching idle robot.
+        Resolves semantic entity IDs to topological approach nodes via World Model.
         Returns robot_id if assigned, or None if queued/no matching robot.
         """
+        # Resolve semantic entity targets if present
+        if self.world_model:
+            if order.pick_entity:
+                order.pick_node = self.world_model.resolve_entity_approach(order.pick_entity)
+            elif order.pick_node:
+                order.pick_node = self.world_model.resolve_entity_approach(order.pick_node)
+
+            if order.drop_entity:
+                order.drop_node = self.world_model.resolve_entity_approach(order.drop_entity)
+            elif order.drop_node:
+                order.drop_node = self.world_model.resolve_entity_approach(order.drop_node)
+
         candidates = []
         for rid, bot in self.robots.items():
             if bot.is_busy or bot.battery_pct < 20.0:
@@ -69,6 +86,42 @@ class FleetManager:
         robot.current_mission_id = order.order_id
         self.active_orders[order.order_id] = order
         return best_robot_id
+
+    def dispatch_charging_if_needed(self, robot_id: str) -> Optional[List[str]]:
+        """
+        Energy-aware dispatch: If robot battery is below 20%, preemptively
+        routes the unit to the nearest available charging dock.
+        """
+        bot = self.robots.get(robot_id)
+        if not bot or bot.battery_pct >= 20.0 or (bot.current_mission_id and "CHARGE" in bot.current_mission_id):
+            return None
+
+        # Find nearest charge node
+        charge_node = None
+        if self.world_model and hasattr(self.world_model, "charger_nodes") and self.world_model.charger_nodes:
+            charge_node = self.world_model.charger_nodes[0]
+        else:
+            for nid, node in self.graph.nodes.items():
+                if getattr(node, "node_type", "") == "CHARGE":
+                    charge_node = nid
+                    break
+
+        if not charge_node:
+            return None
+
+        # Compute collision-free path to charging station
+        route = self.router.space_time_a_star(
+            agent_id=robot_id,
+            start_node=bot.current_node,
+            goal_node=charge_node,
+            constraints=set()
+        )
+        if route:
+            bot.planned_trajectory = route
+            bot.current_mission_id = f"CHARGE-{robot_id}"
+            bot.is_busy = True
+            return route
+        return None
 
     def coordinate_trajectories(self, plans: List[AgentPlan]) -> Optional[Dict[str, List[str]]]:
         """Executes multi-agent CBS routing for all active AMR movements."""

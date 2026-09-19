@@ -28,10 +28,15 @@ class SemanticObject:
     confirmation_reason: Optional[str]
     status: str  # 'PROPOSED', 'NEEDS_CONFIRMATION', 'CONFIRMED', 'REJECTED'
     bounding_box: Dict[str, Any]
+    capabilities: List[str] = field(default_factory=list)
+    approach_node_id: Optional[str] = None
+    docking_vector: Optional[Dict[str, float]] = None
+    clearance_envelope_m: float = 0.35
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        d = asdict(self)
+        return d
 
 
 class SemanticObjectDetector:
@@ -78,6 +83,8 @@ class SemanticObjectDetector:
                     confirmation_reason=reason,
                     status="NEEDS_CONFIRMATION" if needs_conf else "PROPOSED",
                     bounding_box=box.to_dict(),
+                    capabilities=["PALLET_LIFT", "TOTE_STORAGE", "SCISSOR_LIFT"],
+                    clearance_envelope_m=0.5,
                     metadata={
                         "levels": 4,
                         "bay_capacity": 12,
@@ -98,6 +105,7 @@ class SemanticObjectDetector:
             if h <= 0.8 and max(w, d) <= 2.2 and dist_to_corner < 3.2:
                 charger_count += 1
                 conf = 0.91
+                heading_deg = 0.0 if cx < 7.5 else 180.0
                 obj = SemanticObject(
                     id=f"CHG-0{charger_count}",
                     semantic_type="charger",
@@ -107,9 +115,12 @@ class SemanticObjectDetector:
                     confirmation_reason=None,
                     status="PROPOSED",
                     bounding_box=box.to_dict(),
+                    capabilities=["FAST_CHARGE_60KW", "OPPORTUNITY_CHARGE"],
+                    clearance_envelope_m=0.8,
+                    docking_vector={"dx": 1.0 if cx < 7.5 else -1.0, "dy": 0.0, "yaw_deg": heading_deg},
                     metadata={
                         "power_kw": 22.5,
-                        "docking_heading_deg": 0.0 if cx < 7.5 else 180.0
+                        "docking_heading_deg": heading_deg
                     }
                 )
                 detected_objects.append(obj)
@@ -129,6 +140,8 @@ class SemanticObjectDetector:
                     confirmation_reason=None,
                     status="PROPOSED",
                     bounding_box=box.to_dict(),
+                    capabilities=["ROLLER_CONVEYOR", "PACKAGE_TRANSFER"],
+                    clearance_envelope_m=0.4,
                     metadata={
                         "belt_speed_mps": 0.5,
                         "payload_type": "ROLLER_CONVEYOR"
@@ -146,11 +159,13 @@ class SemanticObjectDetector:
                     label = f"Infeed Pick Station P{pick_count}"
                     oid = f"STA-P{pick_count}"
                     stype = "pick_station"
+                    caps = ["TOTE_GRIPPER", "PICK_PLACE", "SCISSOR_LIFT"]
                 else:
                     drop_count += 1
                     label = f"Outbound Drop Station D{drop_count}"
                     oid = f"STA-D{drop_count}"
                     stype = "drop_station"
+                    caps = ["TOTE_GRIPPER", "PICK_PLACE", "ROLLER_CONVEYOR"]
 
                 conf = 0.88
                 obj = SemanticObject(
@@ -162,6 +177,8 @@ class SemanticObjectDetector:
                     confirmation_reason=None,
                     status="PROPOSED",
                     bounding_box=box.to_dict(),
+                    capabilities=caps,
+                    clearance_envelope_m=0.5,
                     metadata={"buffer_capacity": 3}
                 )
                 detected_objects.append(obj)
@@ -181,6 +198,8 @@ class SemanticObjectDetector:
                 confirmation_reason=reason,
                 status="NEEDS_CONFIRMATION",
                 bounding_box=box.to_dict(),
+                capabilities=["OBSTACLE_AVOIDANCE"],
+                clearance_envelope_m=0.35,
                 metadata={"risk": "HIGH", "suggested_action": "Verify if permanent fixture or temporary pallet"}
             )
             detected_objects.append(obj)
@@ -201,6 +220,8 @@ class SemanticObjectDetector:
                 "point_count": 28,
                 "density": 10.0
             },
+            capabilities=["KEEP_OUT", "NO_GO"],
+            clearance_envelope_m=1.0,
             metadata={"safety_class": "CAT4_KEEP_OUT", "penalty_cost": 999.0}
         )
         detected_objects.append(restricted_zone)

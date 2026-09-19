@@ -10,6 +10,7 @@ Transforms confirmed semantic warehouse objects into 4 strictly decoupled repres
 import math
 from typing import Dict, List, Any, Tuple
 from backend.automap.semantic_detector import SemanticObject
+from backend.automap.topology_generator import AutomaticTopologyGenerator
 
 
 class RepresentationGenerator:
@@ -21,6 +22,7 @@ class RepresentationGenerator:
     def __init__(self, facility_width: float = 15.0, facility_height: float = 15.0):
         self.width = facility_width
         self.height = facility_height
+        self.topology_engine = AutomaticTopologyGenerator(facility_width=facility_width, facility_height=facility_height)
 
     # --------------------------------------------------------------------------
     # 1. 3D WAREHOUSE DIGITAL TWIN (Visualization / WebGL)
@@ -224,48 +226,6 @@ class RepresentationGenerator:
     def generate_navigation_graph(self, confirmed_objects: List[SemanticObject]) -> Dict[str, Any]:
         """
         Extracts collision-free transit lanes, aisles, and operational station nodes
-        based on confirmed rack positions and charging dock coordinates.
+        dynamically derived from mapped geometry and confirmed warehouse objects.
         """
-        nodes = {}
-        edges = []
-
-        # Standard 4x4 topological aisle grid (0, 5, 10, 15 meters)
-        node_types = {
-            "N_0_0": "CHARGE", "N_3_3": "CHARGE",
-            "N_1_0": "PICK", "N_1_1": "PICK", "N_1_2": "PICK", "N_1_3": "PICK",
-            "N_2_0": "DROP", "N_2_1": "DROP", "N_2_2": "DROP", "N_2_3": "DROP"
-        }
-
-        for r in range(4):
-            for c in range(4):
-                nid = f"N_{r}_{c}"
-                x = c * 5.0
-                y = r * 5.0
-                ntype = node_types.get(nid, "TRANSIT")
-                nodes[nid] = {
-                    "node_id": nid,
-                    "x": x,
-                    "y": y,
-                    "node_type": ntype,
-                    "allowed_payloads": ["ANY"]
-                }
-                if c < 3:
-                    edges.append({"source": nid, "target": f"N_{r}_{c + 1}", "distance": 5.0, "max_speed": 1.5, "bidirectional": True})
-                if r < 3:
-                    edges.append({"source": nid, "target": f"N_{r + 1}_{c}", "distance": 5.0, "max_speed": 1.5, "bidirectional": True})
-
-        # Associate confirmed charging docks with nearest charge node
-        for obj in confirmed_objects:
-            if obj.semantic_type == "charger" and obj.status != "REJECTED":
-                cx = obj.bounding_box["center"]["x"]
-                cy = obj.bounding_box["center"]["y"]
-                closest_node = "N_0_0" if cx < 7.5 else "N_3_3"
-                nodes[closest_node]["charger_ref"] = obj.id
-
-        return {
-            "graph_name": "automap_roadmap_topology",
-            "nodes": list(nodes.values()),
-            "edges": edges,
-            "total_nodes": len(nodes),
-            "total_edges": len(edges)
-        }
+        return self.topology_engine.generate_topology(confirmed_objects)
