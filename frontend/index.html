@@ -528,17 +528,17 @@
     <!-- 1. TOP OPERATIONAL HEADER -->
     <header class="synq-topbar">
       <div class="topbar-left">
-        <button class="sidebar-toggle-btn" title="Toggle Sidebar" onclick="toggleSidebar()">
+        <button class="sidebar-toggle-btn" title="Toggle Sidebar (Ctrl+B)" onclick="playHapticClick('high'); toggleSidebar();">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </button>
         <div class="brand-block">
           <span class="brand-logo-text">synQ</span>
           <span class="brand-env-badge">v3.0-RC</span>
         </div>
-        <span class="synq-badge online" id="topbarStatusPill"><span class="synq-badge-dot"></span>SYSTEM OPERATIONAL</span>
+        <span class="synq-badge online" id="topbarStatusPill"><span class="synq-badge-dot radar-ping"></span>SYSTEM OPERATIONAL</span>
 
         <!-- Autonomy Loop Pipeline Strip -->
-        <div class="autonomy-pipeline-strip" title="Click to inspect current Autonomy Loop decision state" onclick="navigateTo('overview'); setPanelTab('autonomy');">
+        <div class="autonomy-pipeline-strip" title="Click to inspect current Autonomy Loop decision state (HotKey: ?)" onclick="playHapticClick('high'); navigateTo('overview'); setPanelTab('autonomy');">
           <div class="pipeline-step" id="step-task"><div class="step-dot"></div><span>TASK</span></div>
           <span class="pipeline-arrow">→</span>
           <div class="pipeline-step" id="step-decision"><div class="step-dot"></div><span>DECISION</span></div>
@@ -569,14 +569,16 @@
       </div>
 
       <div class="topbar-right">
-        <button class="synq-btn" style="background: rgba(88,166,255,0.12); color: #58a6ff; border-color: rgba(88,166,255,0.3);" onclick="openDemoQrModal()">
+        <button class="synq-btn" style="background: rgba(88,166,255,0.12); color: #58a6ff; border-color: rgba(88,166,255,0.3);" onclick="playHapticClick('high'); openDemoQrModal();">
           <span>Judge Demo QR</span>
         </button>
-        <button class="synq-btn" onclick="navigateTo('overview'); openWhyFLTXDrawer();">
+        <button class="synq-btn" onclick="playHapticClick('high'); navigateTo('overview'); openWhyFLTXDrawer();">
           <span>Why Did FLTX Do This?</span>
+          <span class="kbd-chip" style="margin-left:4px;">?</span>
         </button>
-        <button class="synq-btn btn-danger" id="btnEstop" onclick="toggleGlobalEstop()">
+        <button class="synq-btn btn-danger" id="btnEstop" onclick="playHapticClick('low'); toggleGlobalEstop();">
           <span id="estopLabel">Emergency Stop (All)</span>
+          <span class="kbd-chip" style="margin-left:4px; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.25); color:#fff;">E</span>
         </button>
       </div>
     </header>
@@ -588,67 +590,77 @@
       <aside class="synq-sidebar" id="appSidebar">
         <div class="sidebar-nav-section">
           <div class="sidebar-nav-header">Command & Control</div>
-          <a class="nav-item active" data-route="overview" onclick="navigateTo('overview')">
+          <a class="nav-item active" data-route="overview" onclick="playHapticClick('high'); navigateTo('overview');">
             <span class="nav-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             </span>
             <span class="nav-label">Overview</span>
+            <span class="kbd-chip">1</span>
           </a>
-          <a class="nav-item" data-route="fleet" onclick="navigateTo('fleet')">
+          <a class="nav-item" data-route="fleet" onclick="playHapticClick('high'); navigateTo('fleet');">
             <span class="nav-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
             </span>
             <span class="nav-label">Fleet</span>
+            <span class="kbd-chip">2</span>
           </a>
-          <a class="nav-item" data-route="missions" onclick="navigateTo('missions')">
+          <a class="nav-item" data-route="missions" onclick="playHapticClick('high'); navigateTo('missions');">
             <span class="nav-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
             </span>
             <span class="nav-label">Missions</span>
+            <span class="kbd-chip">3</span>
           </a>
-          <a class="nav-item" data-route="warehouse" onclick="navigateTo('warehouse')">
+          <a class="nav-item" data-route="warehouse" onclick="playHapticClick('high'); navigateTo('warehouse');">
             <span class="nav-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
             </span>
             <span class="nav-label">Warehouse</span>
+            <span class="kbd-chip">4</span>
           </a>
-          <a class="nav-item" data-route="payloads" onclick="navigateTo('payloads')">
+          <a class="nav-item" data-route="payloads" onclick="playHapticClick('high'); navigateTo('payloads');">
             <span class="nav-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
             </span>
             <span class="nav-label">Payloads</span>
+            <span class="kbd-chip">5</span>
           </a>
 
           <div class="sidebar-nav-header" style="margin-top: 8px;">Intelligence & Diagnostics</div>
-          <a class="nav-item" data-route="simulation" onclick="navigateTo('simulation')">
+          <a class="nav-item" data-route="simulation" onclick="playHapticClick('high'); navigateTo('simulation');">
             <span class="nav-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
             </span>
             <span class="nav-label">Simulation Sandbox</span>
+            <span class="kbd-chip">6</span>
           </a>
-          <a class="nav-item" data-route="telemetry" onclick="navigateTo('telemetry')">
+          <a class="nav-item" data-route="telemetry" onclick="playHapticClick('high'); navigateTo('telemetry');">
             <span class="nav-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg>
             </span>
             <span class="nav-label">Telemetry</span>
+            <span class="kbd-chip">7</span>
           </a>
-          <a class="nav-item" data-route="diagnostics" onclick="navigateTo('diagnostics')">
+          <a class="nav-item" data-route="diagnostics" onclick="playHapticClick('high'); navigateTo('diagnostics');">
             <span class="nav-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
             </span>
             <span class="nav-label">Diagnostics</span>
+            <span class="kbd-chip">8</span>
           </a>
-          <a class="nav-item" data-route="safety" onclick="navigateTo('safety')">
+          <a class="nav-item" data-route="safety" onclick="playHapticClick('high'); navigateTo('safety');">
             <span class="nav-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
             </span>
             <span class="nav-label">Safety</span>
+            <span class="kbd-chip">9</span>
           </a>
-          <a class="nav-item" data-route="settings" onclick="navigateTo('settings')">
+          <a class="nav-item" data-route="settings" onclick="playHapticClick('high'); navigateTo('settings');">
             <span class="nav-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </span>
             <span class="nav-label">System</span>
+            <span class="kbd-chip">0</span>
           </a>
         </div>
 
@@ -720,15 +732,18 @@
 
                 <!-- Autonomy Visualization Toolbar -->
                 <div class="map-toolbar">
-                  <button class="tool-btn active" id="btnToggleLanes" onclick="toggleLayer('lanes')">Transit Lanes</button>
-                  <button class="tool-btn active" id="btnToggleRacks" onclick="toggleLayer('racks')">Racks</button>
-                  <button class="tool-btn active" id="btnToggleEvaluations" onclick="toggleLayer('evaluations')">Candidate Evals</button>
-                  <button class="tool-btn active" id="btnToggleRoutes" onclick="toggleLayer('routes')">CBS Routes</button>
+                  <button class="tool-btn active" id="btnToggleLanes" onclick="playHapticClick('high'); toggleLayer('lanes')">Transit Lanes</button>
+                  <button class="tool-btn active" id="btnToggleRacks" onclick="playHapticClick('high'); toggleLayer('racks')">Racks</button>
+                  <button class="tool-btn active" id="btnToggleEvaluations" onclick="playHapticClick('high'); toggleLayer('evaluations')">Candidate Evals</button>
+                  <button class="tool-btn active" id="btnToggleRoutes" onclick="playHapticClick('high'); toggleLayer('routes')">CBS Routes</button>
                   <div class="tool-sep"></div>
-                  <button class="tool-btn" id="btnSimObstacle" onclick="toggleObstaclePlacement()">Inject Obstacle</button>
-                  <button class="tool-btn" id="btnSimConflict" onclick="triggerCbsConflictScenario()">Simulate CBS Crossing</button>
+                  <button class="tool-btn" id="btnSimObstacle" onclick="playHapticClick('high'); toggleObstaclePlacement()">Inject Obstacle</button>
+                  <button class="tool-btn" id="btnSimConflict" onclick="playHapticClick('high'); triggerCbsConflictScenario()">Simulate CBS Crossing</button>
                   <div class="tool-sep"></div>
-                  <button class="tool-btn" onclick="resetMapCamera()">Reset View</button>
+                  <button class="tool-btn" onclick="zoomInMap()" title="Zoom In (+)">+</button>
+                  <span id="zoomLevelDisplay" style="font-size:10px; font-family:var(--synq-font-mono); color:var(--synq-text-secondary); padding:0 3px;">100%</span>
+                  <button class="tool-btn" onclick="zoomOutMap()" title="Zoom Out (−)">−</button>
+                  <button class="tool-btn" onclick="resetMapCamera()" title="Reset Camera">Reset</button>
                 </div>
 
                 <div class="spatial-toast" id="spatialToast">
@@ -901,6 +916,102 @@
         renderSettingsView();
       }
     }
+
+    /* ------------------------------------------------------------- */
+    /* TACTILE FEEDBACK & SOUND SYNTHESIS (Zero-asset Web Audio API) */
+    /* ------------------------------------------------------------- */
+    function playHapticClick(pitch = "high") {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const freq = (pitch === "high") ? 780 : 340;
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.024);
+        gain.gain.setValueAtTime(0.025, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0005, ctx.currentTime + 0.024);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.024);
+      } catch (e) {}
+    }
+
+    /* ------------------------------------------------------------- */
+    /* MAP CAMERA ZOOM CONTROLS                                      */
+    /* ------------------------------------------------------------- */
+    function zoomInMap() {
+      playHapticClick("high");
+      camera.zoom = Math.min(2.5, camera.zoom * 1.15);
+      updateZoomDisplay();
+    }
+
+    function zoomOutMap() {
+      playHapticClick("high");
+      camera.zoom = Math.max(0.5, camera.zoom * 0.85);
+      updateZoomDisplay();
+    }
+
+    function updateZoomDisplay() {
+      const el = document.getElementById("zoomLevelDisplay");
+      if (el) el.textContent = `${Math.round(camera.zoom * 100)}%`;
+    }
+
+    /* ------------------------------------------------------------- */
+    /* ACETERNITY UI DYNAMIC MOUSE SPOTLIGHT TRACKER                */
+    /* ------------------------------------------------------------- */
+    document.addEventListener("mousemove", e => {
+      const targets = document.querySelectorAll(".spotlight-card, .robot-card, .payload-card, .scenario-card, .kpi-tile");
+      targets.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        el.style.setProperty("--mouse-x", `${x}px`);
+        el.style.setProperty("--mouse-y", `${y}px`);
+      });
+    });
+
+    /* ------------------------------------------------------------- */
+    /* GLOBAL OPERATIONAL KEYBOARD SHORTCUTS                         */
+    /* ------------------------------------------------------------- */
+    document.addEventListener("keydown", e => {
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) return;
+
+      const keyMap = {
+        "1": "overview",
+        "2": "fleet",
+        "3": "missions",
+        "4": "warehouse",
+        "5": "payloads",
+        "6": "simulation",
+        "7": "telemetry",
+        "8": "diagnostics",
+        "9": "safety",
+        "0": "settings"
+      };
+
+      if (keyMap[e.key]) {
+        playHapticClick("high");
+        navigateTo(keyMap[e.key]);
+      } else if (e.key === " " || e.code === "Space") {
+        e.preventDefault();
+        playHapticClick("low");
+        pauseUnit(selectedRobotId);
+      } else if (e.key === "e" || e.key === "E") {
+        playHapticClick("low");
+        toggleGlobalEstop();
+      } else if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        playHapticClick("high");
+        navigateTo("overview");
+        openWhyFLTXDrawer();
+      } else if (e.key === "Escape") {
+        const modal = document.getElementById("demoQrModal");
+        if (modal) modal.style.display = "none";
+      }
+    });
 
     /* ============================================================= */
     /* REALISTIC SPATIAL MODEL & AUTONOMY STATE                      */
@@ -1165,8 +1276,8 @@
       ctx.lineWidth = 1;
       ctx.strokeRect(originX, originY, WAREHOUSE.width * scale, WAREHOUSE.height * scale);
 
-      // Metric Grid
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.02)";
+      // Metric Grid & Spatial Crosshairs
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.025)";
       ctx.lineWidth = 1;
       for (let m = 1; m < WAREHOUSE.width; m++) {
         const p1 = toScreen(m, 0);
@@ -1183,6 +1294,16 @@
         ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
         ctx.stroke();
+      }
+
+      // 5-Meter Engineering Dimension Markers
+      ctx.fillStyle = "#57606e";
+      ctx.font = "9px var(--font-mono)";
+      for (let m = 0; m <= WAREHOUSE.width; m += 5) {
+        const topPt = toScreen(m, 0);
+        ctx.fillText(`${m}m`, topPt.x - 7, topPt.y - 7);
+        const leftPt = toScreen(0, m);
+        ctx.fillText(`${m}m`, leftPt.x - 25, leftPt.y + 3);
       }
 
       // Operational Zones
@@ -1345,16 +1466,21 @@
         ctx.fillText("Obstacle", pt.x - 20, pt.y + 3);
       });
 
-      // CBS Active Routes
+      // CBS Active Routes with Animated Directional Flow
       if (layers.routes) {
         Object.values(ROBOTS).forEach(bot => {
           if (!bot.route || bot.route.length === 0) return;
           const isSelected = (bot.id === selectedRobotId);
 
-          ctx.strokeStyle = isSelected ? "#388bfd" : "rgba(88, 166, 255, 0.35)";
-          ctx.lineWidth = isSelected ? 2 : 1;
+          ctx.save();
+          ctx.strokeStyle = isSelected ? "#38bdf8" : "rgba(88, 166, 255, 0.4)";
+          ctx.lineWidth = isSelected ? 2.5 : 1.5;
+          ctx.setLineDash(isSelected ? [6, 4] : [4, 4]);
+          ctx.lineDashOffset = -(performance.now() / 45) % 10;
           ctx.beginPath();
-          const start = toScreen(bot.x, bot.y);
+          const curX = bot.renderX !== undefined ? bot.renderX : bot.x;
+          const curY = bot.renderY !== undefined ? bot.renderY : bot.y;
+          const start = toScreen(curX, curY);
           ctx.moveTo(start.x, start.y);
           bot.route.forEach(nid => {
             const n = ROADMAP_NODES[nid];
@@ -1364,12 +1490,16 @@
             }
           });
           ctx.stroke();
+          ctx.restore();
         });
       }
 
       // Top-Down High-Precision Industrial AMRs (Physical 0.70m x 0.50m footprint)
       Object.values(ROBOTS).forEach(bot => {
-        const p = toScreen(bot.x, bot.y);
+        // Sub-pixel cinematic interpolation (60fps lerping)
+        bot.renderX = (bot.renderX !== undefined) ? (bot.renderX + (bot.x - bot.renderX) * 0.22) : bot.x;
+        bot.renderY = (bot.renderY !== undefined) ? (bot.renderY + (bot.y - bot.renderY) * 0.22) : bot.y;
+        const p = toScreen(bot.renderX, bot.renderY);
         const isSelected = (bot.id === selectedRobotId);
         const lengthPx = 0.70 * scale;
         const widthPx = 0.50 * scale;
@@ -1731,6 +1861,7 @@
     /* ============================================================= */
 
     function setPanelTab(tab) {
+      playHapticClick('high');
       activeTab = tab;
       ["autonomy", "agent", "inspector", "dispatch", "fleet", "timeline"].forEach(t => {
         const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
@@ -1789,7 +1920,14 @@
       if (!query) return;
 
       box.style.display = "block";
-      box.innerHTML = `<span style="color: var(--color-primary);">Querying Operational Memory database...</span>`;
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Searching Operational Memory Vector Space...</div>
+          <div class="skeleton-box" style="height:10px; width:75%;"></div>
+          <div class="skeleton-box" style="height:10px; width:95%;"></div>
+          <div class="skeleton-box" style="height:10px; width:60%;"></div>
+        </div>
+      `;
 
       try {
         const res = await fetch("/api/v1/agent/query", {

@@ -1,6 +1,12 @@
 /* ==========================================================================
    synQ Industrial Robotics Operating System — Views & Modules Engine
+   Aceternity UI Spotlight, Animista Transitions & Tactile Industrial Design
    ========================================================================== */
+
+let currentFleetFilter = 'ALL';
+let currentFleetSearch = '';
+let currentMissionsFilter = 'ALL';
+let diagLogFilter = '';
 
 // Helper to format numbers safely
 function numFmt(n, d = 2) {
@@ -8,9 +14,10 @@ function numFmt(n, d = 2) {
 }
 
 /* ==========================================================================
-   1. FLEET MATRIX VIEW
+   1. FLEET MATRIX VIEW (Spotlight Cards & Search Filtering)
    ========================================================================== */
-function renderFleetView(filter = 'ALL') {
+function renderFleetView(filter = currentFleetFilter) {
+  currentFleetFilter = filter;
   const container = document.getElementById('fleetViewContainer');
   if (!container) return;
 
@@ -19,48 +26,74 @@ function renderFleetView(filter = 'ALL') {
   const idleCount = bots.filter(b => b.status === 'Idle').length;
   const estopCount = bots.filter(b => b.status === 'Emergency Stop').length;
 
+  // Filter & Search Logic
+  const filteredBots = bots.filter(bot => {
+    let matchFilter = true;
+    if (filter === 'ACTIVE') matchFilter = (bot.status === 'Navigating');
+    else if (filter === 'IDLE') matchFilter = (bot.status === 'Idle');
+    else if (filter === 'ESTOP') matchFilter = (bot.status === 'Emergency Stop');
+
+    let matchSearch = true;
+    if (currentFleetSearch.trim()) {
+      const q = currentFleetSearch.toLowerCase().trim();
+      matchSearch = bot.id.toLowerCase().includes(q) ||
+                    (bot.payload && bot.payload.toLowerCase().includes(q)) ||
+                    (bot.serial && bot.serial.toLowerCase().includes(q));
+    }
+    return matchFilter && matchSearch;
+  });
+
   container.innerHTML = `
     <div class="view-header-strip">
       <div class="view-title-group">
-        <span class="view-title">Fleet Matrix & Telemetry</span>
-        <span class="synq-badge online"><span class="synq-badge-dot"></span>${bots.length} UNITS REGISTERED</span>
+        <span class="view-title">Fleet Matrix & Spatial Telemetry</span>
+        <span class="synq-badge online"><span class="synq-badge-dot radar-ping"></span>${bots.length} UNITS REGISTERED</span>
       </div>
-      <div class="control-filter-bar" style="padding: 4px 8px;">
-        <div class="filter-btn-group" id="fleetFilterGroup">
-          <button class="filter-pill ${filter === 'ALL' ? 'active' : ''}" onclick="renderFleetView('ALL')">All (${bots.length})</button>
-          <button class="filter-pill ${filter === 'ACTIVE' ? 'active' : ''}" onclick="renderFleetView('ACTIVE')">Navigating (${activeCount})</button>
-          <button class="filter-pill ${filter === 'IDLE' ? 'active' : ''}" onclick="renderFleetView('IDLE')">Idle (${idleCount})</button>
-          <button class="filter-pill ${filter === 'ESTOP' ? 'active' : ''}" onclick="renderFleetView('ESTOP')">E-Stop (${estopCount})</button>
+      <div class="control-filter-bar">
+        <div class="filter-btn-group">
+          <button class="filter-pill ${filter === 'ALL' ? 'active' : ''}" onclick="playHapticClick('high'); renderFleetView('ALL');">All (${bots.length})</button>
+          <button class="filter-pill ${filter === 'ACTIVE' ? 'active' : ''}" onclick="playHapticClick('high'); renderFleetView('ACTIVE');">Navigating (${activeCount})</button>
+          <button class="filter-pill ${filter === 'IDLE' ? 'active' : ''}" onclick="playHapticClick('high'); renderFleetView('IDLE');">Idle (${idleCount})</button>
+          <button class="filter-pill ${filter === 'ESTOP' ? 'active' : ''}" onclick="playHapticClick('high'); renderFleetView('ESTOP');">E-Stop (${estopCount})</button>
         </div>
-        <button class="synq-btn" onclick="toggleGlobalEstop()" style="background: rgba(248,81,73,0.15); color:#f85149; border-color: rgba(248,81,73,0.3);">
-          <span>${isEstopActive ? 'Reset Global E-Stop' : 'Global E-Stop'}</span>
-        </button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="text" id="fleetSearchInput" class="select-input" style="margin-bottom:0; width:180px; font-size:10px;" placeholder="Search ID / Payload..." value="${currentFleetSearch}" oninput="currentFleetSearch = this.value; renderFleetView(currentFleetFilter);">
+          <button class="synq-btn" onclick="playHapticClick('low'); toggleGlobalEstop();" style="background: rgba(248,81,73,0.15); color:#f85149; border-color: rgba(248,81,73,0.3);">
+            <span>${isEstopActive ? 'Reset Global E-Stop' : 'Global E-Stop'}</span>
+            <span class="kbd-chip" style="margin-left:4px; background:rgba(0,0,0,0.3); color:#fff; border-color:rgba(255,255,255,0.2);">E</span>
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="synq-grid-3">
-      ${bots
-        .filter(b => {
-          if (filter === 'ACTIVE') return b.status === 'Navigating';
-          if (filter === 'IDLE') return b.status === 'Idle';
-          if (filter === 'ESTOP') return b.status === 'Emergency Stop';
-          return true;
-        })
-        .map(bot => {
-          const isNav = bot.status === 'Navigating';
-          const isStop = bot.status === 'Emergency Stop';
+    ${filteredBots.length === 0 ? `
+      <div class="empty-state-box">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <div class="empty-state-title">No Autonomous Robots Found</div>
+        <div class="empty-state-sub">No AMRs match the query "${currentFleetSearch}". Clear search to view the full warehouse fleet.</div>
+        <button class="synq-btn" style="margin-top:12px;" onclick="currentFleetSearch=''; renderFleetView('ALL');">
+          <span>Reset Search Filters</span>
+        </button>
+      </div>
+    ` : `
+      <div class="synq-grid-3">
+        ${filteredBots.map(bot => {
+          const isNav = (bot.status === 'Navigating');
+          const isStop = (bot.status === 'Emergency Stop');
           const statusClass = isStop ? 'critical' : (isNav ? 'active' : 'idle');
           const batClass = bot.battery > 50 ? 'nominal' : (bot.battery > 20 ? 'medium' : 'critical');
 
           return `
-            <div class="robot-card ${isNav ? 'active-navigating' : ''}">
+            <div class="robot-card spotlight-card ${isNav ? 'active-navigating' : ''}">
               <div class="robot-card-header">
                 <div class="robot-id-group">
                   <span class="robot-id-title">${bot.id}</span>
                   <span class="robot-serial">${bot.serial || 'SN-SYNQ-2026'}</span>
                 </div>
                 <span class="synq-badge ${statusClass}">
-                  <span class="synq-badge-dot"></span>${bot.status.toUpperCase()}
+                  <span class="synq-badge-dot ${isNav ? 'radar-ping' : ''}"></span>${bot.status.toUpperCase()}
                 </span>
               </div>
 
@@ -100,20 +133,21 @@ function renderFleetView(filter = 'ALL') {
               </div>
 
               <div class="robot-card-actions">
-                <button class="synq-btn" style="flex: 1;" onclick="inspectRobotFromMatrix('${bot.id}')">
+                <button class="synq-btn" style="flex: 1;" onclick="playHapticClick('high'); inspectRobotFromMatrix('${bot.id}');">
                   <span>Inspect in Map</span>
                 </button>
-                <button class="synq-btn" onclick="dockUnit('${bot.id}')" title="Return to Charger C1">
+                <button class="synq-btn" onclick="playHapticClick('high'); dockUnit('${bot.id}');" title="Return to Charger C1">
                   <span>Dock</span>
                 </button>
-                <button class="synq-btn" onclick="pauseUnit('${bot.id}')" title="Pause / Resume Motion">
+                <button class="synq-btn" onclick="playHapticClick('low'); pauseUnit('${bot.id}');" title="Pause / Resume Motion">
                   <span>${bot.status === 'Navigating' ? 'Pause' : 'Resume'}</span>
                 </button>
               </div>
             </div>
           `;
         }).join('')}
-    </div>
+      </div>
+    `}
   `;
 }
 
@@ -124,7 +158,7 @@ function inspectRobotFromMatrix(id) {
 }
 
 /* ==========================================================================
-   2. MISSIONS BOARD VIEW
+   2. MISSIONS BOARD VIEW (VDA 5050 Orders & Status Filtering)
    ========================================================================== */
 const SAMPLE_MISSIONS = [
   { id: "TASK-4821", priority: "HIGH", robot: "synq-amr-01", payload: "SCISSOR_LIFT", from: "N_1_1 (Rack B)", to: "N_2_2 (Drop D2)", status: "IN_TRANSIT", progress: 65, eta: "28s" },
@@ -134,41 +168,55 @@ const SAMPLE_MISSIONS = [
   { id: "TASK-4818", priority: "LOW", robot: "synq-amr-02", payload: "ROLLER_CONVEYOR", from: "N_2_1 (Rack E)", to: "DROP-2 (Out D2)", status: "COMPLETED", progress: 100, eta: "0s" }
 ];
 
-function renderMissionsView() {
+function renderMissionsView(filter = currentMissionsFilter) {
+  currentMissionsFilter = filter;
   const container = document.getElementById('missionsViewContainer');
   if (!container) return;
+
+  const filteredMissions = SAMPLE_MISSIONS.filter(m => {
+    if (filter === 'ACTIVE') return m.status === 'IN_TRANSIT';
+    if (filter === 'QUEUED') return m.status === 'QUEUED';
+    if (filter === 'COMPLETED') return m.status === 'COMPLETED';
+    return true;
+  });
 
   container.innerHTML = `
     <div class="view-header-strip">
       <div class="view-title-group">
         <span class="view-title">Missions & VDA 5050 Orders</span>
-        <span class="synq-badge online"><span class="synq-badge-dot"></span>CBS COORDINATION ACTIVE</span>
+        <span class="synq-badge online"><span class="synq-badge-dot radar-ping"></span>CBS COORDINATION ACTIVE</span>
       </div>
-      <div style="display: flex; gap: 8px;">
-        <button class="synq-btn" style="background: var(--synq-status-active); color: #fff; border-color: var(--synq-status-active);" onclick="openQuickOrderModal()">
-          <span>+ Dispatch New Mission</span>
+      <div style="display: flex; gap: 8px; align-items:center;">
+        <div class="filter-btn-group">
+          <button class="filter-pill ${filter === 'ALL' ? 'active' : ''}" onclick="playHapticClick('high'); renderMissionsView('ALL');">All (${SAMPLE_MISSIONS.length})</button>
+          <button class="filter-pill ${filter === 'ACTIVE' ? 'active' : ''}" onclick="playHapticClick('high'); renderMissionsView('ACTIVE');">In Transit (1)</button>
+          <button class="filter-pill ${filter === 'QUEUED' ? 'active' : ''}" onclick="playHapticClick('high'); renderMissionsView('QUEUED');">Queued (1)</button>
+          <button class="filter-pill ${filter === 'COMPLETED' ? 'active' : ''}" onclick="playHapticClick('high'); renderMissionsView('COMPLETED');">Completed (3)</button>
+        </div>
+        <button class="synq-btn" style="background: var(--synq-status-active); color: #fff; border-color: var(--synq-status-active);" onclick="playHapticClick('high'); openQuickOrderModal();">
+          <span>+ Dispatch Mission</span>
         </button>
       </div>
     </div>
 
-    <!-- Top Mission KPIs -->
+    <!-- Top Mission KPIs with Aceternity Spotlight Cards -->
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-      <div class="synq-card" style="padding: 12px;">
+      <div class="synq-card spotlight-card" style="padding: 12px;">
         <span style="font-size: 9px; font-weight:700; text-transform:uppercase; color: var(--synq-text-muted);">Active Missions</span>
         <div style="font-size: 20px; font-weight:700; font-family:var(--synq-font-mono); color:#ffffff; margin-top:4px;">1</div>
         <span style="font-size: 10px; color: var(--synq-status-online);">In Progress (100% On-Time)</span>
       </div>
-      <div class="synq-card" style="padding: 12px;">
+      <div class="synq-card spotlight-card" style="padding: 12px;">
         <span style="font-size: 9px; font-weight:700; text-transform:uppercase; color: var(--synq-text-muted);">Queued Buffer</span>
         <div style="font-size: 20px; font-weight:700; font-family:var(--synq-font-mono); color:#ffffff; margin-top:4px;">1</div>
         <span style="font-size: 10px; color: var(--synq-text-muted);">Allocated to synq-amr-02</span>
       </div>
-      <div class="synq-card" style="padding: 12px;">
+      <div class="synq-card spotlight-card" style="padding: 12px;">
         <span style="font-size: 9px; font-weight:700; text-transform:uppercase; color: var(--synq-text-muted);">Completed Today</span>
         <div style="font-size: 20px; font-weight:700; font-family:var(--synq-font-mono); color:#ffffff; margin-top:4px;">148</div>
         <span style="font-size: 10px; color: var(--synq-status-online);">+12 vs Target SLA</span>
       </div>
-      <div class="synq-card" style="padding: 12px;">
+      <div class="synq-card spotlight-card" style="padding: 12px;">
         <span style="font-size: 9px; font-weight:700; text-transform:uppercase; color: var(--synq-text-muted);">CBS Collision Resolves</span>
         <div style="font-size: 20px; font-weight:700; font-family:var(--synq-font-mono); color:#ffffff; margin-top:4px;">34</div>
         <span style="font-size: 10px; color: var(--synq-status-cbs);">0 Near-Misses</span>
@@ -176,53 +224,60 @@ function renderMissionsView() {
     </div>
 
     <!-- Missions Table -->
-    <div class="synq-table-wrap">
-      <table class="synq-table">
-        <thead>
-          <tr>
-            <th>Order ID</th>
-            <th>Priority</th>
-            <th>AMR Unit</th>
-            <th>Required Payload</th>
-            <th>Origin Node</th>
-            <th>Destination</th>
-            <th>Progress / ETA</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${SAMPLE_MISSIONS.map(m => {
-            const prioClass = m.priority === 'URGENT' ? 'critical' : (m.priority === 'HIGH' ? 'warning' : 'neutral');
-            const stClass = m.status === 'IN_TRANSIT' ? 'active' : (m.status === 'COMPLETED' ? 'online' : 'idle');
-            return `
-              <tr>
-                <td class="table-mono" style="color: #58a6ff; font-weight:700;">${m.id}</td>
-                <td><span class="synq-badge ${prioClass}">${m.priority}</span></td>
-                <td class="table-mono">${m.robot}</td>
-                <td><span class="synq-badge cbs" style="font-size:9px;">${m.payload}</span></td>
-                <td>${m.from}</td>
-                <td>${m.to}</td>
-                <td>
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <div class="battery-bar-track" style="width: 60px; height: 5px;">
-                      <div class="battery-bar-fill nominal" style="width: ${m.progress}%;"></div>
+    ${filteredMissions.length === 0 ? `
+      <div class="empty-state-box">
+        <div class="empty-state-title">No Missions in Category</div>
+        <div class="empty-state-sub">There are currently no tasks matching the selected filter state.</div>
+      </div>
+    ` : `
+      <div class="synq-table-wrap">
+        <table class="synq-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Priority</th>
+              <th>AMR Unit</th>
+              <th>Required Payload</th>
+              <th>Origin Node</th>
+              <th>Destination</th>
+              <th>Progress / ETA</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredMissions.map(m => {
+              const prioClass = m.priority === 'URGENT' ? 'critical' : (m.priority === 'HIGH' ? 'warning' : 'neutral');
+              const stClass = m.status === 'IN_TRANSIT' ? 'active' : (m.status === 'COMPLETED' ? 'online' : 'idle');
+              return `
+                <tr>
+                  <td class="table-mono" style="color: #58a6ff; font-weight:700;">${m.id}</td>
+                  <td><span class="synq-badge ${prioClass}">${m.priority}</span></td>
+                  <td class="table-mono">${m.robot}</td>
+                  <td><span class="synq-badge cbs" style="font-size:9px;">${m.payload}</span></td>
+                  <td>${m.from}</td>
+                  <td>${m.to}</td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <div class="battery-bar-track" style="width: 60px; height: 5px;">
+                        <div class="battery-bar-fill nominal" style="width: ${m.progress}%;"></div>
+                      </div>
+                      <span class="table-mono" style="font-size: 10px;">${m.eta}</span>
                     </div>
-                    <span class="table-mono" style="font-size: 10px;">${m.eta}</span>
-                  </div>
-                </td>
-                <td><span class="synq-badge ${stClass}"><span class="synq-badge-dot"></span>${m.status}</span></td>
-                <td>
-                  <button class="synq-btn" style="padding: 3px 8px; font-size: 10px;" onclick="inspectRobotFromMatrix('${m.robot}')">
-                    <span>Inspect</span>
-                  </button>
-                </td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
+                  </td>
+                  <td><span class="synq-badge ${stClass}"><span class="synq-badge-dot ${m.status === 'IN_TRANSIT' ? 'radar-ping' : ''}"></span>${m.status}</span></td>
+                  <td>
+                    <button class="synq-btn" style="padding: 3px 8px; font-size: 10px;" onclick="playHapticClick('high'); inspectRobotFromMatrix('${m.robot}');">
+                      <span>Inspect</span>
+                    </button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `}
   `;
 }
 
@@ -232,7 +287,7 @@ function openQuickOrderModal() {
 }
 
 /* ==========================================================================
-   3. WAREHOUSE TOPOLOGY VIEW
+   3. WAREHOUSE TOPOLOGY VIEW (Storage Bays & Stations)
    ========================================================================== */
 function renderWarehouseView() {
   const container = document.getElementById('warehouseViewContainer');
@@ -242,17 +297,17 @@ function renderWarehouseView() {
     <div class="view-header-strip">
       <div class="view-title-group">
         <span class="view-title">Warehouse Topology & Spatio-Temporal Graph</span>
-        <span class="synq-badge online"><span class="synq-badge-dot"></span>TOPOLOGICAL GRAPH COMPILED</span>
+        <span class="synq-badge online"><span class="synq-badge-dot radar-ping"></span>TOPOLOGICAL GRAPH COMPILED</span>
       </div>
       <div style="font-size: 11px; color: var(--synq-text-muted);">
         Grid Size: <strong>15.0m × 15.0m</strong> · Nodes: <strong>16</strong> · Edges: <strong>24</strong> · Racks: <strong>6</strong>
       </div>
     </div>
 
-    <!-- Storage Bays & Zones Grid -->
+    <!-- Storage Bays & Zones Grid with Spotlight Cards -->
     <div class="synq-grid-3">
       ${WAREHOUSE.racks.map(rack => `
-        <div class="synq-card" style="padding: 14px;">
+        <div class="synq-card spotlight-card" style="padding: 14px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
             <span style="font-size: 12px; font-weight: 700; color: #ffffff;">${rack.name}</span>
             <span class="synq-badge neutral" style="font-size: 9px;">BAY ${rack.id}</span>
@@ -319,7 +374,7 @@ function renderWarehouseView() {
 }
 
 /* ==========================================================================
-   4. MODULAR PAYLOAD SPECIFICATIONS VIEW
+   4. MODULAR PAYLOAD SPECIFICATIONS VIEW (Visual SVG Schematics & Calibration)
    ========================================================================== */
 function renderPayloadsView() {
   const container = document.getElementById('payloadsViewContainer');
@@ -331,12 +386,27 @@ function renderPayloadsView() {
       code: "synQ-PL-LIFT-26",
       type: "SCISSOR_LIFT",
       rating: "500 kg Payload Capacity",
+      svgDiagram: `
+        <svg width="100%" height="70" viewBox="0 0 200 70" style="background:#0b0d10; border-radius:4px; border:1px solid #222935;">
+          <!-- Base Plate -->
+          <rect x="20" y="58" width="160" height="6" fill="#1f242d" stroke="#38bdf8" stroke-width="0.8"/>
+          <!-- Top Deck -->
+          <rect x="20" y="8" width="160" height="6" fill="#1f242d" stroke="#a371f7" stroke-width="0.8"/>
+          <!-- Pantograph Linkage -->
+          <line x1="30" y1="58" x2="100" y2="14" stroke="#a371f7" stroke-width="2.5"/>
+          <line x1="100" y1="58" x2="30" y2="14" stroke="#a371f7" stroke-width="2.5"/>
+          <line x1="100" y1="58" x2="170" y2="14" stroke="#a371f7" stroke-width="2.5"/>
+          <line x1="170" y1="58" x2="100" y2="14" stroke="#a371f7" stroke-width="2.5"/>
+          <!-- Central Pivot Pin -->
+          <circle cx="65" cy="36" r="3" fill="#ffffff"/>
+          <circle cx="135" cy="36" r="3" fill="#ffffff"/>
+        </svg>
+      `,
       description: "Dual-pantograph electro-mechanical scissor lift engineered for standard Euro and GMA pallets. Features twin synchronized 48V brushless linear drive screws.",
       specs: [
         ["Max Lift Stroke", "450 mm (Vertical)"],
         ["Lifting Speed", "35 mm/s (Nominal)"],
         ["Actuator Power", "650 W Twin BLDC"],
-        ["Deck Dimensions", "1200 mm × 800 mm"],
         ["Tare Weight", "42.5 kg"],
         ["Interlock Safety", "Dual optical top-dead-center limit switches"],
         ["Equipped Units", "synq-amr-01"]
@@ -347,12 +417,25 @@ function renderPayloadsView() {
       code: "synQ-PL-CONV-12",
       type: "ROLLER_CONVEYOR",
       rating: "300 kg Payload Capacity",
+      svgDiagram: `
+        <svg width="100%" height="70" viewBox="0 0 200 70" style="background:#0b0d10; border-radius:4px; border:1px solid #222935;">
+          <!-- Bed Frame -->
+          <rect x="20" y="44" width="160" height="18" fill="#1f242d" stroke="#222935" stroke-width="1"/>
+          <!-- Rollers -->
+          <circle cx="35" cy="32" r="10" fill="#14181f" stroke="#38bdf8" stroke-width="1.8"/>
+          <circle cx="65" cy="32" r="10" fill="#14181f" stroke="#38bdf8" stroke-width="1.8"/>
+          <circle cx="95" cy="32" r="10" fill="#14181f" stroke="#38bdf8" stroke-width="1.8"/>
+          <circle cx="125" cy="32" r="10" fill="#14181f" stroke="#38bdf8" stroke-width="1.8"/>
+          <circle cx="155" cy="32" r="10" fill="#14181f" stroke="#38bdf8" stroke-width="1.8"/>
+          <!-- Drive Belt Line -->
+          <line x1="35" y1="42" x2="155" y2="42" stroke="#2ea043" stroke-width="1.5" stroke-dasharray="4,2"/>
+        </svg>
+      `,
       description: "Bidirectional motorized roller deck with photoelectric tote presence detection. Connects seamlessly to fixed warehouse gravity and automated conveyors.",
       specs: [
         ["Roller Width", "620 mm"],
         ["Roller Pitch", "75 mm Center-to-Center"],
         ["Transfer Speed", "0.40 m/s (Adjustable)"],
-        ["Sensor Array", "4× Retro-reflective Photoelectric"],
         ["Tare Weight", "34.0 kg"],
         ["Interlock Safety", "Pneumatic end-stop tote gate"],
         ["Equipped Units", "synq-amr-02"]
@@ -363,12 +446,26 @@ function renderPayloadsView() {
       code: "synQ-PL-GRIP-04",
       type: "TOTE_GRIPPER",
       rating: "80 kg Payload Capacity",
+      svgDiagram: `
+        <svg width="100%" height="70" viewBox="0 0 200 70" style="background:#0b0d10; border-radius:4px; border:1px solid #222935;">
+          <!-- Linear Guide Bar -->
+          <rect x="25" y="16" width="150" height="8" fill="#1f242d" stroke="#222935"/>
+          <!-- Left Jaw -->
+          <rect x="45" y="16" width="12" height="42" rx="2" fill="#2ea043" stroke="#3fb950" stroke-width="1"/>
+          <!-- Right Jaw -->
+          <rect x="143" y="16" width="12" height="42" rx="2" fill="#2ea043" stroke="#3fb950" stroke-width="1"/>
+          <!-- Clamping arrows -->
+          <line x1="65" y1="36" x2="85" y2="36" stroke="#ffffff" stroke-width="1.5"/>
+          <polyline points="75,32 85,36 75,40" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+          <line x1="135" y1="36" x2="115" y2="36" stroke="#ffffff" stroke-width="1.5"/>
+          <polyline points="125,32 115,36 125,40" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+        </svg>
+      `,
       description: "Servo-driven parallel clamping jaws with high-friction silicone grippers and continuous load-cell force feedback for KLT and plastic container transfer.",
       specs: [
         ["Clamping Stroke", "280 mm to 650 mm"],
         ["Grip Force", "50 N to 400 N (Closed-loop)"],
         ["Actuation Time", "1.2 s (Full Stroke)"],
-        ["Force Feedback", "Dual 50kg Strain Gauge Load Cells"],
         ["Tare Weight", "22.8 kg"],
         ["Interlock Safety", "Spring-loaded mechanical lock on power loss"],
         ["Equipped Units", "synq-amr-03"]
@@ -380,7 +477,7 @@ function renderPayloadsView() {
     <div class="view-header-strip">
       <div class="view-title-group">
         <span class="view-title">Modular Payload Architecture</span>
-        <span class="synq-badge cbs"><span class="synq-badge-dot"></span>VDA 5050 EXTENSION MODULE</span>
+        <span class="synq-badge cbs"><span class="synq-badge-dot radar-ping"></span>VDA 5050 EXTENSION MODULE</span>
       </div>
       <div style="font-size: 11px; color: var(--synq-text-secondary);">
         Standardized quick-release mechanical interface with CANopen / EtherCAT safety bus.
@@ -389,7 +486,7 @@ function renderPayloadsView() {
 
     <div class="synq-grid-3">
       ${payloads.map(p => `
-        <div class="payload-card">
+        <div class="payload-card spotlight-card">
           <div class="payload-hero-header">
             <div>
               <div class="payload-model-name">${p.name}</div>
@@ -397,6 +494,9 @@ function renderPayloadsView() {
             </div>
             <span class="synq-badge cbs">${p.type}</span>
           </div>
+
+          <!-- Schematic Wireframe -->
+          ${p.svgDiagram}
 
           <div style="font-size: 11px; color: var(--synq-status-online); font-weight: 600;">
             ${p.rating}
@@ -418,10 +518,10 @@ function renderPayloadsView() {
           </table>
 
           <div style="display: flex; gap: 6px; margin-top: auto;">
-            <button class="synq-btn" style="flex: 1;" onclick="calibratePayload('${p.type}')">
+            <button class="synq-btn" id="btnCalib-${p.type}" style="flex: 1;" onclick="playHapticClick('high'); runPayloadCalibration('${p.type}');">
               <span>Calibrate Actuator</span>
             </button>
-            <button class="synq-btn" onclick="testPayloadDiagnostics('${p.type}')">
+            <button class="synq-btn" onclick="playHapticClick('high'); testPayloadDiagnostics('${p.type}');">
               <span>Diagnostics</span>
             </button>
           </div>
@@ -431,9 +531,23 @@ function renderPayloadsView() {
   `;
 }
 
-function calibratePayload(type) {
-  showToast(`Calibrating ${type} actuator zero-reference point... Completed (Offset: 0.00mm)`);
-  logEvent('Payload FMS', `${type} calibrated successfully.`);
+function runPayloadCalibration(type) {
+  const btn = document.getElementById(`btnCalib-${type}`);
+  if (btn) {
+    btn.innerHTML = '<span>Calibrating...</span>';
+    btn.disabled = true;
+  }
+  showToast(`Calibrating ${type} actuator zero-reference point via CANopen encoder...`);
+
+  setTimeout(() => {
+    if (btn) {
+      btn.innerHTML = '<span>Calibrated ✓</span>';
+      btn.disabled = false;
+      setTimeout(() => { btn.innerHTML = '<span>Calibrate Actuator</span>'; }, 2500);
+    }
+    showToast(`${type} Calibration Verified: Offset 0.00mm, Current Draw Nominal.`);
+    logEvent('Payload FMS', `${type} completed zero-point encoder calibration.`);
+  }, 1200);
 }
 
 function testPayloadDiagnostics(type) {
@@ -442,7 +556,7 @@ function testPayloadDiagnostics(type) {
 }
 
 /* ==========================================================================
-   5. SIMULATION & WHAT-IF SCENARIO SANDBOX
+   5. SIMULATION & WHAT-IF SCENARIOS (Interactive Stress-Testing Suite)
    ========================================================================== */
 function renderSimulationView() {
   const container = document.getElementById('simulationViewContainer');
@@ -497,17 +611,17 @@ function renderSimulationView() {
     <div class="view-header-strip">
       <div class="view-title-group">
         <span class="view-title">Simulation Sandbox & "Break the Facility" Suite</span>
-        <span class="synq-badge warning"><span class="synq-badge-dot"></span>SYNTHETIC TEST ENVIRONMENT</span>
+        <span class="synq-badge warning"><span class="synq-badge-dot radar-ping"></span>SYNTHETIC TEST ENVIRONMENT</span>
       </div>
       <div style="font-size: 11px; color: var(--synq-text-muted);">
         Non-destructive stress-testing for autonomy, routing robustness, and fault recovery.
       </div>
     </div>
 
-    <!-- Scenarios Grid -->
+    <!-- Scenarios Grid with Spotlight Cards -->
     <div class="synq-grid-3">
       ${scenarios.map(s => `
-        <div class="scenario-card">
+        <div class="scenario-card spotlight-card">
           <div>
             <div class="scenario-title">
               <span>${s.title}</span>
@@ -517,7 +631,7 @@ function renderSimulationView() {
             </div>
             <p class="scenario-desc" style="margin-top: 8px;">${s.desc}</p>
           </div>
-          <button class="synq-btn" onclick="${s.action}" style="margin-top: 10px;">
+          <button class="synq-btn" onclick="playHapticClick('high'); ${s.action};" style="margin-top: 10px;">
             <span>${s.btnText}</span>
           </button>
         </div>
@@ -525,7 +639,7 @@ function renderSimulationView() {
     </div>
 
     <!-- Capacity Simulator Box -->
-    <div class="synq-card" style="padding: 16px;">
+    <div class="synq-card spotlight-card" style="padding: 16px;">
       <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 6px;">
         Facility Throughput & Scaling Simulator ("What-If" Analysis)
       </div>
@@ -556,7 +670,7 @@ function renderSimulationView() {
           <span style="font-size: 10px; color: var(--synq-text-muted);">ESTIMATED CONFLICT RATE:</span>
           <span id="whatIfConflicts" style="font-size: 14px; font-weight: 700; font-family: var(--synq-font-mono); color: var(--synq-status-cbs); margin-left: 8px;">1.4 resolves / hr</span>
         </div>
-        <button class="synq-btn" onclick="applyWhatIfScenario()">
+        <button class="synq-btn" onclick="playHapticClick('high'); applyWhatIfScenario();">
           <span>Run Simulation Benchmark</span>
         </button>
       </div>
@@ -618,16 +732,16 @@ function renderTelemetryView() {
     <div class="view-header-strip">
       <div class="view-title-group">
         <span class="view-title">Real-Time Telemetry & Hardware Sparklines</span>
-        <span class="synq-badge online"><span class="synq-badge-dot"></span>50 Hz HIGH RESOLUTION</span>
+        <span class="synq-badge online"><span class="synq-badge-dot radar-ping"></span>50 Hz HIGH RESOLUTION</span>
       </div>
       <div style="font-size: 11px; color: var(--synq-text-muted);">
         Streaming via WebSockets & FastDDS RTPS
       </div>
     </div>
 
-    <!-- Charts Grid -->
+    <!-- Charts Grid with Spotlight Cards -->
     <div class="synq-grid-2">
-      <div class="synq-card" style="padding: 16px;">
+      <div class="synq-card spotlight-card" style="padding: 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
           <div>
             <div style="font-size: 13px; font-weight: 700; color:#fff;">Fleet Aggregate Velocity</div>
@@ -638,7 +752,7 @@ function renderTelemetryView() {
         <canvas id="canvasSpeedTelemetry" height="140" style="width: 100%; display:block;"></canvas>
       </div>
 
-      <div class="synq-card" style="padding: 16px;">
+      <div class="synq-card spotlight-card" style="padding: 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
           <div>
             <div style="font-size: 13px; font-weight: 700; color:#fff;">CBS Solver Latency</div>
@@ -649,7 +763,7 @@ function renderTelemetryView() {
         <canvas id="canvasCbsTelemetry" height="140" style="width: 100%; display:block;"></canvas>
       </div>
 
-      <div class="synq-card" style="padding: 16px;">
+      <div class="synq-card spotlight-card" style="padding: 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
           <div>
             <div style="font-size: 13px; font-weight: 700; color:#fff;">LiFePO4 Discharge Profile</div>
@@ -660,7 +774,7 @@ function renderTelemetryView() {
         <canvas id="canvasBatteryTelemetry" height="140" style="width: 100%; display:block;"></canvas>
       </div>
 
-      <div class="synq-card" style="padding: 16px;">
+      <div class="synq-card spotlight-card" style="padding: 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
           <div>
             <div style="font-size: 13px; font-weight: 700; color:#fff;">ROS 2 DDS Network Jitter</div>
@@ -729,7 +843,7 @@ function drawSyntheticSparkline(canvasId, strokeColor, points) {
 }
 
 /* ==========================================================================
-   7. DIAGNOSTICS & ROS 2 NODE TOPIC MONITOR VIEW
+   7. DIAGNOSTICS & ROS 2 MONITOR (Log Searching & Terminal Diagnostics)
    ========================================================================== */
 function renderDiagnosticsView() {
   const container = document.getElementById('diagnosticsViewContainer');
@@ -748,10 +862,12 @@ function renderDiagnosticsView() {
     <div class="view-header-strip">
       <div class="view-title-group">
         <span class="view-title">System Diagnostics & ROS 2 Core Monitor</span>
-        <span class="synq-badge online"><span class="synq-badge-dot"></span>6 NODES CONVERGED</span>
+        <span class="synq-badge online"><span class="synq-badge-dot radar-ping"></span>6 NODES CONVERGED</span>
       </div>
-      <div style="font-size: 11px; color: var(--synq-text-muted);">
-        ROS 2 Jazzy Jalisco · CycloneDDS · Domain ID: 42
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="synq-btn" onclick="playHapticClick('high'); exportDiagnosticsLog();">
+          <span>Export Logs (.txt)</span>
+        </button>
       </div>
     </div>
 
@@ -773,7 +889,7 @@ function renderDiagnosticsView() {
             <tr>
               <td class="table-mono" style="color:#58a6ff; font-weight:600;">${n.name}</td>
               <td>${n.pkg}</td>
-              <td><span class="synq-badge online"><span class="synq-badge-dot"></span>${n.state}</span></td>
+              <td><span class="synq-badge online"><span class="synq-badge-dot radar-ping"></span>${n.state}</span></td>
               <td class="table-mono">${n.hz}</td>
               <td class="table-mono" style="color:var(--synq-text-muted);">${n.pid}</td>
               <td><span style="color: var(--synq-status-online); font-weight:600;">0 dropped frames</span></td>
@@ -783,35 +899,67 @@ function renderDiagnosticsView() {
       </table>
     </div>
 
-    <!-- Live Industrial Terminal -->
-    <div class="synq-card" style="padding: 14px;">
+    <!-- Live Industrial Terminal with Real-time Filtering -->
+    <div class="synq-card spotlight-card" style="padding: 14px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
         <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--synq-text-muted); letter-spacing: 0.05em;">
           Kernel & Middleware Event Stream
         </span>
-        <div style="display:flex; gap: 8px;">
-          <button class="synq-btn" style="padding: 2px 8px; font-size: 10px;" onclick="clearTerminalLogs()">Clear Log</button>
-          <span class="synq-badge active" style="font-size: 9px;">STREAMING</span>
+        <div style="display:flex; gap: 8px; align-items:center;">
+          <input type="text" id="logSearchInput" class="select-input" style="width: 170px; margin-bottom:0; font-size:10px;" placeholder="Filter log entries..." oninput="filterTerminalLogs(this.value)">
+          <button class="synq-btn" style="padding: 2px 8px; font-size: 10px;" onclick="playHapticClick('high'); clearTerminalLogs();">Clear Log</button>
+          <span class="synq-badge active" style="font-size: 9px;"><span class="synq-badge-dot radar-ping"></span>STREAMING</span>
         </div>
       </div>
       <div class="diagnostics-terminal" id="diagTerminalConsole">
-        ${ACTIVITIES.map(ev => `
-          <div class="log-line">
-            <span class="log-time">[${ev.time}:00]</span>
-            <span class="log-tag-info">[INFO]</span>
-            <span class="log-src">[${ev.robot}]</span>
-            <span class="log-text">${ev.msg}</span>
-          </div>
-        `).join('')}
-        <div class="log-line">
-          <span class="log-time">[00:00:00]</span>
-          <span class="log-tag-cbs">[CBS]</span>
-          <span class="log-src">[Coordinator]</span>
-          <span class="log-text">Space-Time Graph synchronized. Total nodes: 16, Vertices: 24, Reservations: 0</span>
-        </div>
+        ${renderLogLines(diagLogFilter)}
       </div>
     </div>
   `;
+}
+
+function renderLogLines(filterText = '') {
+  const query = filterText.toLowerCase().trim();
+  const allLogs = [
+    ...ACTIVITIES.map(ev => ({ time: `[${ev.time}:00]`, tag: '[INFO]', tagClass: 'log-tag-info', src: `[${ev.robot}]`, text: ev.msg })),
+    { time: '[00:00:00]', tag: '[CBS]', tagClass: 'log-tag-cbs', src: '[Coordinator]', text: 'Space-Time Graph synchronized. Total nodes: 16, Vertices: 24, Reservations: 0' }
+  ];
+
+  const matched = allLogs.filter(l => {
+    if (!query) return true;
+    return l.src.toLowerCase().includes(query) || l.tag.toLowerCase().includes(query) || l.text.toLowerCase().includes(query);
+  });
+
+  if (matched.length === 0) {
+    return `<div class="log-line"><span class="log-time">[Console]</span><span class="log-text">No log entries match "${filterText}".</span></div>`;
+  }
+
+  return matched.map(l => `
+    <div class="log-line">
+      <span class="log-time">${l.time}</span>
+      <span class="${l.tagClass}">${l.tag}</span>
+      <span class="log-src">${l.src}</span>
+      <span class="log-text">${l.text}</span>
+    </div>
+  `).join('');
+}
+
+function filterTerminalLogs(q) {
+  diagLogFilter = q;
+  const consoleEl = document.getElementById('diagTerminalConsole');
+  if (consoleEl) {
+    consoleEl.innerHTML = renderLogLines(q);
+  }
+}
+
+function exportDiagnosticsLog() {
+  const content = ACTIVITIES.map(ev => `[${ev.time}:00] [${ev.robot}] ${ev.msg}`).join('\n');
+  const blob = new Blob([content], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `synq-diagnostics-${Date.now()}.txt`;
+  a.click();
+  showToast("Diagnostic event stream exported to file.");
 }
 
 function clearTerminalLogs() {
@@ -830,16 +978,16 @@ function renderSafetyView() {
     <div class="view-header-strip">
       <div class="view-title-group">
         <span class="view-title">Industrial Safety Interlocks & Compliance</span>
-        <span class="synq-badge online"><span class="synq-badge-dot"></span>ISO 3691-4 / ISO 13849 PL-d CERTIFIED</span>
+        <span class="synq-badge online"><span class="synq-badge-dot radar-ping"></span>ISO 3691-4 / ISO 13849 PL-d CERTIFIED</span>
       </div>
-      <button class="synq-btn" onclick="toggleGlobalEstop()" style="background: rgba(248,81,73,0.15); color:#f85149; border-color: rgba(248,81,73,0.3);">
+      <button class="synq-btn" onclick="playHapticClick('low'); toggleGlobalEstop();" style="background: rgba(248,81,73,0.15); color:#f85149; border-color: rgba(248,81,73,0.3);">
         <span>${isEstopActive ? 'RESET ALL SAFETY CONTACTORS' : 'TRIGGER SAFETY INTERLOCK TEST'}</span>
       </button>
     </div>
 
-    <!-- Safety Architecture Zones Grid -->
+    <!-- Safety Architecture Zones Grid with Spotlight Cards -->
     <div class="synq-grid-3">
-      <div class="synq-card" style="padding: 16px;">
+      <div class="synq-card spotlight-card" style="padding: 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-size: 13px; font-weight: 700; color:#fff;">360° Safety LiDAR Fields</span>
           <span class="synq-badge online">ACTIVE</span>
@@ -863,7 +1011,7 @@ function renderSafetyView() {
         </p>
       </div>
 
-      <div class="synq-card" style="padding: 16px;">
+      <div class="synq-card spotlight-card" style="padding: 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-size: 13px; font-weight: 700; color:#fff;">Dual-Channel E-Stop Circuit</span>
           <span class="synq-badge ${isEstopActive ? 'critical' : 'online'}">${isEstopActive ? 'TRIPPED' : 'ARMED'}</span>
@@ -887,7 +1035,7 @@ function renderSafetyView() {
         </p>
       </div>
 
-      <div class="synq-card" style="padding: 16px;">
+      <div class="synq-card spotlight-card" style="padding: 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-size: 13px; font-weight: 700; color:#fff;">Inclinometer & Rollover Protection</span>
           <span class="synq-badge online">CALIBRATED</span>
@@ -962,15 +1110,15 @@ function renderSettingsView() {
     <div class="view-header-strip">
       <div class="view-title-group">
         <span class="view-title">System Settings & Gateway Configuration</span>
-        <span class="synq-badge active"><span class="synq-badge-dot"></span>CONFIGURATION ACTIVE</span>
+        <span class="synq-badge active"><span class="synq-badge-dot radar-ping"></span>CONFIGURATION ACTIVE</span>
       </div>
-      <button class="synq-btn" onclick="saveSettingsForm()" style="background: var(--synq-status-active); color: #fff;">
+      <button class="synq-btn" onclick="playHapticClick('high'); saveSettingsForm();" style="background: var(--synq-status-active); color: #fff;">
         <span>Save & Apply Settings</span>
       </button>
     </div>
 
     <div class="synq-grid-2">
-      <div class="synq-card" style="padding: 16px;">
+      <div class="synq-card spotlight-card" style="padding: 16px;">
         <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 12px;">
           ROS 2 & Middleware Gateway
         </div>
@@ -990,7 +1138,7 @@ function renderSettingsView() {
         </div>
       </div>
 
-      <div class="synq-card" style="padding: 16px;">
+      <div class="synq-card spotlight-card" style="padding: 16px;">
         <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 12px;">
           CBS Coordinator & Kinematic Parameters
         </div>
