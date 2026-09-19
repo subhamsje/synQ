@@ -1469,3 +1469,543 @@ function saveSettingsForm() {
   showToast("System settings applied successfully. Gateway parameters re-broadcasted.");
   logEvent("Admin", "Gateway and CBS kinematic configuration updated.");
 }
+
+/* ==========================================================================
+   11. OPERATE COMMAND CENTER COCKPIT CONTROLLERS & TIMELINE ENGINE
+   Matches Screenshot 2 (Operate Command Center) & Technical Cockpit UX
+   ========================================================================== */
+
+let activeInspectorTab = 'state';
+let timelinePlaying = true;
+let timelineSpeed = 1;
+let timelineInterval = null;
+let simulatedClockOffsetMs = 0;
+
+function setInspectorTab(tab) {
+  activeInspectorTab = tab;
+  ['tabState', 'tabSensors', 'tabMission', 'tabDiag'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.remove('active');
+  });
+  const activeBtn = document.getElementById(tab === 'state' ? 'tabState' : tab === 'sensors' ? 'tabSensors' : tab === 'mission' ? 'tabMission' : 'tabDiag');
+  if (activeBtn) activeBtn.classList.add('active');
+  renderInspectorState();
+}
+
+function selectRobot(robotId) {
+  window.selectedRobotId = robotId;
+  if (window.synqStore) {
+    window.synqStore.updateSystem({ selectedRobotId: robotId });
+  }
+
+  const selectEl = document.getElementById('canvasRobotSelect');
+  if (selectEl) selectEl.value = robotId;
+
+  const shortName = robotId.toUpperCase().replace('SYNQ-', '');
+  const feedTitle = document.getElementById('camFeedTitle');
+  if (feedTitle) feedTitle.textContent = `Camera Feed ${shortName}`;
+
+  const inspTitle = document.getElementById('inspectorBotTitle');
+  if (inspTitle) inspTitle.textContent = `Robot Inspector ${shortName}`;
+
+  renderInspectorState();
+  renderCockpitFleet();
+  render2DMinimap();
+
+  if (window.twin3D && window.twin3D.followSelected) {
+    const bot = window.synqStore ? window.synqStore.amrs[robotId] : null;
+    if (bot && window.twin3D.controls) {
+      window.twin3D.controls.target.set(bot.x, 0, bot.y);
+    }
+  }
+}
+window.selectRobot = selectRobot;
+
+function renderInspectorState() {
+  const container = document.getElementById('inspectorContent');
+  if (!container) return;
+
+  const rawBots = window.synqStore ? window.synqStore.amrs : (window.ROBOTS || {});
+  const botId = window.selectedRobotId || 'synq-amr-01';
+  const bot = rawBots[botId] || rawBots['synq-amr-01'] || {
+    id: botId,
+    status: 'Navigating',
+    x: 4.82,
+    y: 7.15,
+    heading: 84,
+    speed: 1.18,
+    battery: 64,
+    payload: 'Pallet P-104',
+    mission: 'MSN-1042'
+  };
+
+  const badge = document.getElementById('inspectorBotBadge');
+  if (badge) {
+    const isNav = bot.status === 'Navigating';
+    badge.className = `synq-badge ${isNav ? 'online' : bot.status === 'Charging' ? 'warning' : 'neutral'}`;
+    badge.textContent = bot.status.toUpperCase();
+  }
+
+  const batColor = bot.battery > 50 ? '#3fb950' : bot.battery > 20 ? '#d29922' : '#f85149';
+
+  if (activeInspectorTab === 'state') {
+    container.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">World Pose</span>
+          <span style="font-family:var(--synq-font-mono); color:#f0f3f6;">X: ${Number(bot.x).toFixed(2)}m, Y: ${Number(bot.y).toFixed(2)}m</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Orientation (θ)</span>
+          <span style="font-family:var(--synq-font-mono); color:#38bdf8;">${Math.round(bot.heading || 0)}° heading</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Linear Velocity</span>
+          <span style="font-family:var(--synq-font-mono); color:#f0f3f6;">${Number(bot.speed || 0.0).toFixed(2)} m/s (Cap: 1.50)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Battery SoC</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <div style="width:40px; height:6px; background:#1e2633; border-radius:3px; overflow:hidden;">
+              <div style="width:${Math.round(bot.battery)}%; height:100%; background:${batColor};"></div>
+            </div>
+            <span style="font-family:var(--synq-font-mono); color:${batColor}; font-weight:700;">${Math.round(bot.battery)}%</span>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Payload Carrier</span>
+          <span style="font-family:var(--synq-font-mono); color:#f0f3f6;">${bot.payload || 'SCISSOR_LIFT'}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Safety Clearance</span>
+          <span style="font-family:var(--synq-font-mono); color:#3fb950;">3.2m (CLEAR)</span>
+        </div>
+      </div>
+    `;
+  } else if (activeInspectorTab === 'sensors') {
+    container.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">LiDAR Ouster OS1-128</span>
+          <span style="font-family:var(--synq-font-mono); color:#3fb950;">10.2 Hz (NOMINAL)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Depth RealSense D455</span>
+          <span style="font-family:var(--synq-font-mono); color:#3fb950;">29.8 fps (LOCKED)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">IMU 6-DOF (BNO085)</span>
+          <span style="font-family:var(--synq-font-mono); color:#38bdf8;">200 Hz (CALIBRATED)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Wheel Encoders (4x)</span>
+          <span style="font-family:var(--synq-font-mono); color:#3fb950;">50 Hz (SYNCED)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Ultrasonic Bumper</span>
+          <span style="font-family:var(--synq-font-mono); color:#8c96a5;">4 Channels Armed</span>
+        </div>
+      </div>
+    `;
+  } else if (activeInspectorTab === 'mission') {
+    container.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Active Mission ID</span>
+          <span style="font-family:var(--synq-font-mono); color:#38bdf8; font-weight:700;">${bot.mission || 'MSN-1042'}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Current Waypoint</span>
+          <span style="font-family:var(--synq-font-mono); color:#f0f3f6;">${bot.currentNode || 'N_1_2'}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Target Destination</span>
+          <span style="font-family:var(--synq-font-mono); color:#f0f3f6;">${bot.destination || 'Rack Bay B'}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Route Progress</span>
+          <span style="font-family:var(--synq-font-mono); color:#3fb950;">72% (Step 3/4)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Estimated Remaining</span>
+          <span style="font-family:var(--synq-font-mono); color:#d29922;">01:24 remaining</span>
+        </div>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">ROS 2 Node</span>
+          <span style="font-family:var(--synq-font-mono); color:#3fb950;">/${bot.id}/nav2_mppi</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">EKF Covariance</span>
+          <span style="font-family:var(--synq-font-mono); color:#f0f3f6;">0.014 m² (CONVERGED)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Comm Ping / DDS</span>
+          <span style="font-family:var(--synq-font-mono); color:#3fb950;">4 ms (CycloneDDS)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+          <span style="color:#8c96a5;">Motor Thermals</span>
+          <span style="font-family:var(--synq-font-mono); color:#8c96a5;">FL:38° FR:39° RL:37° RR:40°</span>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function renderCockpitFleet() {
+  const container = document.getElementById('cockpitFleetList');
+  if (!container) return;
+
+  const rawBots = window.synqStore ? window.synqStore.amrs : (window.ROBOTS || {});
+  const bots = Object.values(rawBots);
+  const selId = window.selectedRobotId || 'synq-amr-01';
+
+  let html = `
+    <table class="cockpit-table">
+      <thead>
+        <tr>
+          <th>AMR</th>
+          <th>Status</th>
+          <th>Battery</th>
+          <th>Node</th>
+          <th>Task</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  bots.forEach(bot => {
+    const isSel = (bot.id === selId);
+    const shortId = bot.id.toUpperCase().replace('SYNQ-', '');
+    const isNav = (bot.status === 'Navigating');
+    const isChg = (bot.status === 'Charging');
+    const badgeCls = isNav ? 'online' : isChg ? 'warning' : 'neutral';
+    const statusText = isNav ? 'ACTIVE' : isChg ? 'CHARGING' : 'IDLE';
+    const batColor = bot.battery > 50 ? '#3fb950' : bot.battery > 20 ? '#d29922' : '#f85149';
+
+    html += `
+      <tr onclick="selectRobot('${bot.id}')" style="cursor:pointer; ${isSel ? 'background:rgba(56,189,248,0.12);' : ''}">
+        <td style="font-weight:700; color:${isSel ? '#38bdf8' : '#f0f3f6'};">${shortId}</td>
+        <td><span class="synq-badge ${badgeCls}" style="font-size:8px; padding:1px 4px;">${statusText}</span></td>
+        <td>
+          <div style="display:flex; align-items:center; gap:4px;">
+            <div style="width:28px; height:4px; background:#1e2633; border-radius:2px; overflow:hidden;">
+              <div style="width:${Math.round(bot.battery)}%; height:100%; background:${batColor};"></div>
+            </div>
+            <span style="color:${batColor};">${Math.round(bot.battery)}%</span>
+          </div>
+        </td>
+        <td>${bot.currentNode || 'N_0_1'}</td>
+        <td style="color:#58a6ff;">${bot.mission || '—'}</td>
+      </tr>
+    `;
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function renderCockpitMissions() {
+  const container = document.getElementById('cockpitMissionList');
+  if (!container) return;
+
+  const missions = [
+    { id: 'MSN-1042', desc: 'Pallet Relocation A-04 → B-12', bot: 'AMR-01', prog: 72, eta: '01:24', status: 'ACTIVE' },
+    { id: 'MSN-1043', desc: 'Inventory Restock Bay-08', bot: 'AMR-04', prog: 44, eta: '03:10', status: 'ACTIVE' },
+    { id: 'MSN-1044', desc: 'Quality Inspection C-02', bot: '—', prog: 0, eta: 'QUEUED', status: 'QUEUED' },
+    { id: 'MSN-1045', desc: 'Battery Fast-Charge Cycle', bot: 'AMR-03', prog: 88, eta: '00:45', status: 'CHARGING' }
+  ];
+
+  let html = `
+    <div style="display:flex; flex-direction:column; gap:5px;">
+  `;
+
+  missions.forEach(m => {
+    const isAct = m.status === 'ACTIVE';
+    html += `
+      <div style="background:#121720; border:1px solid #1e2633; border-radius:4px; padding:5px 8px; font-size:9.5px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+          <strong style="color:#38bdf8; font-family:var(--synq-font-mono);">${m.id}</strong>
+          <span style="font-size:8.5px; color:${isAct ? '#3fb950' : '#8c96a5'}; font-weight:600;">${m.eta}</span>
+        </div>
+        <div style="color:#c9d1d9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.desc}</div>
+        <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+          <div style="flex:1; height:3px; background:#1e2633; border-radius:2px; overflow:hidden;">
+            <div style="width:${m.prog}%; height:100%; background:#1f6feb;"></div>
+          </div>
+          <span style="font-size:8.5px; color:#8c96a5; font-family:var(--synq-font-mono);">${m.bot}</span>
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderCockpitDiagLogs() {
+  const container = document.getElementById('cockpitDiagLogs');
+  if (!container) return;
+
+  const logs = [
+    { t: '12:28:54', tag: 'NAV2', bot: 'AMR-01', text: 'MPPI trajectory optimal: cost=0.014, v=1.18 m/s', col: '#38bdf8' },
+    { t: '12:28:53', tag: 'CBS', bot: 'FLEET', text: 'Space-Time Conflict free across 5 active agent trajectories', col: '#3fb950' },
+    { t: '12:28:52', tag: 'SLAM', bot: 'AMR-01', text: 'Scan matching score: 0.984 | Keyframe #412 committed', col: '#d2a8ff' },
+    { t: '12:28:50', tag: 'TASK', bot: 'AMR-01', text: 'Task MSN-1042 assigned to AMR-01 via Auction Protocol', col: '#58a6ff' },
+    { t: '12:28:47', tag: 'SAFETY', bot: 'AMR-02', text: 'LIDAR scan clear, dynamic obstacle threshold nominal', col: '#3fb950' },
+    { t: '12:28:42', tag: 'VDA5050', bot: 'AMR-04', text: 'Ingested orderUpdate headerId: 4812, sequence: 14', col: '#e3b341' }
+  ];
+
+  let html = '';
+  logs.forEach(l => {
+    html += `
+      <div style="padding:1px 0; border-bottom:1px solid rgba(255,255,255,0.02);">
+        <span style="color:#64748b;">[${l.t}]</span>
+        <span style="color:${l.col}; font-weight:700;">[${l.tag}]</span>
+        <span style="color:#f0f3f6;">${l.text}</span>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+function render2DMinimap() {
+  const canvas = document.getElementById('minimapCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const rect = canvas.getBoundingClientRect();
+  if (canvas.width !== rect.width || canvas.height !== rect.height) {
+    canvas.width = rect.width || 300;
+    canvas.height = rect.height || 140;
+  }
+
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // Background
+  ctx.fillStyle = '#07090c';
+  ctx.fillRect(0, 0, w, h);
+
+  // Grid
+  ctx.strokeStyle = '#121720';
+  ctx.lineWidth = 1;
+  const stepX = w / 8;
+  const stepY = h / 6;
+  for (let x = 0; x < w; x += stepX) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+  }
+  for (let y = 0; y < h; y += stepY) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+
+  // Scale map from 15m x 15m
+  const pad = 12;
+  const scale = Math.min((w - pad * 2) / 15.0, (h - pad * 2) / 15.0);
+  const ox = (w - 15.0 * scale) / 2;
+  const oy = (h - 15.0 * scale) / 2;
+
+  // Draw Racks
+  const racks = [
+    { x: 2.0, y: 1.8, w: 4.5, h: 1.4 },
+    { x: 8.5, y: 1.8, w: 4.5, h: 1.4 },
+    { x: 2.0, y: 6.8, w: 4.5, h: 1.4 },
+    { x: 8.5, y: 6.8, w: 4.5, h: 1.4 },
+    { x: 2.0, y: 11.8, w: 4.5, h: 1.4 },
+    { x: 8.5, y: 11.8, w: 4.5, h: 1.4 }
+  ];
+
+  ctx.fillStyle = 'rgba(210, 153, 34, 0.25)';
+  ctx.strokeStyle = '#d29922';
+  ctx.lineWidth = 1;
+  racks.forEach(r => {
+    ctx.fillRect(ox + r.x * scale, oy + r.y * scale, r.w * scale, r.h * scale);
+    ctx.strokeRect(ox + r.x * scale, oy + r.y * scale, r.w * scale, r.h * scale);
+  });
+
+  // Charging Stations
+  ctx.fillStyle = '#e3b341';
+  ctx.beginPath();
+  ctx.arc(ox + 0.5 * scale, oy + 0.5 * scale, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Draw 5 AMRs
+  const rawBots = window.synqStore ? window.synqStore.amrs : (window.ROBOTS || {});
+  const bots = Object.values(rawBots);
+  const selId = window.selectedRobotId || 'synq-amr-01';
+
+  bots.forEach(bot => {
+    const bx = ox + (bot.x || 0) * scale;
+    const by = oy + (bot.y || 0) * scale;
+    const isSel = (bot.id === selId);
+
+    if (isSel) {
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(bx, by, 9, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = isSel ? '#38bdf8' : '#1f6feb';
+    ctx.beginPath();
+    ctx.arc(bx, by, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Direction vector
+    const rad = ((bot.heading || 0) * Math.PI) / 180;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.lineTo(bx + Math.cos(rad) * 9, by + Math.sin(rad) * 9);
+    ctx.stroke();
+  });
+}
+
+function renderCockpitLidarPcd() {
+  const canvas = document.getElementById('cockpitLidarPcdCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const rect = canvas.getBoundingClientRect();
+  if (canvas.width !== rect.width || canvas.height !== rect.height) {
+    canvas.width = rect.width || 150;
+    canvas.height = rect.height || 85;
+  }
+
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#040608';
+  ctx.fillRect(0, 0, w, h);
+
+  const numPoints = 140;
+  const time = Date.now() * 0.002;
+
+  for (let i = 0; i < numPoints; i++) {
+    const angle = (i / numPoints) * Math.PI * 2;
+    const depth = 20 + 25 * Math.sin(angle * 3 + time) + (Math.random() * 4);
+    const px = w / 2 + Math.cos(angle) * (depth * 1.2);
+    const py = h / 2 + Math.sin(angle) * (depth * 0.7);
+
+    // Rainbow depth coloring
+    const hue = Math.floor((depth / 50) * 240); // 0 (red) to 240 (blue)
+    ctx.fillStyle = `hsl(${hue}, 85%, 60%)`;
+    ctx.fillRect(px, py, 2, 2);
+  }
+}
+
+function toggleTwinLayer(key) {
+  if (window.twin3D) {
+    window.twin3D.toggleLayer(key);
+  }
+}
+
+function toggleCanvasLayerPill(btn, key) {
+  if (btn) btn.classList.toggle('active');
+  toggleTwinLayer(key);
+}
+
+function promptNewMission() {
+  playHapticClick('high');
+  showToast("Dispatch Modal: Queuing new pallet transfer MSN-1046");
+}
+
+function focusCameraFeed() {
+  const card = document.getElementById('camFeedTitle');
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth' });
+    showToast("Camera Feeds Focused");
+  }
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+function initTimelineScrubber() {
+  const clockTime = document.getElementById('headerClockTime');
+  const clockDate = document.getElementById('headerClockDate');
+  const timeClock = document.getElementById('timelineClockDisplay');
+
+  function tickClocks() {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const pad3 = (n) => String(n).padStart(3, '0');
+
+    const hh = pad(now.getHours());
+    const mm = pad(now.getMinutes());
+    const ss = pad(now.getSeconds());
+    const ms = pad3(now.getMilliseconds());
+
+    if (clockTime) clockTime.textContent = `${hh}:${mm}:${ss}`;
+    if (clockDate) {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      clockDate.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    }
+    if (timeClock) timeClock.textContent = `${hh}:${mm}:${ss}.${ms}`;
+  }
+
+  setInterval(tickClocks, 60);
+  tickClocks();
+
+  // Periodic updates for mini-map, pcd canvas, and cockpit lists
+  setInterval(() => {
+    render2DMinimap();
+    renderCockpitLidarPcd();
+    renderCockpitFleet();
+  }, 100);
+}
+
+function toggleTimelinePlay() {
+  timelinePlaying = !timelinePlaying;
+  const btn = document.getElementById('timelinePlayPauseBtn');
+  if (btn) btn.textContent = timelinePlaying ? '❚❚' : '▶';
+  showToast(timelinePlaying ? 'Timeline Live Stream Resumed' : 'Timeline Playback Paused');
+}
+
+function timelineStepStart() {
+  showToast('Seek to Timeline Origin: 12:00:00');
+}
+
+function timelineRewind() {
+  showToast('Rewinding Timeline (-15s)');
+}
+
+function timelineFastForward() {
+  const chip = document.getElementById('timelineSpeedChip');
+  timelineSpeed = timelineSpeed === 1 ? 2 : timelineSpeed === 2 ? 5 : 1;
+  if (chip) chip.textContent = `${timelineSpeed}x`;
+  showToast(`Timeline Playback Speed: ${timelineSpeed}x`);
+}
+
+function onTimelineScrub(event) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+  showToast(`Seeked Timeline to ${(pct * 100).toFixed(1)}%`);
+}
+
+// Ensure initialization on DOMContentLoaded
+window.addEventListener('DOMContentLoaded', () => {
+  initTimelineScrubber();
+  renderCockpitFleet();
+  renderCockpitMissions();
+  renderCockpitDiagLogs();
+  renderInspectorState();
+  render2DMinimap();
+  renderCockpitLidarPcd();
+});
+

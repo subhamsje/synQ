@@ -40,112 +40,400 @@
     if (!container) return;
 
     container.innerHTML = `
-      <div class="automap-shell">
-        <!-- 1. AutoMap Header Ribbon & Pipeline Stepper -->
-        <div class="automap-header-strip">
-          <div class="automap-title-block">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="view-title" style="font-size:16px;">AutoMap Studio — Scan to Digital Twin</span>
-              <span class="synq-badge online"><span class="synq-badge-dot radar-ping"></span>DEPLOYMENT PIPELINE</span>
-            </div>
-            <div style="font-size:11px; color:var(--synq-text-secondary); margin-top:2px;">
-              Autonomous warehouse spatial reconstruction from LiDAR, depth point clouds, and odometry.
-            </div>
-          </div>
+      <div class="synq-command-body" style="height:100%;">
 
-          <!-- 7-Stage Pipeline Stepper Bar -->
-          <div class="automap-stepper-bar">
-            ${STEP_SEQUENCE.map((s, idx) => `
-              <div class="automap-step-item ${s.key === currentStep ? 'active' : ''}" id="step-node-${s.key}">
-                <div class="step-num">${idx + 1}</div>
-                <div class="step-text">
-                  <span class="step-name">${s.label.split('. ')[1]}</span>
-                  <span class="step-sub">${s.desc}</span>
-                </div>
-              </div>
-              ${idx < STEP_SEQUENCE.length - 1 ? '<div class="step-line"></div>' : ''}
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- 2. Main Studio Workspace: 3D Visualizer (Left) & Review Drawer (Right) -->
-        <div class="automap-workspace">
-
-          <!-- Left Visualizer Container -->
-          <div class="automap-visual-container">
-            <div class="automap-canvas-toolbar">
-              <div style="display:flex; gap:6px; align-items:center;">
-                <button class="tool-btn ${activeViewMode === '3D' ? 'active' : ''}" onclick="window.setAutoMapViewMode('3D')">3D Point Cloud & Meshes</button>
-                <button class="tool-btn ${activeViewMode === '2D' ? 'active' : ''}" onclick="window.setAutoMapViewMode('2D')">2D Nav2 Costmap View</button>
-              </div>
-              <div style="display:flex; gap:8px; align-items:center;">
-                <span id="reconPointsBadge" class="synq-badge neutral" style="font-size:10px;">0 POINTS LOADED</span>
-                <button class="tool-btn" onclick="window.resetAutoMapCamera()">Reset View</button>
-              </div>
-            </div>
-
-            <!-- 3D Three.js Canvas Mount -->
-            <div id="automap3dViewport" class="automap-3d-mount"></div>
-
-            <!-- 2D Canvas Mount (Hidden unless toggled) -->
-            <canvas id="automap2dCanvas" class="automap-2d-canvas" style="display:none;"></canvas>
-
-            <!-- Bottom Live Telemetry Hud -->
-            <div class="automap-viewport-hud">
-              <div>Facility Size: <strong>15.0m × 15.0m</strong></div>
-              <div>Grid Voxel: <strong>0.15m</strong></div>
-              <div>SLAM Reference: <strong>/synq_amr_01/map</strong></div>
-              <div id="automapStatusMsg" style="color:#58a6ff;">Ready to begin mapping scan.</div>
+        <!-- LEFT DRAWER: PRE-FLIGHT HARDWARE, AMRs, SENSORS -->
+        <aside class="synq-operate-sidebar" style="width: 260px; padding: 0;">
+          <div style="padding: 10px; border-bottom: 1px solid #1e2633;">
+            <div style="font-size: 9.5px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:6px;">Deployment Target</div>
+            <div style="display:flex; background:#121720; border:1px solid #1e2633; border-radius:4px; padding:2px;">
+              <button class="filter-pill" style="flex:1; font-size:9.5px; padding:3px 0; text-align:center;">Simulation</button>
+              <button class="filter-pill active" style="flex:1; font-size:9.5px; padding:3px 0; text-align:center;">Real World</button>
             </div>
           </div>
 
-          <!-- Right Operator Review & Classification Drawer -->
-          <div class="automap-drawer">
-            <!-- Stage Control Buttons -->
-            <div class="automap-action-card">
-              <div style="font-size:11px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
-                Active Workflow Stage
+          <!-- Pre-Flight Hardware Checklist -->
+          <div style="padding: 10px; border-bottom: 1px solid #1e2633;">
+            <div style="font-size: 9.5px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:6px;">Pre-Flight Hardware Checklist</div>
+            <div style="display:flex; flex-direction:column; gap:4px; font-size:9.5px; color:#c9d1d9;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="color:#3fb950; font-weight:700;">✔</span>
+                <span>LiDAR Ouster OS1-128 Connected (10Hz)</span>
               </div>
-              <div id="stageControlButtons" style="display:flex; flex-direction:column; gap:8px;">
-                <button class="synq-btn" style="background:#238636; color:#fff; border-color:#2ea043;" onclick="window.startAutoMapScan()">
-                  <span>▶ 1. Run AMR Mapping Scan</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="color:#3fb950; font-weight:700;">✔</span>
+                <span>Intel RealSense D455 Depth (30fps)</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="color:#3fb950; font-weight:700;">✔</span>
+                <span>RTK-GPS / Wheel Odometry Calibrated</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="color:#3fb950; font-weight:700;">✔</span>
+                <span>ROS 2 DDS Domain 42 Bridge Ready</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="color:#3fb950; font-weight:700;">✔</span>
+                <span>Nav2 Lifecycle Nodes Active</span>
+              </div>
+            </div>
+
+            <!-- Vibrant Green Action Button -->
+            <button class="synq-btn" style="width:100%; margin-top:10px; background:#238636; color:#fff; border-color:#2ea043; font-weight:700; padding:7px 0; justify-content:center;" onclick="window.startAutoMapScan()">
+              <span>▶ Start Mapping Mission</span>
+            </button>
+          </div>
+
+          <!-- Connected AMRs Matrix -->
+          <div style="padding: 10px; border-bottom: 1px solid #1e2633;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size: 9.5px; font-weight:700; color:#64748b; text-transform:uppercase;">Connected AMRs</span>
+              <span class="synq-badge online" style="font-size:8.5px;">5 PAIRED</span>
+            </div>
+            <table class="cockpit-table">
+              <thead>
+                <tr>
+                  <th>Unit</th>
+                  <th>IP Address</th>
+                  <th>Ping</th>
+                  <th>SLAM Node</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="background:rgba(56,189,248,0.1);">
+                  <td style="color:#38bdf8; font-weight:700;">AMR-01</td>
+                  <td>192.168.1.21</td>
+                  <td style="color:#3fb950;">4ms</td>
+                  <td><span class="synq-badge online" style="font-size:8px;">ONLINE</span></td>
+                </tr>
+                <tr>
+                  <td>AMR-02</td>
+                  <td>192.168.1.22</td>
+                  <td>6ms</td>
+                  <td><span class="synq-badge neutral" style="font-size:8px;">STANDBY</span></td>
+                </tr>
+                <tr>
+                  <td>AMR-03</td>
+                  <td>192.168.1.23</td>
+                  <td>5ms</td>
+                  <td><span class="synq-badge neutral" style="font-size:8px;">STANDBY</span></td>
+                </tr>
+                <tr>
+                  <td>AMR-04</td>
+                  <td>192.168.1.24</td>
+                  <td>8ms</td>
+                  <td><span class="synq-badge neutral" style="font-size:8px;">STANDBY</span></td>
+                </tr>
+                <tr>
+                  <td>AMR-05</td>
+                  <td>192.168.1.25</td>
+                  <td>4ms</td>
+                  <td><span class="synq-badge neutral" style="font-size:8px;">STANDBY</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Sensors Live Rates (AMR-01) -->
+          <div style="padding: 10px; flex:1; overflow-y:auto;">
+            <div style="font-size: 9.5px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:6px;">Sensors (AMR-01)</div>
+            <table class="cockpit-table">
+              <thead>
+                <tr>
+                  <th>Sensor Stream</th>
+                  <th>Rate</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>LiDAR 128-Beam</td>
+                  <td style="color:#3fb950;">10.2 Hz</td>
+                  <td><span style="color:#3fb950;">OK</span></td>
+                </tr>
+                <tr>
+                  <td>RealSense RGB-D</td>
+                  <td style="color:#3fb950;">29.8 fps</td>
+                  <td><span style="color:#3fb950;">OK</span></td>
+                </tr>
+                <tr>
+                  <td>IMU 6-DOF</td>
+                  <td style="color:#38bdf8;">200 Hz</td>
+                  <td><span style="color:#3fb950;">OK</span></td>
+                </tr>
+                <tr>
+                  <td>Wheel Encoders</td>
+                  <td>50 Hz</td>
+                  <td><span style="color:#3fb950;">OK</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </aside>
+
+        <!-- CENTER STACK: 3D RECONSTRUCTION VIEWPORT + BOTTOM COCKPIT -->
+        <div class="synq-main-center-stack">
+
+          <!-- 3D RECONSTRUCTION VIEWPORT -->
+          <div class="synq-viewport-stage" id="automapStage">
+            <div id="automap3dViewport" class="automap-3d-mount" style="width:100%; height:100%; position:absolute; top:0; left:0;"></div>
+            <canvas id="automap2dCanvas" class="automap-2d-canvas" style="display:none; width:100%; height:100%; position:absolute; top:0; left:0;"></canvas>
+
+            <!-- In-Canvas Top Floating Bar -->
+            <div class="in-canvas-top-bar">
+              <div class="in-canvas-pill-group">
+                <button class="tool-btn ${activeViewMode === '3D' ? 'active' : ''}" onclick="window.setAutoMapViewMode('3D')">3D Point Cloud</button>
+                <button class="tool-btn ${activeViewMode === '2D' ? 'active' : ''}" onclick="window.setAutoMapViewMode('2D')">2D Costmap</button>
+                <span style="color:#2d3646;">|</span>
+                <span id="reconPointsBadge" style="font-size:10px; color:#38bdf8; font-weight:600;">2.4M POINTS LOADED</span>
+                <span style="color:#2d3646;">|</span>
+                <span style="font-size:10px; color:#8c96a5;">Voxel Grid: 0.15m</span>
+              </div>
+
+              <div class="in-canvas-pill-group">
+                <button class="synq-btn" style="padding: 2px 7px; font-size:9.5px; background:#1f6feb; color:#fff;" onclick="window.generateRepresentations()">
+                  <span>Compile World Model</span>
                 </button>
-                <button class="synq-btn" style="background:rgba(56,189,248,0.15); color:#38bdf8; border-color:rgba(56,189,248,0.4);" onclick="window.runAutoMapReconstruction()">
-                  <span>⚡ 2. Reconstruct & Detect Objects</span>
+                <button class="synq-btn" style="padding: 2px 7px; font-size:9.5px; background:rgba(163,113,247,0.2); color:#d2a8ff; border-color:rgba(163,113,247,0.4);" onclick="window.activateAutoMapIntoFMS()">
+                  <span>Activate in synQ</span>
                 </button>
-                <div style="display:flex; gap:6px;">
-                  <button class="synq-btn" style="flex:1;" onclick="window.confirmAllDetections()">
-                    <span>Approve All (✓)</span>
-                  </button>
-                  <button class="synq-btn" style="flex:1; background:#1f6feb; color:#fff; border-color:#388bfd;" onclick="window.generateRepresentations()">
-                    <span>3. Compile World Model</span>
-                  </button>
-                </div>
-                <button class="synq-btn" style="background:rgba(163,113,247,0.2); color:#d2a8ff; border-color:rgba(163,113,247,0.5); font-weight:700;" onclick="window.activateAutoMapIntoFMS()">
-                  <span>🚀 4. Activate in synQ FMS & Digital Twin</span>
+                <button class="in-canvas-icon-btn" onclick="window.resetAutoMapCamera()" title="Reset Camera">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
                 </button>
               </div>
             </div>
 
-            <!-- Semantic Filter Tabs -->
-            <div class="automap-filter-strip">
-              <button class="filter-tab ${activeFilter === 'ALL' ? 'active' : ''}" onclick="window.setAutoMapFilter('ALL')">All (<span id="countAll">0</span>)</button>
-              <button class="filter-tab ${activeFilter === 'NEEDS_CONFIRMATION' ? 'active' : ''}" onclick="window.setAutoMapFilter('NEEDS_CONFIRMATION')">
-                Needs Review (<span id="countNeedsReview" style="color:#d29922; font-weight:700;">0</span>)
+            <!-- In-Canvas Bottom Floating Layer Pills -->
+            <div class="in-canvas-bottom-pills">
+              <button class="canvas-layer-pill active">
+                <span style="width:5px; height:5px; border-radius:50%; background:#38bdf8;"></span>
+                <span>Racks</span>
               </button>
-              <button class="filter-tab ${activeFilter === 'rack' ? 'active' : ''}" onclick="window.setAutoMapFilter('rack')">Racks</button>
-              <button class="filter-tab ${activeFilter === 'stations' ? 'active' : ''}" onclick="window.setAutoMapFilter('stations')">Stations</button>
+              <button class="canvas-layer-pill active">
+                <span style="width:5px; height:5px; border-radius:50%; background:#38bdf8;"></span>
+                <span>Aisles</span>
+              </button>
+              <button class="canvas-layer-pill active">
+                <span style="width:5px; height:5px; border-radius:50%; background:#38bdf8;"></span>
+                <span>Bounding Boxes</span>
+              </button>
+              <button class="canvas-layer-pill active">
+                <span style="width:5px; height:5px; border-radius:50%; background:#38bdf8;"></span>
+                <span>Point Cloud</span>
+              </button>
+              <button class="canvas-layer-pill active">
+                <span style="width:5px; height:5px; border-radius:50%; background:#38bdf8;"></span>
+                <span>Stations</span>
+              </button>
             </div>
 
-            <!-- Detection Cards List -->
-            <div id="automapDetectionsList" class="automap-detections-scroll">
-              <div style="padding:24px 16px; text-align:center; color:var(--synq-text-muted); font-size:12px;">
-                No objects detected yet. Click <strong>"Run AMR Mapping Scan"</strong> to record LiDAR and extract warehouse infrastructure.
+            <div class="automap-viewport-hud" style="position:absolute; bottom:12px; left:12px; background:rgba(13,17,23,0.85); padding:4px 10px; border-radius:4px; font-size:9.5px; border:1px solid #1e2633; z-index:15;">
+              <span id="automapStatusMsg" style="color:#58a6ff;">Real-time SLAM & Voxel Reconstruction Active</span>
+            </div>
+          </div>
+
+          <!-- BOTTOM COCKPIT (3 COLUMNS: MAPPING PROGRESS, DETECTED OBJECTS, MISSION QUEUE) -->
+          <div class="synq-bottom-cockpit">
+
+            <!-- Column 1: Mapping Progress with Circular Gauge -->
+            <div class="cockpit-panel">
+              <div class="cockpit-panel-header">
+                <div class="cockpit-panel-title">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle></svg>
+                  <span>Mapping Progress</span>
+                </div>
+                <span class="synq-badge online" style="font-size:9px;">ACTIVE</span>
+              </div>
+              <div class="cockpit-panel-body" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div class="circular-progress-wrap">
+                  <svg class="circular-gauge" viewBox="0 0 80 80">
+                    <circle class="gauge-bg" cx="40" cy="40" r="34"></circle>
+                    <circle class="gauge-fill" cx="40" cy="40" r="34"></circle>
+                    <text x="40" y="44" text-anchor="middle" fill="#f0f3f6" font-size="14" font-weight="700" font-family="var(--synq-font-mono)">68%</text>
+                  </svg>
+                  <div style="display:flex; flex-direction:column; gap:3px; font-size:9.5px;">
+                    <div>Total Area: <strong>1,420 m²</strong></div>
+                    <div>LiDAR Points: <strong style="color:#38bdf8;">2,418,200</strong></div>
+                    <div>Loop Closures: <strong style="color:#3fb950;">14 Verified</strong></div>
+                    <div>Confidence: <strong style="color:#3fb950;">98.4%</strong></div>
+                  </div>
+                </div>
+                <div style="display:flex; gap:6px; margin-top:6px;">
+                  <button class="synq-btn" style="flex:1; padding:3px 0; font-size:9px; justify-content:center;" onclick="window.generateRepresentations()">Save & Export</button>
+                  <button class="synq-btn" style="flex:1; padding:3px 0; font-size:9px; justify-content:center;" onclick="window.activateAutoMapIntoFMS()">Align Twin</button>
+                  <button class="synq-btn" style="padding:3px 8px; font-size:9px; color:#f85149;" onclick="window.resetAutoMapCamera()">Reset</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Column 2: Detected Objects (Live Table) -->
+            <div class="cockpit-panel">
+              <div class="cockpit-panel-header">
+                <div class="cockpit-panel-title">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18"></rect></svg>
+                  <span>Detected Objects (Live)</span>
+                </div>
+                <button class="synq-btn" style="padding:2px 6px; font-size:8.5px;" onclick="window.confirmAllDetections()">Approve All (✓)</button>
+              </div>
+              <div class="cockpit-panel-body">
+                <table class="cockpit-table">
+                  <thead>
+                    <tr>
+                      <th>Object</th>
+                      <th>Category</th>
+                      <th>Conf.</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="automapObjectsTableBody">
+                    <tr>
+                      <td style="color:#38bdf8; font-weight:700;">Rack R-12</td>
+                      <td>Heavy Pallet</td>
+                      <td>98.4%</td>
+                      <td><span class="synq-badge online" style="font-size:8px;">CONFIRMED</span></td>
+                      <td><button class="synq-btn" style="padding:1px 5px; font-size:8px;">View</button></td>
+                    </tr>
+                    <tr>
+                      <td style="color:#38bdf8; font-weight:700;">Conveyor C-01</td>
+                      <td>Material Flow</td>
+                      <td>94.1%</td>
+                      <td><span class="synq-badge online" style="font-size:8px;">CONFIRMED</span></td>
+                      <td><button class="synq-btn" style="padding:1px 5px; font-size:8px;">View</button></td>
+                    </tr>
+                    <tr>
+                      <td style="color:#d29922; font-weight:700;">Pallet P-04</td>
+                      <td>Obstacle</td>
+                      <td>87.2%</td>
+                      <td><span class="synq-badge warning" style="font-size:8px;">NEEDS REVIEW</span></td>
+                      <td><button class="synq-btn" style="padding:1px 5px; font-size:8px; background:#1f6feb; color:#fff;" onclick="window.confirmSingleDetection('Pallet P-04')">Verify</button></td>
+                    </tr>
+                    <tr>
+                      <td style="color:#38bdf8; font-weight:700;">Zone Z-03</td>
+                      <td>Restricted</td>
+                      <td>99.0%</td>
+                      <td><span class="synq-badge online" style="font-size:8px;">CONFIRMED</span></td>
+                      <td><button class="synq-btn" style="padding:1px 5px; font-size:8px;">View</button></td>
+                    </tr>
+                    <tr>
+                      <td style="color:#38bdf8; font-weight:700;">Dock D-01</td>
+                      <td>Charging Pad</td>
+                      <td>96.5%</td>
+                      <td><span class="synq-badge online" style="font-size:8px;">CONFIRMED</span></td>
+                      <td><button class="synq-btn" style="padding:1px 5px; font-size:8px;">View</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Column 3: AutoMap Mission Queue -->
+            <div class="cockpit-panel">
+              <div class="cockpit-panel-header">
+                <div class="cockpit-panel-title">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                  <span>AutoMap Mission Queue</span>
+                </div>
+                <span style="font-size:9px; color:#64748b;">08:42 REMAINING</span>
+              </div>
+              <div class="cockpit-panel-body" style="font-size:9.5px;">
+                <div style="display:flex; flex-direction:column; gap:5px;">
+                  <div style="background:#121720; border:1px solid #1e2633; border-radius:4px; padding:5px 8px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                      <strong style="color:#38bdf8;">AUTOSCAN-01: Bay A-F Perimeter</strong>
+                      <span style="color:#3fb950;">IN PROGRESS</span>
+                    </div>
+                    <div style="color:#8c96a5;">Waypoints: WP-01 → WP-02 → WP-03 → WP-04 → WP-05</div>
+                    <div style="width:100%; height:3px; background:#1e2633; border-radius:2px; margin-top:4px; overflow:hidden;">
+                      <div style="width:68%; height:100%; background:#238636;"></div>
+                    </div>
+                  </div>
+                  <div style="background:#121720; border:1px solid #1e2633; border-radius:4px; padding:5px 8px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                      <strong style="color:#8c96a5;">AUTOSCAN-02: Aisle Crossings</strong>
+                      <span style="color:#64748b;">QUEUED</span>
+                    </div>
+                    <div style="color:#64748b;">Awaiting completion of Bay perimeter sweep</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- RIGHT TECHNICAL COCKPIT: QUAD SENSOR SPLIT & INSPECTOR -->
+        <aside class="synq-right-cockpit">
+
+          <!-- AMR-01 Live View: 4-Way Sensor Quad Split -->
+          <div class="cockpit-card">
+            <div class="cockpit-card-header">
+              <div class="cockpit-card-title">
+                <span style="width:6px; height:6px; border-radius:50%; background:#10b981;"></span>
+                <span>AMR-01 — Live View</span>
+              </div>
+              <span class="synq-badge online" style="font-size:8.5px;">4 STREAMS</span>
+            </div>
+            <div class="quad-sensor-grid">
+              <div class="sensor-quad-tile">
+                <span class="sensor-tile-label">FRONT RGB</span>
+                <img src="/static/public/warehouse_camera.jpg" alt="Front Camera Feed" class="sensor-quad-img">
+              </div>
+              <div class="sensor-quad-tile">
+                <span class="sensor-tile-label">DEPTH D455</span>
+                <img src="/static/public/warehouse_depth.jpg" alt="Depth Sensor Feed" class="sensor-quad-img">
+              </div>
+              <div class="sensor-quad-tile">
+                <span class="sensor-tile-label">LIDAR TOP VIEW</span>
+                <canvas id="automapRadarCanvas" style="width:100%; height:100%; display:block; background:#040608;"></canvas>
+              </div>
+              <div class="sensor-quad-tile">
+                <span class="sensor-tile-label">3D POINT CLOUD</span>
+                <canvas id="automapLidarPcdCanvas" style="width:100%; height:100%; display:block; background:#040608;"></canvas>
               </div>
             </div>
           </div>
 
-        </div>
+          <!-- Robot Inspector AMR-01 (SLAM Telemetry) -->
+          <div class="cockpit-card" style="border-bottom:none; flex:1; display:flex; flex-direction:column;">
+            <div class="cockpit-card-header">
+              <div class="cockpit-card-title">
+                <span style="width:6px; height:6px; border-radius:50%; background:#38bdf8;"></span>
+                <span>Robot Inspector AMR-01</span>
+              </div>
+              <span class="synq-badge online" style="font-size:8.5px;">SLAM MAPPING</span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px; font-size:9.5px; flex:1; overflow-y:auto;">
+              <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+                <span style="color:#8c96a5;">SLAM Node</span>
+                <span style="font-family:var(--synq-font-mono); color:#3fb950;">slam_toolbox_async (ONLINE)</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+                <span style="color:#8c96a5;">Keyframes Captured</span>
+                <span style="font-family:var(--synq-font-mono); color:#f0f3f6;">412 frames</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+                <span style="color:#8c96a5;">Loop Closures</span>
+                <span style="font-family:var(--synq-font-mono); color:#38bdf8;">14 validated</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+                <span style="color:#8c96a5;">Estimated Drift</span>
+                <span style="font-family:var(--synq-font-mono); color:#3fb950;">±0.012 m</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+                <span style="color:#8c96a5;">Scan Match Score</span>
+                <span style="font-family:var(--synq-font-mono); color:#3fb950;">0.984 (EXCELLENT)</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:3px;">
+                <span style="color:#8c96a5;">Battery SoC</span>
+                <span style="font-family:var(--synq-font-mono); color:#3fb950;">64% (25.4V)</span>
+              </div>
+            </div>
+          </div>
+
+        </aside>
+
       </div>
     `;
 
@@ -803,6 +1091,148 @@
       box.innerHTML = '<span style="color:red;">Failed to load representation.</span>';
     }
   };
+
+  /* ==========================================================================
+     QUAD SENSOR RADAR & LIDAR LIVE ANIMATION
+     ========================================================================== */
+  let radarAngle = 0;
+  function renderAutoMapRadar() {
+    const canvas = document.getElementById('automapRadarCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    if (canvas.width !== rect.width || canvas.height !== rect.height) {
+      canvas.width = rect.width || 140;
+      canvas.height = rect.height || 80;
+    }
+
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#040608';
+    ctx.fillRect(0, 0, w, h);
+
+    const cx = w / 2;
+    const cy = h / 2;
+    const maxR = Math.min(w, h) / 2 - 4;
+
+    // Range rings
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
+    ctx.lineWidth = 1;
+    for (let r = 1; r <= 3; r++) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, (maxR / 3) * r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Crosshairs
+    ctx.beginPath();
+    ctx.moveTo(cx - maxR, cy); ctx.lineTo(cx + maxR, cy);
+    ctx.moveTo(cx, cy - maxR); ctx.lineTo(cx, cy + maxR);
+    ctx.stroke();
+
+    // Rotating sweep cone
+    radarAngle += 0.08;
+    const sweepGradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
+    sweepGradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+    sweepGradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, maxR, radarAngle - 0.4, radarAngle);
+    ctx.closePath();
+    ctx.fillStyle = sweepGradient;
+    ctx.fill();
+
+    // Sweep line
+    ctx.strokeStyle = '#10b981';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(radarAngle) * maxR, cy + Math.sin(radarAngle) * maxR);
+    ctx.stroke();
+    ctx.restore();
+
+    // Obstacle blips
+    const blips = [
+      { r: 0.6 * maxR, a: 0.8 },
+      { r: 0.8 * maxR, a: 2.2 },
+      { r: 0.45 * maxR, a: 3.9 },
+      { r: 0.75 * maxR, a: 5.1 }
+    ];
+    blips.forEach(b => {
+      const bx = cx + Math.cos(b.a) * b.r;
+      const by = cy + Math.sin(b.a) * b.r;
+      ctx.fillStyle = '#f85149';
+      ctx.beginPath();
+      ctx.arc(bx, by, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function renderAutoMapLidarPcd() {
+    const canvas = document.getElementById('automapLidarPcdCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    if (canvas.width !== rect.width || canvas.height !== rect.height) {
+      canvas.width = rect.width || 140;
+      canvas.height = rect.height || 80;
+    }
+
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#040608';
+    ctx.fillRect(0, 0, w, h);
+
+    const numPoints = 120;
+    const time = Date.now() * 0.002;
+    for (let i = 0; i < numPoints; i++) {
+      const angle = (i / numPoints) * Math.PI * 2;
+      const depth = 15 + 20 * Math.sin(angle * 2 + time) + (Math.random() * 3);
+      const px = w / 2 + Math.cos(angle) * (depth * 1.4);
+      const py = h / 2 + Math.sin(angle) * (depth * 0.8);
+      const hue = Math.floor((depth / 40) * 260);
+      ctx.fillStyle = `hsl(${hue}, 90%, 65%)`;
+      ctx.fillRect(px, py, 2, 2);
+    }
+  }
+
+  window.confirmSingleDetection = function(name) {
+    if (typeof playHapticClick === 'function') playHapticClick('high');
+    if (typeof showToast === 'function') showToast(`Verified & Confirmed: ${name}`);
+    const tbody = document.getElementById('automapObjectsTableBody');
+    if (tbody) {
+      const trs = tbody.querySelectorAll('tr');
+      trs.forEach(tr => {
+        if (tr.textContent.includes(name)) {
+          const badge = tr.querySelector('.synq-badge');
+          if (badge) {
+            badge.className = 'synq-badge online';
+            badge.textContent = 'CONFIRMED';
+          }
+          const btn = tr.querySelector('button');
+          if (btn) {
+            btn.style.background = 'transparent';
+            btn.style.color = '#c9d1d9';
+            btn.textContent = 'View';
+          }
+        }
+      });
+    }
+  };
+
+  // Run quad sensor periodic refresh
+  setInterval(() => {
+    renderAutoMapRadar();
+    renderAutoMapLidarPcd();
+  }, 60);
 
   // Attach to global window
   window.renderAutoMapView = renderAutoMapView;

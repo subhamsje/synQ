@@ -131,6 +131,8 @@
       // 8. Event Listeners
       window.addEventListener('resize', () => this.onResize());
       this.renderer.domElement.addEventListener('click', (e) => this.onPointerClick(e));
+      this.renderer.domElement.addEventListener('pointermove', (e) => this.onPointerMove(e));
+      this.renderer.domElement.addEventListener('pointerleave', () => this.hideRackCallout());
 
       // 9. Start Render Loop
       this.animate();
@@ -274,6 +276,16 @@
         g.add(beam);
       }
 
+      // Invisible hit box for raycasting & hover callout
+      const hitGeo = new THREE.BoxGeometry(rack.w, height, rack.h);
+      const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+      const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+      hitMesh.position.set(0, height / 2, 0);
+      hitMesh.userData = { isRack: true, rackData: rack };
+      g.add(hitMesh);
+
+      g.name = "rack_" + (rack.id || "bay");
+      g.userData = { isRack: true, rackData: rack };
       g.position.set(cx, 0, cz);
       return g;
     }
@@ -583,7 +595,66 @@
           }
           curr = curr.parent;
         }
+
+        // Check if rack clicked
+        if (hit.object.userData && hit.object.userData.isRack) {
+          const rack = hit.object.userData.rackData;
+          this.showRackCallout(event.clientX, event.clientY, rack);
+          return;
+        }
       }
+    }
+
+    onPointerMove(event) {
+      if (!this.renderer || !this.camera) return;
+      const rect = this.renderer.domElement.getBoundingClientRect();
+      this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+      const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+
+      for (let hit of intersects) {
+        if (hit.object.userData && hit.object.userData.isRack) {
+          const rack = hit.object.userData.rackData;
+          this.showRackCallout(event.clientX, event.clientY, rack);
+          return;
+        }
+      }
+      this.hideRackCallout();
+    }
+
+    showRackCallout(clientX, clientY, rack) {
+      const callout = document.getElementById('rackCalloutOverlay');
+      if (!callout) return;
+      const stage = document.getElementById('viewportStage');
+      if (!stage) return;
+      const stageRect = stage.getBoundingClientRect();
+
+      const x = clientX - stageRect.left;
+      const y = clientY - stageRect.top;
+
+      callout.style.left = `${x}px`;
+      callout.style.top = `${y}px`;
+      callout.style.display = 'block';
+
+      const titleEl = document.getElementById('rackCalloutTitle');
+      const typeEl = document.getElementById('rackCalloutType');
+      const occEl = document.getElementById('rackCalloutOcc');
+      const statEl = document.getElementById('rackCalloutStatus');
+
+      if (titleEl) titleEl.textContent = `Rack R-${rack.id || '12'}`;
+      if (typeEl) typeEl.textContent = rack.name || 'Heavy Industrial';
+      if (occEl) occEl.textContent = '84% (42/50 bays)';
+      if (statEl) {
+        statEl.textContent = 'Optimal';
+        statEl.style.color = '#3fb950';
+      }
+    }
+
+    hideRackCallout() {
+      const callout = document.getElementById('rackCalloutOverlay');
+      if (callout) callout.style.display = 'none';
     }
 
     onResize() {

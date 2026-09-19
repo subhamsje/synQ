@@ -655,63 +655,54 @@
 <body>
   <div id="synqAppRoot">
 
-    <!-- 1. TOP OPERATIONAL HEADER -->
-    <header class="synq-topbar">
-      <div class="topbar-left">
-        <button class="sidebar-toggle-btn" title="Toggle Sidebar (Ctrl+B)" onclick="playHapticClick('high'); toggleSidebar();">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-        </button>
-        <div class="brand-block">
-          <span class="brand-logo-text">synQ</span>
-          <span class="brand-env-badge">v3.0-RC</span>
-        </div>
-        <span class="synq-badge online" id="topbarStatusPill"><span class="synq-badge-dot radar-ping"></span>SYSTEM OPERATIONAL</span>
-
-        <!-- Autonomy Loop Pipeline Strip -->
-        <div class="autonomy-pipeline-strip" title="Click to inspect current Autonomy Loop decision state (HotKey: ?)" onclick="playHapticClick('high'); navigateTo('overview'); setPanelTab('autonomy');">
-          <div class="pipeline-step" id="step-task"><div class="step-dot"></div><span>TASK</span></div>
-          <span class="pipeline-arrow" id="arr-0">→</span>
-          <div class="pipeline-step" id="step-decision"><div class="step-dot"></div><span>DECISION</span></div>
-          <span class="pipeline-arrow" id="arr-1">→</span>
-          <div class="pipeline-step" id="step-route"><div class="step-dot"></div><span>ROUTE</span></div>
-          <span class="pipeline-arrow" id="arr-2">→</span>
-          <div class="pipeline-step active" id="step-exec"><div class="step-dot"></div><span>EXECUTION</span></div>
-          <span class="pipeline-arrow" id="arr-3">→</span>
-          <div class="pipeline-step" id="step-conflict"><div class="step-dot"></div><span>CONFLICT</span></div>
-          <span class="pipeline-arrow" id="arr-4">→</span>
-          <div class="pipeline-step" id="step-recovery"><div class="step-dot"></div><span>RECOVERY</span></div>
-          <span class="pipeline-arrow" id="arr-5">→</span>
-          <div class="pipeline-step" id="step-verify"><div class="step-dot"></div><span>VERIFIED</span></div>
-        </div>
+    <!-- 1. UNIVERSAL OPERATIONAL MASTER HEADER (Matches Reference Screenshots) -->
+    <header class="synq-master-header">
+      <div class="synq-brand-wrap">
+        <a href="#" class="synq-logo-mark" onclick="navigateTo('overview'); return false;">
+          <div class="synq-logo-text">syn<span class="q-dot">Q</span></div>
+        </a>
+        <div class="synq-tagline">WAREHOUSE INTELLIGENCE IN MOTION</div>
       </div>
 
-      <!-- Topbar Telemetry Strip -->
-      <div class="topbar-telemetry-strip">
-        <div class="topbar-metric-item">Fleet: <strong id="topbarFleetStatus">3 / 3 ONLINE</strong></div>
-        <span style="color: var(--synq-border-default);">|</span>
-        <div class="topbar-metric-item">Missions: <strong id="topbarActiveMissions">01 ACTIVE</strong></div>
-        <span style="color: var(--synq-border-default);">|</span>
-        <div class="topbar-metric-item">Warnings: <strong id="topbarWarnings" style="color: var(--synq-status-online);">00</strong></div>
-        <span style="color: var(--synq-border-default);">|</span>
-        <div class="topbar-metric-item">Latency: <strong id="topbarLatency">12 ms</strong></div>
-        <span style="color: var(--synq-border-default);">|</span>
-        <span class="synq-badge online" id="topbarSourceBadge" style="font-size: 9px;"><span class="synq-badge-dot radar-ping"></span>ROS 2 LIVE</span>
-      </div>
+      <!-- Center Primary Navigation Tabs -->
+      <nav class="synq-header-tabs">
+        <button class="synq-nav-tab active" data-nav="overview" onclick="playHapticClick('high'); navigateTo('overview');">
+          <span>Operate</span>
+        </button>
+        <button class="synq-nav-tab" data-nav="fleet" onclick="playHapticClick('high'); navigateTo('fleet');">
+          <span>Fleet</span>
+        </button>
+        <button class="synq-nav-tab" data-nav="missions" onclick="playHapticClick('high'); navigateTo('missions');">
+          <span>Missions</span>
+        </button>
+        <button class="synq-nav-tab" data-nav="automap" onclick="playHapticClick('high'); navigateTo('automap');">
+          <span>AutoMap</span>
+        </button>
+        <button class="synq-nav-tab" data-nav="telemetry" onclick="playHapticClick('high'); navigateTo('telemetry');">
+          <span>Analytics</span>
+        </button>
+        <button class="synq-nav-tab" data-nav="warehouse" onclick="playHapticClick('high'); navigateTo('warehouse');">
+          <span>Digital Twin</span>
+        </button>
+        <button class="synq-nav-tab" data-nav="settings" onclick="playHapticClick('high'); navigateTo('settings');">
+          <span>System</span>
+        </button>
+      </nav>
 
-      <div class="topbar-right">
-        <button class="synq-btn" style="background: rgba(88,166,255,0.12); color: #58a6ff; border-color: rgba(88,166,255,0.3);" onclick="playHapticClick('high'); openDemoQrModal();">
-          <span>Judge Demo QR</span>
-        </button>
-        <div class="moving-border-btn" onclick="playHapticClick('high'); navigateTo('overview'); openWhyFLTXDrawer();" title="Inspect Autonomy Decision Reasoning (HotKey: ?)">
-          <button class="moving-border-btn-inner">
-            <span>Why Did FLTX Do This?</span>
-            <span class="kbd-chip" style="margin-left:4px;">?</span>
-          </button>
+      <!-- Right Header Controls -->
+      <div class="synq-header-right">
+        <div class="synq-status-pill">
+          <span class="status-dot"></span>
+          <span id="masterStatusText">All Systems Nominal | 5 AMRs Connected</span>
         </div>
-        <button class="synq-btn btn-danger" id="btnEstop" onclick="playHapticClick('low'); toggleGlobalEstop();">
-          <span id="estopLabel">Emergency Stop (All)</span>
-          <span class="kbd-chip" style="margin-left:4px; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.25); color:#fff;">E</span>
+        <button class="synq-btn" style="padding: 4px 8px;" onclick="toggleFullscreen()" title="Toggle Fullscreen">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
         </button>
+        <div class="synq-clock-box">
+          <span class="synq-clock-time" id="headerClockTime">12:28:54</span>
+          <span class="synq-clock-date" id="headerClockDate">Thu, 19 Sep 2026</span>
+        </div>
+        <div class="synq-user-avatar" title="Operator: Subham Joshi (SJ)">SJ</div>
       </div>
     </header>
 
@@ -812,143 +803,370 @@
       <!-- 3. MULTI-VIEW MAIN CONTAINER -->
       <main class="synq-main-view">
 
-        <!-- VIEW 1: OVERVIEW (HERO DIGITAL TWIN + KPI RIBBON + CONTEXT PANEL) -->
-        <div class="view-page active" id="view-overview">
-          <div class="view-overview-layout">
+        <!-- VIEW 1: OPERATE COMMAND CENTER (Matches Reference Screenshot 2) -->
+        <div class="view-page active" id="view-overview" style="padding:0; height:100%; overflow:hidden;">
+          <div class="synq-command-body" style="height:100%;">
 
-            <!-- KPI Ribbon -->
-            <div class="overview-top-kpis">
-              <div class="kpi-tile">
-                <span class="kpi-label">Active AMRs</span>
-                <div class="kpi-value-row">
-                  <span class="kpi-value" id="kpiActiveRobots">3</span>
-                  <span class="kpi-delta pos">100% ONLINE</span>
-                </div>
+            <!-- LEFT OPERATE SIDEBAR: VIEWS & LAYERS -->
+            <aside class="synq-operate-sidebar">
+              <div class="sidebar-group-title">Views</div>
+              <div class="sidebar-views-list">
+                <button class="sidebar-view-btn active" data-vroute="overview" onclick="playHapticClick('high'); navigateTo('overview');">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                  <span>Overview</span>
+                </button>
+                <button class="sidebar-view-btn" data-vroute="fleet" onclick="playHapticClick('high'); navigateTo('fleet');">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
+                  <span>Fleet Status</span>
+                </button>
+                <button class="sidebar-view-btn" data-vroute="missions" onclick="playHapticClick('high'); navigateTo('missions');">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                  <span>Mission Control</span>
+                </button>
+                <button class="sidebar-view-btn" data-vroute="automap" onclick="playHapticClick('high'); navigateTo('automap');">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                  <span>AutoMap Studio</span>
+                </button>
+                <button class="sidebar-view-btn" data-vroute="warehouse" onclick="playHapticClick('high'); navigateTo('warehouse');">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon></svg>
+                  <span>3D Digital Twin</span>
+                </button>
+                <button class="sidebar-view-btn" data-vroute="telemetry" onclick="playHapticClick('high'); navigateTo('telemetry');">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg>
+                  <span>Telemetry Hub</span>
+                </button>
+                <button class="sidebar-view-btn" data-vroute="diagnostics" onclick="playHapticClick('high'); navigateTo('diagnostics');">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                  <span>Diagnostics</span>
+                </button>
+                <button class="sidebar-view-btn" data-vroute="safety" onclick="playHapticClick('high'); navigateTo('safety');">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  <span>Safety & E-Stop</span>
+                </button>
+                <button class="sidebar-view-btn" data-vroute="camera" onclick="playHapticClick('high'); focusCameraFeed();">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                  <span>Camera Feeds</span>
+                </button>
+                <button class="sidebar-view-btn" data-vroute="simulation" onclick="playHapticClick('high'); navigateTo('simulation');">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span>Traffic & CBS</span>
+                </button>
+                <button class="sidebar-view-btn" data-vroute="payloads" onclick="playHapticClick('high'); navigateTo('payloads');">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                  <span>Analytics</span>
+                </button>
+                <button class="sidebar-view-btn" data-vroute="settings" onclick="playHapticClick('high'); navigateTo('settings');">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                  <span>System Settings</span>
+                </button>
               </div>
-              <div class="kpi-tile">
-                <span class="kpi-label">Active Missions</span>
-                <div class="kpi-value-row">
-                  <span class="kpi-value" id="kpiActiveMissions">1</span>
-                  <span class="kpi-delta neu" id="kpiTaskName">TASK-4821</span>
-                </div>
-              </div>
-              <div class="kpi-tile">
-                <span class="kpi-label">Completed Tasks</span>
-                <div class="kpi-value-row">
-                  <span class="kpi-value" id="kpiCompletedTasks">148</span>
-                  <span class="kpi-delta pos">+12 TODAY</span>
-                </div>
-              </div>
-              <div class="kpi-tile">
-                <span class="kpi-label">Fleet Utilization</span>
-                <div class="kpi-value-row">
-                  <span class="kpi-value" id="kpiUtilization">81.4%</span>
-                  <span class="kpi-delta pos">+4.2%</span>
-                </div>
-              </div>
-              <div class="kpi-tile">
-                <span class="kpi-label">Average SoC</span>
-                <div class="kpi-value-row">
-                  <span class="kpi-value" id="kpiAvgBattery">91.2%</span>
-                  <span class="kpi-delta pos">NOMINAL</span>
-                </div>
-              </div>
-              <div class="kpi-tile">
-                <span class="kpi-label">Active Warnings</span>
-                <div class="kpi-value-row">
-                  <span class="kpi-value" id="kpiWarnings">0</span>
-                  <span class="kpi-delta pos">0 CRITICAL</span>
-                </div>
-              </div>
-            </div>
 
-            <!-- Central Hero Map & Right Panel Workspace -->
-            <div class="overview-workspace">
+              <div class="sidebar-group-title" style="margin-top: 10px;">Layers</div>
+              <div class="sidebar-layers-list">
+                <label class="layer-switch-row">
+                  <span>Racks & Aisles</span>
+                  <div class="synq-switch">
+                    <input type="checkbox" checked onchange="toggleTwinLayer('racks')">
+                    <span class="synq-switch-slider"></span>
+                  </div>
+                </label>
+                <label class="layer-switch-row">
+                  <span>AMR Poses</span>
+                  <div class="synq-switch">
+                    <input type="checkbox" checked onchange="toggleTwinLayer('amrs')">
+                    <span class="synq-switch-slider"></span>
+                  </div>
+                </label>
+                <label class="layer-switch-row">
+                  <span>CBS Paths</span>
+                  <div class="synq-switch">
+                    <input type="checkbox" checked onchange="toggleTwinLayer('plannedPath')">
+                    <span class="synq-switch-slider"></span>
+                  </div>
+                </label>
+                <label class="layer-switch-row">
+                  <span>LiDAR Clouds</span>
+                  <div class="synq-switch">
+                    <input type="checkbox" checked onchange="toggleTwinLayer('lidar')">
+                    <span class="synq-switch-slider"></span>
+                  </div>
+                </label>
+                <label class="layer-switch-row">
+                  <span>Obstacle Zones</span>
+                  <div class="synq-switch">
+                    <input type="checkbox" checked onchange="toggleTwinLayer('zones')">
+                    <span class="synq-switch-slider"></span>
+                  </div>
+                </label>
+                <label class="layer-switch-row">
+                  <span>Heatmap</span>
+                  <div class="synq-switch">
+                    <input type="checkbox" onchange="toggleTwinLayer('heatmap')">
+                    <span class="synq-switch-slider"></span>
+                  </div>
+                </label>
+                <label class="layer-switch-row">
+                  <span>Occupancy Grid</span>
+                  <div class="synq-switch">
+                    <input type="checkbox" checked onchange="toggleTwinLayer('grid')">
+                    <span class="synq-switch-slider"></span>
+                  </div>
+                </label>
+                <label class="layer-switch-row">
+                  <span>Stations</span>
+                  <div class="synq-switch">
+                    <input type="checkbox" checked onchange="toggleTwinLayer('stations')">
+                    <span class="synq-switch-slider"></span>
+                  </div>
+                </label>
+                <label class="layer-switch-row">
+                  <span>TF Frames</span>
+                  <div class="synq-switch">
+                    <input type="checkbox" checked onchange="toggleTwinLayer('tfFrames')">
+                    <span class="synq-switch-slider"></span>
+                  </div>
+                </label>
+              </div>
+            </aside>
 
-              <!-- Warehouse Map -->
-              <section class="map-container" id="mapContainer">
-                <canvas id="warehouseCanvas"></canvas>
-                <div id="warehouse3DContainer" style="display:none; width:100%; height:100%; position:absolute; top:0; left:0; z-index:1;"></div>
+            <!-- CENTER WORKSPACE STACK: 3D VIEWPORT + BOTTOM COCKPIT -->
+            <div class="synq-main-center-stack">
 
-                <!-- Foxglove Viewport Dual-Mode Switcher -->
-                <div class="viewport-mode-strip" id="viewportModeStrip">
-                  <button class="mode-tab active" id="btnMode2D" onclick="playHapticClick('high'); setViewportMode('2d')" title="Switch to 2D Planar Tactical Grid">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-                    <span>2D TACTICAL</span>
+              <!-- CENTRAL 3D VIEWPORT STAGE -->
+              <div class="synq-viewport-stage" id="viewportStage">
+                <canvas id="warehouseCanvas" style="display:none;"></canvas>
+                <div id="warehouse3DContainer" style="width:100%; height:100%; position:absolute; top:0; left:0;"></div>
+
+                <!-- In-Canvas Top Floating Bar -->
+                <div class="in-canvas-top-bar">
+                  <div class="in-canvas-pill-group">
+                    <select class="in-canvas-select" id="canvasRobotSelect" onchange="selectRobot(this.value)">
+                      <option value="synq-amr-01">AMR-01 Focused</option>
+                      <option value="synq-amr-02">AMR-02</option>
+                      <option value="synq-amr-03">AMR-03</option>
+                      <option value="synq-amr-04">AMR-04</option>
+                      <option value="synq-amr-05">AMR-05</option>
+                    </select>
+                    <span style="color:#2d3646;">|</span>
+                    <span style="font-size:10px; color:#38bdf8; font-weight:600;">LiDAR: 360° 128-Beam Active</span>
+                    <span style="color:#2d3646;">|</span>
+                    <span style="font-size:10px; color:#8c96a5;">Map: WH-Alpha-v2.4</span>
+                    <span style="color:#2d3646;">|</span>
+                    <span style="font-size:10px; color:#64748b;">Scale: 1:50</span>
+                  </div>
+
+                  <div class="in-canvas-pill-group">
+                    <button class="in-canvas-icon-btn" onclick="set3DPreset('perspective')" title="Reset View">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                    </button>
+                    <button class="in-canvas-icon-btn" onclick="set3DPreset('topdown')" title="Top-Down View">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                    </button>
+                    <button class="in-canvas-icon-btn" onclick="set3DPreset('perspective')" title="Isometric Perspective">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                    </button>
+                    <button class="in-canvas-icon-btn" onclick="set3DPreset('follow')" title="Follow Active AMR">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.35 3.83a2 2 0 0 1-2 1.82H9.83a2 2 0 0 1-2-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 1h4.35a2 2 0 0 1 2 1.82l.35 3.83"></path></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- In-Canvas Top-Right Floating Legend -->
+                <div class="in-canvas-legend">
+                  <div class="in-canvas-legend-header">
+                    <span>Scene Legend</span>
+                  </div>
+                  <div class="in-canvas-legend-item">
+                    <span style="width:7px; height:7px; border-radius:50%; background:#8c96a5;"></span>
+                    <span>Idle AMR</span>
+                  </div>
+                  <div class="in-canvas-legend-item">
+                    <span style="width:7px; height:7px; border-radius:50%; background:#1f6feb;"></span>
+                    <span>Active Mission</span>
+                  </div>
+                  <div class="in-canvas-legend-item">
+                    <span style="width:7px; height:7px; border-radius:50%; background:#e3b341;"></span>
+                    <span>Charging</span>
+                  </div>
+                  <div class="in-canvas-legend-item">
+                    <span style="width:7px; height:7px; border-radius:50%; background:#f85149;"></span>
+                    <span>CBS Conflict Route</span>
+                  </div>
+                  <div class="in-canvas-legend-item">
+                    <span style="width:7px; height:7px; border-radius:2px; background:#d29922;"></span>
+                    <span>Heavy Pallet Rack</span>
+                  </div>
+                </div>
+
+                <!-- Interactive Rack Callout Overlay -->
+                <div class="rack-callout-overlay" id="rackCalloutOverlay">
+                  <div class="rack-callout-title" id="rackCalloutTitle">Rack R-12</div>
+                  <div class="rack-callout-row"><span>Type:</span> <strong id="rackCalloutType">Heavy Industrial</strong></div>
+                  <div class="rack-callout-row"><span>Occupancy:</span> <strong id="rackCalloutOcc">84% (42/50 bays)</strong></div>
+                  <div class="rack-callout-row"><span>Status:</span> <strong id="rackCalloutStatus" style="color:#3fb950;">Optimal</strong></div>
+                </div>
+
+                <!-- In-Canvas Bottom Floating Layer Pills Bar -->
+                <div class="in-canvas-bottom-pills">
+                  <button class="canvas-layer-pill active" onclick="toggleCanvasLayerPill(this, 'racks')">
+                    <span style="width:5px; height:5px; border-radius:50%; background:#38bdf8;"></span>
+                    <span>Racks</span>
                   </button>
-                  <button class="mode-tab" id="btnMode3D" onclick="playHapticClick('high'); setViewportMode('3d')" title="Switch to Foxglove 3D Spatial WebGL Viewport">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                    <span>3D SPATIAL</span>
+                  <button class="canvas-layer-pill active" onclick="toggleCanvasLayerPill(this, 'aisles')">
+                    <span style="width:5px; height:5px; border-radius:50%; background:#38bdf8;"></span>
+                    <span>Aisles</span>
+                  </button>
+                  <button class="canvas-layer-pill active" onclick="toggleCanvasLayerPill(this, 'plannedPath')">
+                    <span style="width:5px; height:5px; border-radius:50%; background:#38bdf8;"></span>
+                    <span>CBS Paths</span>
+                  </button>
+                  <button class="canvas-layer-pill active" onclick="toggleCanvasLayerPill(this, 'lidar')">
+                    <span style="width:5px; height:5px; border-radius:50%; background:#38bdf8;"></span>
+                    <span>LiDAR</span>
+                  </button>
+                  <button class="canvas-layer-pill" onclick="toggleCanvasLayerPill(this, 'heatmap')">
+                    <span style="width:5px; height:5px; border-radius:50%; background:#8c96a5;"></span>
+                    <span>Heatmap</span>
+                  </button>
+                  <button class="canvas-layer-pill active" onclick="toggleCanvasLayerPill(this, 'stations')">
+                    <span style="width:5px; height:5px; border-radius:50%; background:#38bdf8;"></span>
+                    <span>Stations</span>
+                  </button>
+                  <button class="canvas-layer-pill active" onclick="toggleCanvasLayerPill(this, 'tfFrames')">
+                    <span style="width:5px; height:5px; border-radius:50%; background:#38bdf8;"></span>
+                    <span>TF Frames</span>
                   </button>
                 </div>
 
-                <!-- Autonomy Visualization Toolbar (2D Mode) -->
-                <div class="map-toolbar" id="toolbar2D">
-                  <button class="tool-btn active" id="btnToggleLanes" onclick="playHapticClick('high'); toggleLayer('lanes')">Transit Lanes</button>
-                  <button class="tool-btn active" id="btnToggleRacks" onclick="playHapticClick('high'); toggleLayer('racks')">Racks</button>
-                  <button class="tool-btn active" id="btnToggleEvaluations" onclick="playHapticClick('high'); toggleLayer('evaluations')">Candidate Evals</button>
-                  <button class="tool-btn active" id="btnToggleRoutes" onclick="playHapticClick('high'); toggleLayer('routes')">CBS Routes</button>
-                  <button class="tool-btn active" id="btnToggleTrails" onclick="playHapticClick('high'); toggleLayer('trails')">Executed Trails</button>
-                  <div class="tool-sep"></div>
-                  <button class="tool-btn" id="btnSimObstacle" onclick="playHapticClick('high'); toggleObstaclePlacement()">Inject Obstacle</button>
-                  <button class="tool-btn" id="btnSimConflict" onclick="playHapticClick('high'); triggerCbsConflictScenario()">Simulate CBS Crossing</button>
-                  <button class="tool-btn" id="btnSimPause" onclick="playHapticClick('high'); toggleSimPause()">Pause</button>
-                  <button class="tool-btn" id="btnSimReset" onclick="playHapticClick('high'); resetSimulationState()">Reset Sim</button>
-                  <button class="tool-btn" id="btnSimSpawn" onclick="playHapticClick('high'); promptSpawnAMR()">+ Spawn AMR</button>
-                  <button class="tool-btn" id="btnSimRemove" onclick="playHapticClick('low'); promptRemoveAMR()">− Remove AMR</button>
-                  <div class="tool-sep"></div>
-                  <button class="tool-btn" onclick="zoomInMap()" title="Zoom In (+)">+</button>
-                  <span id="zoomLevelDisplay" style="font-size:10px; font-family:var(--synq-font-mono); color:var(--synq-text-secondary); padding:0 3px;">100%</span>
-                  <button class="tool-btn" onclick="zoomOutMap()" title="Zoom Out (−)">−</button>
-                  <button class="tool-btn" onclick="resetMapCamera()" title="Reset Camera">Reset</button>
+                <!-- In-Canvas Bottom-Right 3D Axes Gizmo -->
+                <div class="in-canvas-gizmo" id="axesGizmoWrap">
+                  <canvas id="gizmoCanvas" width="44" height="44"></canvas>
                 </div>
 
-                <!-- 3D Spatial Toolbar (Foxglove & Webviz controls) -->
-                <div class="map-toolbar" id="toolbar3D" style="display:none;">
-                  <span style="font-size:9.5px; font-weight:700; color:var(--synq-status-cyan, #38bdf8); padding:0 4px; text-transform:uppercase;">CAMERA:</span>
-                  <button class="tool-btn active" id="btn3DPerspective" onclick="playHapticClick('high'); set3DPreset('perspective')">Perspective</button>
-                  <button class="tool-btn" id="btn3DTopDown" onclick="playHapticClick('high'); set3DPreset('topdown')">Top-Down</button>
-                  <button class="tool-btn" id="btn3DFollow" onclick="playHapticClick('high'); set3DPreset('follow')">Follow AMR</button>
-                  <div class="tool-sep"></div>
-                  <span style="font-size:9.5px; font-weight:700; color:var(--synq-status-cyan, #38bdf8); padding:0 4px; text-transform:uppercase;">3D LAYERS:</span>
-                  <button class="tool-btn active" id="btn3DTf" onclick="playHapticClick('high'); toggle3DLayer('tfFrames')">TF Frames (XYZ)</button>
-                  <button class="tool-btn active" id="btn3DLidar" onclick="playHapticClick('high'); toggle3DLayer('lidar')">LiDAR Point Cloud</button>
-                  <button class="tool-btn active" id="btn3DZones" onclick="playHapticClick('high'); toggle3DLayer('zones')">Safety Zones</button>
-                  <button class="tool-btn active" id="btn3DRacks" onclick="playHapticClick('high'); toggle3DLayer('racks')">Extruded Racks</button>
-                  <button class="tool-btn active" id="btn3DPaths" onclick="playHapticClick('high'); toggle3DLayer('plannedPath')">Trajectories</button>
-                  <div class="tool-sep"></div>
-                  <button class="tool-btn" id="btnSimPause3D" onclick="playHapticClick('high'); toggleSimPause()">Pause</button>
-                  <button class="tool-btn" onclick="playHapticClick('high'); resetSimulationState()">Reset</button>
-                </div>
-
-                <div class="spatial-toast" id="spatialToast">
+                <div class="spatial-toast" id="spatialToast" style="display:none;">
                   <span id="spatialToastMsg">Autonomy Event</span>
                 </div>
+              </div>
 
-                <div class="map-footer-hud">
-                  <span>Warehouse: <strong>15m × 15m Hub</strong></span>
-                  <span id="legendCoords">X: 0.00m, Y: 0.00m</span>
-                  <span>Active CBS Reservations: <strong id="valReservationsCount">0</strong></span>
+              <!-- BOTTOM COCKPIT (3 COLUMNS) -->
+              <div class="synq-bottom-cockpit">
+
+                <!-- Column 1: Fleet Status (5 AMRs) -->
+                <div class="cockpit-panel">
+                  <div class="cockpit-panel-header">
+                    <div class="cockpit-panel-title">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle></svg>
+                      <span>Fleet Status (5 AMRs)</span>
+                    </div>
+                    <span class="synq-badge online" style="font-size:9px;">5 ONLINE</span>
+                  </div>
+                  <div class="cockpit-panel-body" id="cockpitFleetList">
+                    <!-- Populated dynamically via renderCockpitFleet() -->
+                  </div>
                 </div>
-              </section>
 
-              <!-- Contextual Right Panel -->
-              <aside class="operations-panel">
-                <div class="panel-tabs animated-tabs-strip">
-                  <button class="tab-btn active animated-tab-item" id="tabBtnAutonomy" onclick="setPanelTab('autonomy')">Autonomy Loop</button>
-                  <button class="tab-btn animated-tab-item" id="tabBtnAgent" onclick="setPanelTab('agent')">Ask FLTX</button>
-                  <button class="tab-btn animated-tab-item" id="tabBtnInspector" onclick="setPanelTab('inspector')">Inspector</button>
-                  <button class="tab-btn animated-tab-item" id="tabBtnDispatch" onclick="setPanelTab('dispatch')">Dispatch</button>
-                  <button class="tab-btn animated-tab-item" id="tabBtnFleet" onclick="setPanelTab('fleet')">Fleet</button>
-                  <button class="tab-btn animated-tab-item" id="tabBtnTimeline" onclick="setPanelTab('timeline')">Activity</button>
+                <!-- Column 2: Mission Queue (+ New Mission) -->
+                <div class="cockpit-panel">
+                  <div class="cockpit-panel-header">
+                    <div class="cockpit-panel-title">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                      <span>Mission Queue</span>
+                    </div>
+                    <button class="synq-btn" style="padding: 2px 7px; font-size:9.5px; background: #1f6feb; color:#fff;" onclick="promptNewMission()">
+                      <span>+ New Mission</span>
+                    </button>
+                  </div>
+                  <div class="cockpit-panel-body" id="cockpitMissionList">
+                    <!-- Populated dynamically via renderCockpitMissions() -->
+                  </div>
                 </div>
 
-                <div class="panel-body" id="panelBody">
-                  <!-- Dynamically rendered -->
+                <!-- Column 3: System Diagnostics Log -->
+                <div class="cockpit-panel">
+                  <div class="cockpit-panel-header">
+                    <div class="cockpit-panel-title">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                      <span>System Diagnostics</span>
+                    </div>
+                    <span style="font-size:9px; color:#64748b; font-family:var(--synq-font-mono);">STREAM ACTIVE</span>
+                  </div>
+                  <div class="cockpit-panel-body" id="cockpitDiagLogs" style="font-family:var(--synq-font-mono); font-size:9.5px; line-height:1.45; color:#8c96a5;">
+                    <!-- Streaming logs -->
+                  </div>
                 </div>
-              </aside>
 
+              </div>
             </div>
+
+            <!-- RIGHT TECHNICAL COCKPIT -->
+            <aside class="synq-right-cockpit">
+
+              <!-- Card 1: Camera Feed AMR-01 -->
+              <div class="cockpit-card">
+                <div class="cockpit-card-header">
+                  <div class="cockpit-card-title">
+                    <span style="width:6px; height:6px; border-radius:50%; background:#10b981;"></span>
+                    <span id="camFeedTitle">Camera Feed AMR-01</span>
+                  </div>
+                  <span class="synq-badge online" style="font-size:8.5px;">LIVE 1080P</span>
+                </div>
+                <div class="quad-sensor-grid">
+                  <div class="sensor-quad-tile">
+                    <span class="sensor-tile-label">FRONT RGB</span>
+                    <img src="/static/public/warehouse_camera.jpg" alt="Front Camera Feed" class="sensor-quad-img">
+                  </div>
+                  <div class="sensor-quad-tile">
+                    <span class="sensor-tile-label">3D LIDAR CLOUD</span>
+                    <canvas id="cockpitLidarPcdCanvas" style="width:100%; height:100%; display:block; background:#040608;"></canvas>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 2: 2D Navigation Map -->
+              <div class="cockpit-card">
+                <div class="cockpit-card-header">
+                  <div class="cockpit-card-title">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+                    <span>2D Navigation Map</span>
+                  </div>
+                  <span style="font-size:9px; color:#64748b; font-family:var(--synq-font-mono);">NAV2 COSTMAP</span>
+                </div>
+                <div class="minimap-mount">
+                  <canvas id="minimapCanvas" style="width:100%; height:100%; display:block;"></canvas>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:8.5px; color:#64748b; margin-top:4px; padding:0 2px;">
+                  <span>● AMRs</span>
+                  <span>■ Racks</span>
+                  <span>--- Planned Paths</span>
+                  <span>▲ Charging</span>
+                </div>
+              </div>
+
+              <!-- Card 3: Robot Inspector AMR-01 -->
+              <div class="cockpit-card" style="border-bottom:none; flex:1; display:flex; flex-direction:column;">
+                <div class="cockpit-card-header">
+                  <div class="cockpit-card-title">
+                    <span style="width:6px; height:6px; border-radius:50%; background:#38bdf8;"></span>
+                    <span id="inspectorBotTitle">Robot Inspector AMR-01</span>
+                  </div>
+                  <span class="synq-badge online" id="inspectorBotBadge" style="font-size:8.5px;">NAVIGATING</span>
+                </div>
+
+                <!-- Inspector Tabs: State, Sensors, Mission, Diagnostics -->
+                <div style="display:flex; gap:2px; background:#121720; border:1px solid #1e2633; border-radius:4px; padding:2px; margin-bottom:8px;">
+                  <button class="filter-pill active" id="tabState" style="flex:1; text-align:center; font-size:9px; padding:3px 0;" onclick="setInspectorTab('state')">State</button>
+                  <button class="filter-pill" id="tabSensors" style="flex:1; text-align:center; font-size:9px; padding:3px 0;" onclick="setInspectorTab('sensors')">Sensors</button>
+                  <button class="filter-pill" id="tabMission" style="flex:1; text-align:center; font-size:9px; padding:3px 0;" onclick="setInspectorTab('mission')">Mission</button>
+                  <button class="filter-pill" id="tabDiag" style="flex:1; text-align:center; font-size:9px; padding:3px 0;" onclick="setInspectorTab('diagnostics')">Diag</button>
+                </div>
+
+                <div id="inspectorContent" style="flex:1; overflow-y:auto; font-size:9.5px;">
+                  <!-- Key-Value metrics rendered dynamically -->
+                </div>
+              </div>
+
+            </aside>
+
           </div>
         </div>
 
@@ -1025,19 +1243,41 @@
       </main>
     </div>
 
-    <!-- 4. BOTTOM STRIP -->
-    <footer class="synq-footer">
-      <div class="footer-segment">
-        <span>ROS 2: <strong>Active</strong></span>
-        <span>Nav2: <strong>MPPI 50Hz</strong></span>
-        <span>CBS Router: <strong>Space-Time Tree Ready</strong></span>
-        <span>VDA 5050: <strong>v3.0 Ingest</strong></span>
+    <!-- 4. BOTTOM INTERACTIVE PLAYBACK TIMELINE (Matches Reference Screenshots) -->
+    <div class="synq-master-timeline">
+      <div class="timeline-play-controls">
+        <button class="timeline-ctrl-btn" onclick="timelineStepStart()" title="Step to Start">|◀</button>
+        <button class="timeline-ctrl-btn" onclick="timelineRewind()" title="Rewind">◀◀</button>
+        <button class="timeline-ctrl-btn" id="timelinePlayPauseBtn" onclick="toggleTimelinePlay()" title="Pause / Play">❚❚</button>
+        <button class="timeline-ctrl-btn" onclick="timelineFastForward()" title="Fast Forward">▶▶</button>
+        <span class="timeline-speed-chip" id="timelineSpeedChip">1x</span>
+        <div class="timeline-live-badge">LIVE</div>
       </div>
-      <div class="footer-segment">
-        <span>Digital Twin: <strong>Synced (50ms tick)</strong></span>
-        <span>Time: <strong id="stripTime">00:00:00</strong></span>
+
+      <div class="timeline-track-wrap" id="timelineTrackWrap" onclick="onTimelineScrub(event)">
+        <div class="timeline-scrubber-line"></div>
+        <div class="timeline-pin" style="left: 12%;" title="12:00:00 Mission Start">
+          <div class="timeline-pin-dot" style="background:#38bdf8;"></div>
+          <span class="timeline-pin-label">12:00:00 Mission Start</span>
+        </div>
+        <div class="timeline-pin" style="left: 38%;" title="12:14:22 Obstacle Detected">
+          <div class="timeline-pin-dot" style="background:#f85149;"></div>
+          <span class="timeline-pin-label">12:14:22 Obstacle Detected</span>
+        </div>
+        <div class="timeline-pin" style="left: 65%;" title="12:22:05 Map Update">
+          <div class="timeline-pin-dot" style="background:#e3b341;"></div>
+          <span class="timeline-pin-label">12:22:05 Map Update</span>
+        </div>
+        <div class="timeline-pin" style="left: 88%;" title="12:28:50 Task Allocated">
+          <div class="timeline-pin-dot" style="background:#3fb950;"></div>
+          <span class="timeline-pin-label">12:28:50 Task Allocated</span>
+        </div>
       </div>
-    </footer>
+
+      <div class="timeline-clock-display">
+        <span id="timelineClockDisplay">12:28:54.402</span>
+      </div>
+    </div>
 
   </div>
 
@@ -1066,7 +1306,17 @@
     function navigateTo(route) {
       currentRoute = route;
 
-      // Update sidebar active state
+      // Update master header navigation tabs
+      document.querySelectorAll(".synq-nav-tab").forEach(tab => {
+        tab.classList.toggle("active", tab.getAttribute("data-nav") === route);
+      });
+
+      // Update operate sidebar views list
+      document.querySelectorAll(".sidebar-view-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-vroute") === route);
+      });
+
+      // Update legacy sidebar active state
       document.querySelectorAll(".nav-item").forEach(item => {
         item.classList.toggle("active", item.getAttribute("data-route") === route);
       });
@@ -1083,6 +1333,13 @@
 
       // Trigger view renderers
       if (route === "overview") {
+        setViewportMode("3d");
+        if (typeof renderCockpitFleet === "function") renderCockpitFleet();
+        if (typeof renderCockpitMissions === "function") renderCockpitMissions();
+        if (typeof renderCockpitDiagLogs === "function") renderCockpitDiagLogs();
+        if (typeof renderInspectorState === "function") renderInspectorState();
+        if (typeof render2DMinimap === "function") render2DMinimap();
+        if (typeof renderCockpitLidarPcd === "function") renderCockpitLidarPcd();
         setTimeout(resizeCanvas, 50);
       } else if (route === "fleet" && typeof renderFleetView === "function") {
         renderFleetView();
@@ -1325,11 +1582,11 @@
     const ctx = canvas.getContext("2d");
 
     let twin3DInstance = null;
-    let currentViewportMode = "2d";
+    let currentViewportMode = "3d";
 
     function resizeCanvas() {
-      const container = document.getElementById("mapContainer");
-      if (container) {
+      const container = document.getElementById("viewportStage") || document.getElementById("mapContainer");
+      if (container && canvas) {
         canvas.width = container.clientWidth;
         canvas.height = container.clientHeight;
       }
@@ -1339,6 +1596,7 @@
     }
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
+    setTimeout(() => { setViewportMode("3d"); }, 120);
 
     /* Foxglove Viewport Dual-Mode Controller */
     function setViewportMode(mode) {
