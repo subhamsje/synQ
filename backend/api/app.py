@@ -13,8 +13,7 @@ from fms.fleet.fleet_manager import FleetManager, RobotAgent, WarehouseOrder
 from fms.vda5050.vda5050_serializer import VDA5050Serializer, VDA5050State, VDA5050Header
 
 # Centralized State Management
-from backend.agent.robot_state import robot_state, get_robot_state_dict
-from backend.agent.domain_bridge import sync_fms_to_central_state, get_robot_payload_from_state
+from backend.agent.robot_state import robot_state
 
 # Operational Intelligence Modules
 from backend.persistence.db import db
@@ -35,6 +34,7 @@ from fms.tasks.task_engine import task_engine
 from fms.observation.observation_loop import observation_loop
 from backend.recovery.recovery_engine import recovery_engine
 from fms.models.domain_models import TaskStatus, PayloadType
+from backend.automap.automap_service import automap_service
 
 app = FastAPI(
     title="FLTX Autonomous Operations Platform API",
@@ -448,6 +448,87 @@ def get_demo_qr_svg(request: Request):
     url = f"http://{host}/demo"
     svg = qr_generator.generate_demo_qr_svg(url)
     return Response(content=svg, media_type="image/svg+xml")
+
+
+
+# -----------------------------------------------------------------------------
+# AutoMap: Scan-to-Digital-Twin Endpoints
+# -----------------------------------------------------------------------------
+
+class AutoMapStartRequest(BaseModel):
+    robot_id: str = "synq-amr-01"
+    profile: str = "standard_hub"
+
+
+class AutoMapDetectionUpdateRequest(BaseModel):
+    object_id: str
+    semantic_type: Optional[str] = None
+    status: Optional[str] = None
+    label: Optional[str] = None
+    dimensions: Optional[Dict[str, float]] = None
+    position: Optional[Dict[str, float]] = None
+
+
+@app.post("/api/v1/automap/session/start")
+def automap_start_session(req: AutoMapStartRequest):
+    return automap_service.start_session(robot_id=req.robot_id, profile=req.profile)
+
+
+@app.get("/api/v1/automap/session/status")
+def automap_get_status():
+    return automap_service.get_session_status()
+
+
+@app.post("/api/v1/automap/reconstruct")
+def automap_run_reconstruction():
+    return automap_service.run_reconstruction_and_detection()
+
+
+@app.get("/api/v1/automap/detections")
+def automap_get_detections():
+    return {
+        "status": automap_service.get_session_status(),
+        "detections": [d.to_dict() for d in automap_service.detections]
+    }
+
+
+@app.post("/api/v1/automap/detections/update")
+def automap_update_detection(req: AutoMapDetectionUpdateRequest):
+    updated = automap_service.update_detection(
+        object_id=req.object_id,
+        semantic_type=req.semantic_type,
+        status=req.status,
+        label=req.label,
+        dimensions=req.dimensions,
+        position=req.position
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail=f"Detection {req.object_id} not found")
+    return updated
+
+
+@app.post("/api/v1/automap/detections/confirm-all")
+def automap_confirm_all():
+    count = automap_service.confirm_all_detections()
+    return {"status": "SUCCESS", "confirmed_count": count}
+
+
+@app.post("/api/v1/automap/generate")
+def automap_generate_representations():
+    return automap_service.generate_representations()
+
+
+@app.post("/api/v1/automap/activate")
+def automap_activate_map():
+    return automap_service.activate_in_fms(fms)
+
+
+@app.get("/api/v1/automap/export/{rep_type}")
+def automap_export(rep_type: str):
+    data = automap_service.export_representation(rep_type)
+    if not data:
+        raise HTTPException(status_code=404, detail=f"Representation '{rep_type}' not available")
+    return data
 
 
 @app.websocket("/ws/telemetry")

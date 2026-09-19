@@ -628,7 +628,14 @@
             <span class="kbd-chip">5</span>
           </a>
 
-          <div class="sidebar-nav-header" style="margin-top: 8px;">Intelligence & Diagnostics</div>
+          <div class="sidebar-nav-header" style="margin-top: 8px;">Spatial & Diagnostics</div>
+          <a class="nav-item" data-route="automap" onclick="playHapticClick('high'); navigateTo('automap');">
+            <span class="nav-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            </span>
+            <span class="nav-label">AutoMap Studio</span>
+            <span class="kbd-chip">M</span>
+          </a>
           <a class="nav-item" data-route="simulation" onclick="playHapticClick('high'); navigateTo('simulation');">
             <span class="nav-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
@@ -840,6 +847,13 @@
           </div>
         </div>
 
+        <!-- VIEW: AUTOMAP STUDIO (SCAN TO DIGITAL TWIN) -->
+        <div class="view-page" id="view-automap">
+          <div class="synq-view-container" id="automapViewContainer" style="padding:0; height:100%;">
+            <!-- Dynamically populated in renderAutoMapView() -->
+          </div>
+        </div>
+
         <!-- VIEW 10: SETTINGS & GATEWAY VIEW -->
         <div class="view-page" id="view-settings">
           <div class="synq-view-container" id="settingsViewContainer">
@@ -866,9 +880,12 @@
 
   </div>
 
+  <script src="/static/js/vendor/three.min.js"></script>
+  <script src="/static/js/vendor/OrbitControls.js"></script>
   <script src="/static/js/state_store.js"></script>
   <script src="/static/js/realtime_adapter.js"></script>
   <script src="/static/js/views.js"></script>
+  <script src="/static/js/automap_view.js"></script>
   <script>
     /* ============================================================= */
     /* 0. APPLICATION ROUTER & VIEW CONTROLLER                       */
@@ -921,6 +938,8 @@
         renderDiagnosticsView();
       } else if (route === "safety" && typeof renderSafetyView === "function") {
         renderSafetyView();
+      } else if (route === "automap" && typeof renderAutoMapView === "function") {
+        renderAutoMapView();
       } else if (route === "settings" && typeof renderSettingsView === "function") {
         renderSettingsView();
       }
@@ -1037,7 +1056,9 @@
         "7": "telemetry",
         "8": "diagnostics",
         "9": "safety",
-        "0": "settings"
+        "0": "settings",
+        "m": "automap",
+        "M": "automap"
       };
 
       if (keyMap[e.key]) {
