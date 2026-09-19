@@ -761,13 +761,13 @@
 
               <!-- Contextual Right Panel -->
               <aside class="operations-panel">
-                <div class="panel-tabs">
-                  <button class="tab-btn active" id="tabBtnAutonomy" onclick="setPanelTab('autonomy')">Autonomy Loop</button>
-                  <button class="tab-btn" id="tabBtnAgent" onclick="setPanelTab('agent')">Ask FLTX</button>
-                  <button class="tab-btn" id="tabBtnInspector" onclick="setPanelTab('inspector')">Inspector</button>
-                  <button class="tab-btn" id="tabBtnDispatch" onclick="setPanelTab('dispatch')">Dispatch</button>
-                  <button class="tab-btn" id="tabBtnFleet" onclick="setPanelTab('fleet')">Fleet</button>
-                  <button class="tab-btn" id="tabBtnTimeline" onclick="setPanelTab('timeline')">Activity</button>
+                <div class="panel-tabs animated-tabs-strip">
+                  <button class="tab-btn active animated-tab-item" id="tabBtnAutonomy" onclick="setPanelTab('autonomy')">Autonomy Loop</button>
+                  <button class="tab-btn animated-tab-item" id="tabBtnAgent" onclick="setPanelTab('agent')">Ask FLTX</button>
+                  <button class="tab-btn animated-tab-item" id="tabBtnInspector" onclick="setPanelTab('inspector')">Inspector</button>
+                  <button class="tab-btn animated-tab-item" id="tabBtnDispatch" onclick="setPanelTab('dispatch')">Dispatch</button>
+                  <button class="tab-btn animated-tab-item" id="tabBtnFleet" onclick="setPanelTab('fleet')">Fleet</button>
+                  <button class="tab-btn animated-tab-item" id="tabBtnTimeline" onclick="setPanelTab('timeline')">Activity</button>
                 </div>
 
                 <div class="panel-body" id="panelBody">
@@ -1048,8 +1048,11 @@
         navigateTo("overview");
         openWhyFLTXDrawer();
       } else if (e.key === "Escape") {
-        const modal = document.getElementById("demoQrModal");
-        if (modal) modal.style.display = "none";
+        const qrModal = document.getElementById("demoQrModal");
+        if (qrModal) qrModal.style.display = "none";
+        const botModal = document.getElementById("expandableRobotModal");
+        if (botModal) botModal.style.display = "none";
+        hideRobotTooltip();
       }
     });
 
@@ -1615,10 +1618,23 @@
           }
         });
 
-        // 4. Heavy Industrial AMR Chassis Body
+        // 4. Aceternity Spotlight Focus Glow & AMR Chassis Body
+        if (isSelected) {
+          ctx.save();
+          const spotGrad = ctx.createRadialGradient(0, 0, lengthPx * 0.3, 0, 0, lengthPx * 1.5);
+          spotGrad.addColorStop(0, "rgba(56, 189, 248, 0.35)");
+          spotGrad.addColorStop(0.5, "rgba(56, 189, 248, 0.08)");
+          spotGrad.addColorStop(1, "rgba(56, 189, 248, 0)");
+          ctx.fillStyle = spotGrad;
+          ctx.beginPath();
+          ctx.arc(0, 0, lengthPx * 1.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
         ctx.fillStyle = isSelected ? "#1c2333" : "#16191f";
-        ctx.strokeStyle = isEstop ? "#f85149" : (isSelected ? "#388bfd" : "#30363d");
-        ctx.lineWidth = isSelected ? 1.8 : 1.2;
+        ctx.strokeStyle = isEstop ? "#f85149" : (isSelected ? "#38bdf8" : "#30363d");
+        ctx.lineWidth = isSelected ? 2 : 1.2;
         ctx.beginPath();
         ctx.roundRect(-lengthPx / 2, -widthPx / 2, lengthPx, widthPx, 4);
         ctx.fill();
@@ -1748,6 +1764,7 @@
 
     window.addEventListener("mousemove", e => {
       const rect = canvas.getBoundingClientRect();
+      const inCanvas = (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom);
       const wPos = toWorld(e.clientX - rect.left, e.clientY - rect.top);
       document.getElementById("legendCoords").textContent =
         `X: ${Math.max(0, Math.min(15, wPos.x)).toFixed(2)}m, Y: ${Math.max(0, Math.min(15, wPos.y)).toFixed(2)}m`;
@@ -1757,6 +1774,24 @@
         camera.y += e.clientY - camera.startY;
         camera.startX = e.clientX;
         camera.startY = e.clientY;
+      }
+
+      // Aceternity Animated Tooltip on AMR Hover
+      if (inCanvas) {
+        let hoveredBot = null;
+        for (const bot of Object.values(ROBOTS)) {
+          if (Math.hypot(bot.x - wPos.x, bot.y - wPos.y) <= 0.75) {
+            hoveredBot = bot;
+            break;
+          }
+        }
+        if (hoveredBot) {
+          showRobotTooltip(hoveredBot, e.clientX + 16, e.clientY + 16);
+        } else {
+          hideRobotTooltip();
+        }
+      } else {
+        hideRobotTooltip();
       }
     });
 
@@ -2218,7 +2253,7 @@
           </div>
           <div id="dispatchDecisionPreviewBox" style="font-size: 11px; margin-bottom: 12px;"></div>
 
-          <button class="btn-submit-action" onclick="commitDispatch()">Dispatch Mission</button>
+          <button class="btn-submit-action stateful-btn" id="btnDispatchSubmit" onclick="triggerStatefulButton(this, () => commitDispatch(), 'Mission Dispatched ✓')"><span>Dispatch Mission</span></button>
         </div>
       `;
       previewDispatchDecision();
@@ -2511,11 +2546,236 @@
       };
     } catch (e) {}
 
+    /* Aceternity Animated Tooltip */
+    function showRobotTooltip(bot, screenX, screenY) {
+      let tt = document.getElementById("synqFloatingTooltip");
+      if (!tt) {
+        tt = document.createElement("div");
+        tt.id = "synqFloatingTooltip";
+        tt.className = "synq-floating-tooltip";
+        document.body.appendChild(tt);
+      }
+      tt.innerHTML = `
+        <div class="tooltip-robot-id">
+          <span>${bot.id}</span>
+          <span style="font-size:9px; padding:1px 5px; border-radius:3px; background:${bot.status === 'Navigating' ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.1)'}; color:${bot.status === 'Navigating' ? '#38bdf8' : '#8b949e'}; font-weight:700;">${bot.status.toUpperCase()}</span>
+        </div>
+        <div class="tooltip-stat-row">
+          <span>Battery SoC:</span>
+          <span class="tooltip-stat-val" style="color:${bot.battery < 25 ? '#f85149' : '#3fb950'};">${bot.battery.toFixed(1)}%</span>
+        </div>
+        <div class="tooltip-stat-row">
+          <span>Payload:</span>
+          <span class="tooltip-stat-val" style="color:#a371f7;">${(bot.payload || 'SCISSOR_LIFT').replace('_', ' ')}</span>
+        </div>
+        <div class="tooltip-stat-row">
+          <span>Velocity:</span>
+          <span class="tooltip-stat-val">${bot.speed.toFixed(2)} m/s (${bot.heading.toFixed(0)}°)</span>
+        </div>
+      `;
+      tt.style.left = `${screenX}px`;
+      tt.style.top = `${screenY}px`;
+      tt.classList.add("visible");
+    }
+
+    function hideRobotTooltip() {
+      const tt = document.getElementById("synqFloatingTooltip");
+      if (tt) tt.classList.remove("visible");
+    }
+
+    /* Aceternity Expandable Robot Telemetry Card Modal */
+    function openExpandableRobotModal(robotId) {
+      playHapticClick("high");
+      selectedRobotId = robotId;
+      const bot = ROBOTS[robotId] || ROBOTS["synq-amr-01"];
+      const modal = document.getElementById("expandableRobotModal");
+      if (!modal) return;
+
+      const isNav = (bot.status === 'Navigating');
+      const isStop = (bot.status === 'Emergency Stop');
+      const statusBadge = isStop ? 'critical' : (isNav ? 'online' : 'neutral');
+
+      document.getElementById("modalBotTitle").textContent = bot.id;
+      document.getElementById("modalBotSerial").textContent = bot.serial || "SN-SYNQ-2026-X01";
+      document.getElementById("modalBotStatusBadge").className = `synq-badge ${statusBadge}`;
+      document.getElementById("modalBotStatusBadge").innerHTML = `<span class="synq-badge-dot ${isNav ? 'radar-ping' : ''}"></span>${bot.status.toUpperCase()}`;
+
+      document.getElementById("modalBatSoc").textContent = `${bot.battery.toFixed(1)}%`;
+      document.getElementById("modalBatBar").style.width = `${Math.min(100, Math.max(0, bot.battery))}%`;
+      const v1 = (3.28 + (bot.battery / 100) * 0.05).toFixed(2);
+      const v2 = (3.27 + (bot.battery / 100) * 0.05).toFixed(2);
+      const v3 = (3.28 + (bot.battery / 100) * 0.05).toFixed(2);
+      const v4 = (3.26 + (bot.battery / 100) * 0.05).toFixed(2);
+      document.getElementById("cellV1").textContent = `${v1}V`;
+      document.getElementById("cellV2").textContent = `${v2}V`;
+      document.getElementById("cellV3").textContent = `${v3}V`;
+      document.getElementById("cellV4").textContent = `${v4}V`;
+
+      document.getElementById("modalVel").textContent = `${bot.speed.toFixed(2)} m/s · ${bot.heading.toFixed(0)}°`;
+      document.getElementById("modalCoords").textContent = `(${bot.x.toFixed(2)}, ${bot.y.toFixed(2)})`;
+      document.getElementById("modalPayload").textContent = (bot.payload || "SCISSOR_LIFT").replace('_', ' ');
+      document.getElementById("modalMission").textContent = bot.mission || "Awaiting Task Allocation";
+
+      modal.style.display = "flex";
+    }
+
+    function closeExpandableRobotModal() {
+      playHapticClick("high");
+      const modal = document.getElementById("expandableRobotModal");
+      if (modal) modal.style.display = "none";
+    }
+
+    /* Aceternity Stateful Button Engine */
+    async function triggerStatefulButton(btnElement, asyncAction, successLabel = "Completed ✓") {
+      if (!btnElement || btnElement.classList.contains("loading")) return;
+      playHapticClick("high");
+      const originalHtml = btnElement.innerHTML;
+      btnElement.classList.add("loading");
+      btnElement.innerHTML = `<span class="btn-spinner"></span><span>Processing...</span>`;
+
+      try {
+        if (typeof asyncAction === "function") {
+          await asyncAction();
+        } else {
+          await new Promise(r => setTimeout(r, 450));
+        }
+        btnElement.classList.remove("loading");
+        btnElement.classList.add("success");
+        btnElement.innerHTML = `<span>${successLabel}</span>`;
+        playHapticClick("high");
+
+        setTimeout(() => {
+          btnElement.classList.remove("success");
+          btnElement.innerHTML = originalHtml;
+        }, 1400);
+      } catch (err) {
+        btnElement.classList.remove("loading");
+        btnElement.innerHTML = `<span style="color:#f85149;">Failed!</span>`;
+        setTimeout(() => {
+          btnElement.innerHTML = originalHtml;
+        }, 1400);
+      }
+    }
+
     renderPanel();
   </script>
 
+  <!-- ACETERNITY EXPANDABLE ROBOT TELEMETRY MODAL -->
+  <div id="expandableRobotModal" class="synq-modal-backdrop" style="display:none;" onclick="if(event.target===this) closeExpandableRobotModal();">
+    <div class="synq-modal-dialog anim-scale-in">
+      <div class="synq-modal-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:28px; height:28px; border-radius:6px; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); display:flex; align-items:center; justify-content:center;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
+          </div>
+          <div>
+            <div style="font-size:14px; font-weight:700; color:#fff; display:flex; align-items:center; gap:8px;">
+              <span id="modalBotTitle">synq-amr-01</span>
+              <span id="modalBotStatusBadge" class="synq-badge online"><span class="synq-badge-dot radar-ping"></span>NAVIGATING</span>
+            </div>
+            <div id="modalBotSerial" style="font-size:10px; color:var(--synq-text-muted); font-family:var(--synq-font-mono);">SN-SYNQ-2026-X01</div>
+          </div>
+        </div>
+        <button class="synq-modal-close-btn" onclick="closeExpandableRobotModal()" title="Close (Esc)">✕</button>
+      </div>
+
+      <div class="synq-modal-body">
+        <!-- Battery 4-Cell Balancer Strip -->
+        <div style="background:var(--synq-bg-elevated); border:1px solid var(--synq-border-default); border-radius:6px; padding:12px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--synq-text-muted);">LiFePO4 4-Cell Active Balancer</span>
+            <span id="modalBatSoc" class="table-mono" style="font-size:12px; font-weight:700; color:var(--synq-status-online);">95.0%</span>
+          </div>
+          <div class="battery-bar-track" style="height:6px; margin-bottom:10px;">
+            <div id="modalBatBar" class="battery-bar-fill nominal" style="width:95%;"></div>
+          </div>
+          <div class="cell-balance-bars">
+            <div class="cell-bar-wrap">
+              <div class="cell-bar-track"><div class="cell-bar-fill" style="height:88%;"></div></div>
+              <div class="cell-bar-label" id="cellV1">3.32V</div>
+            </div>
+            <div class="cell-bar-wrap">
+              <div class="cell-bar-track"><div class="cell-bar-fill" style="height:86%;"></div></div>
+              <div class="cell-bar-label" id="cellV2">3.31V</div>
+            </div>
+            <div class="cell-bar-wrap">
+              <div class="cell-bar-track"><div class="cell-bar-fill" style="height:88%;"></div></div>
+              <div class="cell-bar-label" id="cellV3">3.32V</div>
+            </div>
+            <div class="cell-bar-wrap">
+              <div class="cell-bar-track"><div class="cell-bar-fill" style="height:85%;"></div></div>
+              <div class="cell-bar-label" id="cellV4">3.30V</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subsystems Grid -->
+        <div class="subsystem-telemetry-grid">
+          <div class="subsystem-box">
+            <div class="subsystem-title">
+              <span>Dual Traction Motors</span>
+              <span style="color:#38bdf8;">NOMINAL</span>
+            </div>
+            <div class="tooltip-stat-row"><span>Left Drive:</span><span class="tooltip-stat-val">142 RPM · 0.85A</span></div>
+            <div class="tooltip-stat-row"><span>Right Drive:</span><span class="tooltip-stat-val">142 RPM · 0.84A</span></div>
+            <div class="tooltip-stat-row"><span>Driver Temp:</span><span class="tooltip-stat-val">31.4°C</span></div>
+            <div class="tooltip-stat-row"><span>Encoder Sync:</span><span class="tooltip-stat-val" style="color:#3fb950;">0 slip</span></div>
+          </div>
+
+          <div class="subsystem-box">
+            <div class="subsystem-title">
+              <span>360° Safety LiDAR</span>
+              <span style="color:#3fb950;">PROTECTED</span>
+            </div>
+            <div class="tooltip-stat-row"><span>Points / Sec:</span><span class="tooltip-stat-val">4,800 pts/s</span></div>
+            <div class="tooltip-stat-row"><span>Safety Field:</span><span class="tooltip-stat-val" style="color:#3fb950;">Zone 1 (CLEAR)</span></div>
+            <div class="tooltip-stat-row"><span>Scan Rate:</span><span class="tooltip-stat-val">25.0 Hz</span></div>
+            <div class="tooltip-stat-row"><span>Lens Health:</span><span class="tooltip-stat-val">99.2% Optic</span></div>
+          </div>
+
+          <div class="subsystem-box">
+            <div class="subsystem-title">
+              <span>CANopen & FastDDS</span>
+              <span style="color:#38bdf8;">SYNCED</span>
+            </div>
+            <div class="tooltip-stat-row"><span>Node ID:</span><span class="tooltip-stat-val">0x14 (PDO1/PDO2)</span></div>
+            <div class="tooltip-stat-row"><span>Heartbeat:</span><span class="tooltip-stat-val">50.0 Hz (0 drops)</span></div>
+            <div class="tooltip-stat-row"><span>RTPS Latency:</span><span class="tooltip-stat-val">0.38 ms</span></div>
+            <div class="tooltip-stat-row"><span>Safety Interlock:</span><span class="tooltip-stat-val" style="color:#3fb950;">ARMED</span></div>
+          </div>
+
+          <div class="subsystem-box">
+            <div class="subsystem-title">
+              <span>Navigation & Payload</span>
+              <span style="color:#a371f7;">ACTIVE</span>
+            </div>
+            <div class="tooltip-stat-row"><span>Velocity:</span><span class="tooltip-stat-val" id="modalVel">0.85 m/s</span></div>
+            <div class="tooltip-stat-row"><span>Spatio Coords:</span><span class="tooltip-stat-val" id="modalCoords">(0.00, 0.00)</span></div>
+            <div class="tooltip-stat-row"><span>Payload Deck:</span><span class="tooltip-stat-val" id="modalPayload" style="color:#a371f7;">SCISSOR LIFT</span></div>
+            <div class="tooltip-stat-row"><span>Assigned Mission:</span><span class="tooltip-stat-val" id="modalMission" style="color:#58a6ff;">TASK-4821</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="synq-modal-footer">
+        <button class="synq-btn" onclick="closeExpandableRobotModal(); navigateTo('overview');">
+          <span>Track in Digital Twin</span>
+        </button>
+        <button class="stateful-btn" onclick="triggerStatefulButton(this, () => pauseUnit(selectedRobotId), 'Status Toggled ✓')">
+          <span>Pause / Resume</span>
+        </button>
+        <button class="stateful-btn" onclick="triggerStatefulButton(this, () => dockUnit(selectedRobotId), 'Routing to Dock ✓')">
+          <span>Return to Dock</span>
+        </button>
+        <button class="synq-btn btn-danger" onclick="playHapticClick('low'); toggleUnitEstop(selectedRobotId);">
+          <span>Isolate Unit E-Stop</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- JUDGE DEMO QR MODAL -->
-  <div id="demoQrModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:1000; align-items:center; justify-content:center;">
+  <div id="demoQrModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:1000; align-items:center; justify-content:center;" onclick="if(event.target===this) document.getElementById('demoQrModal').style.display='none';">
     <div class="scale-up-center" style="background: var(--synq-bg-surface); border: 1px solid var(--synq-border-light); border-radius: 8px; padding: 24px; max-width: 380px; text-align: center; color: #fff; box-shadow: var(--synq-shadow-lg);">
       <h3 style="margin-bottom: 6px; font-size: 15px; font-weight: 700; letter-spacing:-0.2px;">FLTX Live Facility Demo Portal</h3>
       <p style="font-size: 11px; color: var(--synq-text-secondary); margin-bottom: 16px; line-height: 1.45;">

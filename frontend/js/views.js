@@ -82,14 +82,15 @@ function renderFleetView(filter = currentFleetFilter) {
         ${filteredBots.map(bot => {
           const isNav = (bot.status === 'Navigating');
           const isStop = (bot.status === 'Emergency Stop');
+          const isSelected = (bot.id === selectedRobotId);
           const statusClass = isStop ? 'critical' : (isNav ? 'active' : 'idle');
           const batClass = bot.battery > 50 ? 'nominal' : (bot.battery > 20 ? 'medium' : 'critical');
 
-          return `
-            <div class="robot-card spotlight-card ${isNav ? 'active-navigating' : ''}">
+          const cardInnerHtml = `
+            <div class="robot-card spotlight-card ${isNav ? 'active-navigating' : ''}" style="height: 100%;">
               <div class="robot-card-header">
                 <div class="robot-id-group">
-                  <span class="robot-id-title">${bot.id}</span>
+                  <span class="robot-id-title" style="color: ${isSelected ? '#38bdf8' : '#fff'};">${bot.id}</span>
                   <span class="robot-serial">${bot.serial || 'SN-SYNQ-2026'}</span>
                 </div>
                 <span class="synq-badge ${statusClass}">
@@ -133,18 +134,32 @@ function renderFleetView(filter = currentFleetFilter) {
               </div>
 
               <div class="robot-card-actions">
-                <button class="synq-btn" style="flex: 1;" onclick="playHapticClick('high'); inspectRobotFromMatrix('${bot.id}');">
-                  <span>Inspect in Map</span>
+                <button class="synq-btn" onclick="playHapticClick('high'); openExpandableRobotModal('${bot.id}');" title="Expand Telemetry & Diagnostics">
+                  <span>Expand ↗</span>
                 </button>
-                <button class="synq-btn" onclick="playHapticClick('high'); dockUnit('${bot.id}');" title="Return to Charger C1">
+                <button class="synq-btn" onclick="playHapticClick('high'); inspectRobotFromMatrix('${bot.id}');" title="Focus in Digital Twin">
+                  <span>Track</span>
+                </button>
+                <button class="stateful-btn" onclick="triggerStatefulButton(this, () => dockUnit('${bot.id}'), 'Docked ✓')" title="Return to Charger C1">
                   <span>Dock</span>
                 </button>
-                <button class="synq-btn" onclick="playHapticClick('low'); pauseUnit('${bot.id}');" title="Pause / Resume Motion">
+                <button class="stateful-btn" onclick="triggerStatefulButton(this, () => pauseUnit('${bot.id}'), 'Toggled ✓')" title="Pause / Resume Motion">
                   <span>${bot.status === 'Navigating' ? 'Pause' : 'Resume'}</span>
                 </button>
               </div>
             </div>
           `;
+
+          if (isSelected) {
+            return `
+              <div class="moving-border-card">
+                <div class="moving-border-card-inner">
+                  ${cardInnerHtml}
+                </div>
+              </div>
+            `;
+          }
+          return cardInnerHtml;
         }).join('')}
       </div>
     `}
@@ -899,23 +914,136 @@ function renderDiagnosticsView() {
       </table>
     </div>
 
-    <!-- Live Industrial Terminal with Real-time Filtering -->
-    <div class="synq-card spotlight-card" style="padding: 14px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--synq-text-muted); letter-spacing: 0.05em;">
-          Kernel & Middleware Event Stream
-        </span>
-        <div style="display:flex; gap: 8px; align-items:center;">
-          <input type="text" id="logSearchInput" class="select-input" style="width: 170px; margin-bottom:0; font-size:10px;" placeholder="Filter log entries..." oninput="filterTerminalLogs(this.value)">
-          <button class="synq-btn" style="padding: 2px 8px; font-size: 10px;" onclick="playHapticClick('high'); clearTerminalLogs();">Clear Log</button>
-          <span class="synq-badge active" style="font-size: 9px;"><span class="synq-badge-dot radar-ping"></span>STREAMING</span>
+    <!-- ACETERNITY TERMINAL: ROS 2 KERNEL & FASTDDS EVENT STREAM -->
+    <div class="aceternity-terminal spotlight-card" style="margin-bottom: 16px;">
+      <div class="terminal-titlebar">
+        <div class="terminal-controls">
+          <span class="mac-dot mac-dot-red"></span>
+          <span class="mac-dot mac-dot-yellow"></span>
+          <span class="mac-dot mac-dot-green"></span>
+        </div>
+        <div class="terminal-title-text">bash — ros2 run synq_cbs_planner coordinator_node</div>
+        <span class="synq-badge active" style="font-size: 9px;"><span class="synq-badge-dot radar-ping"></span>STREAMING (FastDDS)</span>
+      </div>
+
+      <div class="terminal-actions-bar">
+        <div class="animated-tabs-strip" style="background: rgba(0,0,0,0.3); border:none; padding:2px;">
+          <button class="animated-tab-item active" id="termTabAll" onclick="switchTerminalTopic('ALL')">All Topics</button>
+          <button class="animated-tab-item" id="termTabNav" onclick="switchTerminalTopic('/cmd_vel')">/cmd_vel & /odom</button>
+          <button class="animated-tab-item" id="termTabScan" onclick="switchTerminalTopic('/scan')">/scan (LiDAR)</button>
+          <button class="animated-tab-item" id="termTabCbs" onclick="switchTerminalTopic('CBS')">CBS Planner</button>
+        </div>
+        <div style="margin-left: auto; display:flex; gap:6px; align-items:center;">
+          <input type="text" id="logSearchInput" class="select-input" style="width: 150px; margin-bottom:0; font-size:10px; padding:3px 8px;" placeholder="Filter log regex..." oninput="filterTerminalLogs(this.value)">
+          <button class="synq-btn" style="padding: 3px 8px; font-size: 10px;" onclick="playHapticClick('high'); clearTerminalLogs();">Clear</button>
+          <button class="stateful-btn" style="padding: 3px 10px; font-size: 10px;" onclick="triggerStatefulButton(this, () => copyTerminalOutput(), 'Copied ✓')">
+            <span>Copy Terminal</span>
+          </button>
         </div>
       </div>
-      <div class="diagnostics-terminal" id="diagTerminalConsole">
+
+      <div class="terminal-body" id="diagTerminalConsole">
         ${renderLogLines(diagLogFilter)}
       </div>
     </div>
+
+    <!-- ACETERNITY CODE BLOCK: SYSTEM ARCHITECTURE & INTEROP SPECS -->
+    <div class="aceternity-code-block spotlight-card">
+      <div class="code-block-header">
+        <div class="code-block-filename">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          <span id="codeBlockTabTitle">vda5050_order_dispatch.json</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div class="animated-tabs-strip" style="background: rgba(0,0,0,0.3); border:none; padding:2px;">
+            <button class="animated-tab-item active" id="codeTabJson" onclick="switchCodeBlockTab('JSON')">VDA 5050 Order</button>
+            <button class="animated-tab-item" id="codeTabYaml" onclick="switchCodeBlockTab('YAML')">CBS Trajectory Plan</button>
+          </div>
+          <button class="stateful-btn" style="padding: 3px 10px; font-size: 10px;" onclick="triggerStatefulButton(this, () => copyCodeBlock(), 'Copied ✓')">
+            <span>Copy Code</span>
+          </button>
+        </div>
+      </div>
+      <pre class="code-block-content" id="codeBlockDisplayContent">${getCodeSnippet('JSON')}</pre>
+    </div>
   `;
+}
+
+let activeTerminalTopic = 'ALL';
+function switchTerminalTopic(topic) {
+  playHapticClick('high');
+  activeTerminalTopic = topic;
+  ['termTabAll', 'termTabNav', 'termTabScan', 'termTabCbs'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  if (topic === 'ALL') document.getElementById('termTabAll')?.classList.add('active');
+  if (topic === '/cmd_vel') document.getElementById('termTabNav')?.classList.add('active');
+  if (topic === '/scan') document.getElementById('termTabScan')?.classList.add('active');
+  if (topic === 'CBS') document.getElementById('termTabCbs')?.classList.add('active');
+
+  const q = (topic === 'ALL') ? '' : topic;
+  filterTerminalLogs(q);
+}
+
+let activeCodeTab = 'JSON';
+function switchCodeBlockTab(tab) {
+  playHapticClick('high');
+  activeCodeTab = tab;
+  document.getElementById('codeTabJson')?.classList.toggle('active', tab === 'JSON');
+  document.getElementById('codeTabYaml')?.classList.toggle('active', tab === 'YAML');
+  document.getElementById('codeBlockTabTitle').textContent = tab === 'JSON' ? 'vda5050_order_dispatch.json' : 'cbs_spatio_temporal_constraint.yaml';
+  document.getElementById('codeBlockDisplayContent').textContent = getCodeSnippet(tab);
+}
+
+function getCodeSnippet(type) {
+  if (type === 'YAML') {
+    return `# CBS Spatio-Temporal Constraint Tree Export
+planner: synq_cbs_v3
+facility: austin_hub_01
+timestamp: 1789790120.45
+reservations:
+  - node: "N_1_1"
+    robot: "synq-amr-01"
+    time_window: [1.0, 3.5]
+    status: RESERVED
+  - node: "N_1_2"
+    robot: "synq-amr-03"
+    time_window: [2.0, 4.5]
+    status: DETOUR_BYPASS
+metrics:
+  cost_delta_sec: +1.2
+  collision_count: 0
+  feasibility: PROVEN`;
+  }
+  return `{
+  "headerId": 14902,
+  "timestamp": "2026-09-19T03:52:12Z",
+  "version": "3.0.0",
+  "manufacturer": "synQ Robotics",
+  "orderId": "TASK-4821",
+  "orderUpdateId": 0,
+  "zoneId": "Austin-Hub-Floor01",
+  "nodes": [
+    { "nodeId": "N_0_0", "sequenceId": 0, "released": true, "nodePosition": { "x": 0.0, "y": 0.0 } },
+    { "nodeId": "N_2_2", "sequenceId": 2, "released": true, "nodePosition": { "x": 10.0, "y": 10.0 } }
+  ],
+  "edges": [
+    { "edgeId": "E_0_0_to_N_2_2", "sequenceId": 1, "startNodeId": "N_0_0", "endNodeId": "N_2_2", "released": true }
+  ]
+}`;
+}
+
+function copyTerminalOutput() {
+  const text = ACTIVITIES.map(ev => `[${ev.time}:00] [${ev.robot}] ${ev.msg}`).join('\n');
+  navigator.clipboard.writeText(text);
+  showToast("Terminal buffer copied to clipboard");
+}
+
+function copyCodeBlock() {
+  const text = getCodeSnippet(activeCodeTab);
+  navigator.clipboard.writeText(text);
+  showToast("Code block copied to clipboard");
 }
 
 function renderLogLines(filterText = '') {

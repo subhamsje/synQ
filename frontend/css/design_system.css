@@ -1411,5 +1411,525 @@ footer.synq-footer {
   animation: synq-scale-up 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ========================================================================== */
+/* 8. ACETERNITY UI COMPONENT SUITE & ANIMISTA MOTION LIBRARY                 */
+/* ========================================================================== */
+
+/* --- ANIMISTA: PURPOSEFUL MOTION PRIMITIVES --- */
+
+/* 1. Fade-in for panels & views */
+.anim-fade-in, .panel-body > * {
+  animation: synq-fade-in 0.22s cubic-bezier(0.390, 0.575, 0.565, 1.000) both;
+}
+@keyframes synq-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* 2. Slide-in for inspector / contextual drawers */
+.anim-slide-in-right, .operations-panel {
+  animation: synq-slide-in-right 0.25s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+}
+@keyframes synq-slide-in-right {
+  0% { transform: translateX(24px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+.anim-slide-in-left {
+  animation: synq-slide-in-left 0.25s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+}
+@keyframes synq-slide-in-left {
+  0% { transform: translateX(-24px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* 3. Scale-in for modals & dialogs */
+.anim-scale-in, .synq-modal-dialog {
+  animation: synq-scale-in 0.2s cubic-bezier(0.390, 0.575, 0.565, 1.000) both;
+}
+@keyframes synq-scale-in {
+  0% { transform: scale(0.93); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 4. Pulse for live robot telemetry status */
+.anim-pulse, .status-live-pulse {
+  animation: synq-pulse-status 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes synq-pulse-status {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(1.15); }
+}
+
+/* 5. Blink for critical warnings & safety faults */
+.anim-blink, .critical-alarm-blink {
+  animation: synq-critical-blink 0.75s ease-in-out infinite alternate;
+}
+@keyframes synq-critical-blink {
+  0% { opacity: 1; filter: drop-shadow(0 0 6px #f85149); }
+  100% { opacity: 0.35; filter: none; }
+}
+
+/* 6. Shadow-drop for tactile card hover */
+.anim-shadow-drop, .robot-card, .kpi-tile, .scenario-card, .synq-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+.anim-shadow-drop:hover, .robot-card:hover, .scenario-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55), 0 0 12px rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+/* --- ACETERNITY: SIDEBAR NAVIGATION UPGRADE --- */
+.synq-sidebar .nav-item {
+  position: relative;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.synq-sidebar .nav-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 18px;
+  background: #38bdf8;
+  border-radius: 0 3px 3px 0;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.synq-sidebar .nav-item.active::before {
+  transform: translateY(-50%) scaleY(1);
+}
+
+.synq-sidebar .nav-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateX(2px);
+}
+
+/* --- ACETERNITY: MOVING BORDER ON SELECTED / ACTIVE ROBOT --- */
+.moving-border-card {
+  position: relative;
+  border-radius: var(--synq-radius-md);
+  padding: 1.5px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.moving-border-card::before {
+  content: "";
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: conic-gradient(from 0deg, transparent 0 310deg, #38bdf8 340deg, #a371f7 360deg);
+  animation: synq-conic-spin 3.5s linear infinite;
+  z-index: 1;
+}
+
+.moving-border-card-inner {
+  position: relative;
+  background: var(--synq-bg-surface);
+  border-radius: calc(var(--synq-radius-md) - 1px);
+  z-index: 2;
+  height: 100%;
+}
+
+/* --- ACETERNITY: EXPANDABLE ROBOT TELEMETRY CARD & MODAL --- */
+.synq-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.synq-modal-dialog {
+  background: var(--synq-bg-surface);
+  border: 1px solid var(--synq-border-light);
+  border-radius: var(--synq-radius-md);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.75), 0 0 24px rgba(56, 189, 248, 0.15);
+  max-width: 680px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  color: #fff;
+  position: relative;
+}
+
+.synq-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--synq-border-default);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: var(--synq-bg-surface);
+  z-index: 10;
+}
+
+.synq-modal-close-btn {
+  background: transparent;
+  border: 1px solid var(--synq-border-default);
+  color: var(--synq-text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s ease;
+}
+.synq-modal-close-btn:hover {
+  color: #fff;
+  border-color: var(--synq-border-light);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.synq-modal-body {
+  padding: 20px;
+}
+
+.synq-modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--synq-border-default);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: var(--synq-bg-elevated);
+}
+
+/* Expandable Robot Subsystems Grid */
+.subsystem-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.subsystem-box {
+  background: var(--synq-bg-elevated);
+  border: 1px solid var(--synq-border-default);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.subsystem-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--synq-text-muted);
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 4-Cell Battery Balancer Bar */
+.cell-balance-bars {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+.cell-bar-wrap {
+  flex: 1;
+  text-align: center;
+}
+.cell-bar-track {
+  height: 48px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  border: 1px solid var(--synq-border-subtle);
+}
+.cell-bar-fill {
+  width: 100%;
+  background: #3fb950;
+  border-radius: 2px;
+  transition: height 0.3s ease;
+}
+.cell-bar-label {
+  font-size: 9px;
+  color: var(--synq-text-muted);
+  margin-top: 3px;
+  font-family: var(--synq-font-mono);
+}
+
+/* --- ACETERNITY: ANIMATED TABS WITH SLIDING BACKGROUND PILL --- */
+.animated-tabs-strip {
+  display: inline-flex;
+  background: rgba(14, 17, 21, 0.9);
+  padding: 3px;
+  border-radius: 6px;
+  border: 1px solid var(--synq-border-default);
+  gap: 2px;
+}
+
+.animated-tab-item {
+  position: relative;
+  padding: 5px 12px;
+  border: none;
+  background: transparent;
+  color: var(--synq-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.animated-tab-item:hover {
+  color: #fff;
+}
+
+.animated-tab-item.active {
+  color: #fff;
+  background: var(--synq-bg-surface);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(56, 189, 248, 0.3);
+}
+
+/* --- ACETERNITY: TERMINAL (MACOS-STYLE WITH TRAFFIC LIGHTS) --- */
+.aceternity-terminal {
+  background: #080a0d;
+  border: 1px solid var(--synq-border-default);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+}
+
+.terminal-titlebar {
+  background: #11151b;
+  border-bottom: 1px solid var(--synq-border-default);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.terminal-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mac-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.mac-dot-red { background: #ff5f56; border: 1px solid #e0443e; }
+.mac-dot-yellow { background: #ffbd2e; border: 1px solid #dea123; }
+.mac-dot-green { background: #27c93f; border: 1px solid #1aab29; }
+
+.terminal-title-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--synq-text-secondary);
+  font-family: var(--synq-font-mono);
+}
+
+.terminal-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #0c0f14;
+  border-bottom: 1px solid var(--synq-border-subtle);
+  font-size: 11px;
+}
+
+.terminal-body {
+  font-family: var(--synq-font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 14px;
+  max-height: 280px;
+  overflow-y: auto;
+  color: #e6edf3;
+  background: #080a0d;
+}
+
+/* --- ACETERNITY: CODE BLOCK WITH COPY ACTION --- */
+.aceternity-code-block {
+  background: #080a0d;
+  border: 1px solid var(--synq-border-default);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 10px 0;
+  font-family: var(--synq-font-mono);
+}
+
+.code-block-header {
+  background: #11151b;
+  border-bottom: 1px solid var(--synq-border-default);
+  padding: 6px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.code-block-filename {
+  color: var(--synq-text-secondary);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.code-copy-btn {
+  background: transparent;
+  border: 1px solid var(--synq-border-default);
+  color: var(--synq-text-muted);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.code-copy-btn:hover {
+  color: #fff;
+  border-color: var(--synq-border-light);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.code-block-content {
+  padding: 12px;
+  overflow-x: auto;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #7dd3fc;
+}
+
+/* --- ACETERNITY: STATEFUL BUTTON (SPINNER -> CHECKMARK -> IDLE) --- */
+.stateful-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--synq-radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--synq-border-default);
+  background: var(--synq-bg-surface);
+  color: #fff;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  user-select: none;
+}
+
+.stateful-btn:hover {
+  background: var(--synq-bg-elevated);
+  border-color: var(--synq-border-light);
+}
+
+.stateful-btn:active {
+  transform: scale(0.97);
+}
+
+.stateful-btn.loading {
+  pointer-events: none;
+  opacity: 0.85;
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.stateful-btn.success {
+  background: rgba(63, 185, 80, 0.15) !important;
+  color: #3fb950 !important;
+  border-color: rgba(63, 185, 80, 0.4) !important;
+}
+
+.btn-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(56, 189, 248, 0.25);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: synq-spin 0.6s linear infinite;
+  display: inline-block;
+}
+@keyframes synq-spin {
+  100% { transform: rotate(360deg); }
+}
+
+/* --- ACETERNITY: ANIMATED FLOATING TOOLTIP --- */
+.synq-floating-tooltip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 2000;
+  background: rgba(14, 17, 21, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 12px rgba(56, 189, 248, 0.2);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.4;
+  opacity: 0;
+  transform: translateY(6px) scale(0.96);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.synq-floating-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.tooltip-robot-id {
+  font-weight: 700;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tooltip-stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--synq-text-muted);
+}
+.tooltip-stat-val {
+  color: #fff;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- ACETERNITY: RADIAL SPOTLIGHT FOCUS FOR ACTIVE ROBOT --- */
+.robot-spotlight-focus {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, rgba(56, 189, 248, 0.05) 50%, transparent 75%);
+  animation: synq-pulse-status 2.5s ease-in-out infinite alternate;
+  z-index: 5;
+}
+
+
 
 
