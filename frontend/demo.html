@@ -4,16 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>FLTX Live Facility Demo Portal</title>
+  <link rel="stylesheet" href="/static/css/design_system.css">
   <style>
     :root {
-      --bg: #0d1117;
-      --panel: #161b22;
-      --panel-elevated: #21262d;
-      --border: #30363d;
-      --border-subtle: #21262d;
-      --text: #e6edf3;
+      --bg: #0b0d10;
+      --panel: #11151b;
+      --panel-elevated: #181d24;
+      --border: #262c36;
+      --border-subtle: #1c222b;
+      --text: #f0f3f6;
       --text-muted: #8b949e;
-      --accent: #58a6ff;
+      --accent: #38bdf8;
       --success: #3fb950;
       --warning: #d29922;
       --danger: #f85149;
@@ -21,14 +22,19 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: var(--bg);
+      background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0);
+      background-size: 20px 20px;
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       padding-bottom: 60px;
+      min-height: 100vh;
     }
     .header {
-      background: var(--panel);
+      background: rgba(17, 21, 27, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      padding: 14px 16px;
+      padding: 14px 18px;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -40,20 +46,32 @@
       margin-bottom: 8px;
     }
     .brand-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
       color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .brand-title span {
+      background: linear-gradient(135deg, #38bdf8, #a371f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     .brand-badge {
       font-size: 10px;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 0.5px;
       text-transform: uppercase;
-      padding: 3px 8px;
-      border-radius: 4px;
-      background: rgba(63, 185, 80, 0.15);
+      padding: 3px 10px;
+      border-radius: 12px;
+      background: rgba(63, 185, 80, 0.12);
       color: var(--success);
-      border: 1px solid rgba(63, 185, 80, 0.4);
+      border: 1px solid rgba(63, 185, 80, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
     .status-strip {
       display: flex;
@@ -65,14 +83,17 @@
     }
     .status-pill {
       background: var(--panel-elevated);
-      padding: 4px 8px;
+      padding: 4px 10px;
       border-radius: 4px;
       border: 1px solid var(--border-subtle);
+      font-variant-numeric: tabular-nums;
     }
     .status-pill strong { color: var(--text); }
     .nav-tabs {
       display: flex;
-      background: var(--panel);
+      background: rgba(17, 21, 27, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--border);
       overflow-x: auto;
     }
@@ -88,11 +109,16 @@
       text-align: center;
       white-space: nowrap;
       cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .nav-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.02);
     }
     .nav-btn.active {
       color: var(--accent);
       border-bottom-color: var(--accent);
-      background: rgba(88, 166, 255, 0.05);
+      background: rgba(56, 189, 248, 0.06);
     }
     .container {
       padding: 16px;
@@ -105,10 +131,12 @@
       border-radius: 8px;
       padding: 16px;
       margin-bottom: 14px;
+      position: relative;
     }
     .card-title {
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: -0.2px;
       color: #fff;
       margin-bottom: 10px;
       display: flex;
@@ -126,24 +154,35 @@
       color: var(--text);
       cursor: pointer;
       display: block;
-      transition: border-color 0.15s ease;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
     }
-    .btn-scenario:hover { border-color: var(--accent); }
+    .btn-scenario:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 10px rgba(56, 189, 248, 0.15);
+    }
+    .btn-scenario:active {
+      transform: translateY(0);
+    }
     .scenario-title {
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
       color: #fff;
       margin-bottom: 4px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
     }
     .scenario-desc {
       font-size: 11px;
       color: var(--text-muted);
-      line-height: 1.4;
+      line-height: 1.45;
     }
     .scenario-badge {
       font-size: 9px;
+      font-weight: 700;
       padding: 2px 6px;
       border-radius: 3px;
       background: rgba(210, 153, 34, 0.15);
@@ -160,8 +199,13 @@
       margin: 0 6px 8px 0;
       color: var(--text);
       cursor: pointer;
+      transition: all 0.15s ease;
     }
-    .query-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .query-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.08);
+    }
     .input-row {
       display: flex;
       gap: 8px;
@@ -169,43 +213,52 @@
     }
     .input-field {
       flex: 1;
-      background: var(--bg);
+      background: #080a0d;
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 10px 12px;
+      padding: 10px 14px;
       color: var(--text);
-      font-size: 13px;
+      font-size: 12px;
       outline: none;
+      transition: border-color 0.15s ease;
     }
-    .input-field:focus { border-color: var(--accent); }
+    .input-field:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+    }
     .btn-primary {
       background: var(--accent);
-      color: #0d1117;
-      font-weight: 600;
+      color: #0b0d10;
+      font-weight: 700;
       border: none;
       border-radius: 6px;
-      padding: 0 16px;
-      font-size: 13px;
+      padding: 0 18px;
+      font-size: 12px;
       cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-primary:hover {
+      background: #7dd3fc;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
     }
     .output-box {
-      background: var(--bg);
-      border: 1px solid var(--border-subtle);
+      background: #080a0d;
+      border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 12px;
-      margin-top: 12px;
+      padding: 14px;
+      margin-top: 14px;
       font-size: 12px;
-      line-height: 1.5;
+      line-height: 1.55;
     }
     pre.code-report {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 11px;
       color: #c9d1d9;
-      background: var(--bg);
-      padding: 12px;
+      background: #080a0d;
+      padding: 14px;
       border-radius: 6px;
       overflow-x: auto;
-      line-height: 1.4;
+      line-height: 1.45;
       border: 1px solid var(--border-subtle);
     }
     .roster-row {
@@ -223,8 +276,13 @@
 
   <div class="header">
     <div class="brand-row">
-      <div class="brand-title">FLTX AUTONOMOUS OPERATIONS</div>
-      <div class="brand-badge">● LIVE DEMO</div>
+      <div class="brand-title">
+        <span>synQ</span> FLTX AUTONOMOUS OPS
+      </div>
+      <div class="brand-badge">
+        <span class="synq-badge-dot radar-ping" style="background: #3fb950;"></span>
+        LIVE DEMO
+      </div>
     </div>
     <div class="status-strip">
       <div class="status-pill">Fleet: <strong>12 AMRs</strong></div>
@@ -235,26 +293,26 @@
   </div>
 
   <div class="nav-tabs">
-    <button class="nav-btn active" onclick="setTab('scenarios')">Break Facility</button>
-    <button class="nav-btn" onclick="setTab('agent')">Ask FLTX</button>
-    <button class="nav-btn" onclick="setTab('report')">Daily Report</button>
-    <button class="nav-btn" onclick="setTab('fleet')">Fleet Roster</button>
+    <button class="nav-btn active" onclick="playHapticClick('high'); setTab('scenarios')">Break Facility</button>
+    <button class="nav-btn" onclick="playHapticClick('high'); setTab('agent')">Ask FLTX</button>
+    <button class="nav-btn" onclick="playHapticClick('high'); setTab('report')">Daily Report</button>
+    <button class="nav-btn" onclick="playHapticClick('high'); setTab('fleet')">Fleet Roster</button>
   </div>
 
   <div class="container">
 
     <!-- TAB 1: BREAK THE FACILITY (SCENARIO RUNNER) -->
     <div id="tabScenarios">
-      <div class="card">
+      <div class="card spotlight-card">
         <div class="card-title">
           <span>FACILITY DISRUPTION SIMULATOR</span>
-          <span style="font-size: 10px; color: var(--text-muted);">HACKATHON JUDGE MODE</span>
+          <span style="font-size: 10px; color: var(--text-muted); font-family: ui-monospace, monospace;">JUDGE INTERACTIVE MODE</span>
         </div>
-        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
-          Trigger physical and operational disruptions to observe FLTX's autonomous detection, deconfliction, and self-healing recovery loops.
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.45;">
+          Trigger physical obstacles and fleet disruptions. FLTX continuously detects, resolves via CBS, and explains root causes without operator intervention.
         </p>
 
-        <button class="btn-scenario" onclick="runScenario('BLOCK_AISLE_C04')">
+        <button class="btn-scenario spotlight-card" onclick="playHapticClick('low'); runScenario('BLOCK_AISLE_C04')">
           <div class="scenario-title">
             <span>[ BLOCK AISLE C04 ]</span>
             <span class="scenario-badge">HIGH RISK</span>
@@ -262,7 +320,7 @@
           <div class="scenario-desc">Injects dynamic physical obstacle in primary arterial lane. Triggers CBS detour & verifies SLA.</div>
         </button>
 
-        <button class="btn-scenario" onclick="runScenario('DISABLE_ROBOT_AMR07')">
+        <button class="btn-scenario spotlight-card" onclick="playHapticClick('low'); runScenario('DISABLE_ROBOT_AMR07')">
           <div class="scenario-title">
             <span>[ DISABLE ROBOT AMR-07 ]</span>
             <span class="scenario-badge" style="color: var(--danger); border-color: rgba(248,81,73,0.3)">CRITICAL</span>
@@ -270,7 +328,7 @@
           <div class="scenario-desc">Simulates drive motor failure. Reallocates 3 active tasks across remaining fleet with 0 cancellations.</div>
         </button>
 
-        <button class="btn-scenario" onclick="runScenario('DEGRADE_BATTERY')">
+        <button class="btn-scenario spotlight-card" onclick="playHapticClick('low'); runScenario('DEGRADE_BATTERY')">
           <div class="scenario-title">
             <span>[ DEGRADE BATTERY (14% SoC) ]</span>
             <span class="scenario-badge">ENERGY</span>
@@ -278,7 +336,7 @@
           <div class="scenario-desc">Forces emergency low battery threshold. Triggers in-transit task handoff & auto dock rescue.</div>
         </button>
 
-        <button class="btn-scenario" onclick="runScenario('CONGEST_CORRIDOR')">
+        <button class="btn-scenario spotlight-card" onclick="playHapticClick('low'); runScenario('CONGEST_CORRIDOR')">
           <div class="scenario-title">
             <span>[ CONGEST INTERSECTION ]</span>
             <span class="scenario-badge">CBS ROUTING</span>
@@ -286,15 +344,15 @@
           <div class="scenario-desc">Converges 5 AMRs on intersection N_1_1. Constraint Tree schedules deconfliction without deadlock.</div>
         </button>
 
-        <button class="btn-scenario" onclick="runScenario('ADD_URGENT_TASK')">
+        <button class="btn-scenario spotlight-card" onclick="playHapticClick('low'); runScenario('ADD_URGENT_TASK')">
           <div class="scenario-title">
             <span>[ URGENT MEDICAL ORDER (4m SLA) ]</span>
-            <span class="scenario-badge" style="color: var(--accent); border-color: rgba(88,166,255,0.3)">PRIORITY</span>
+            <span class="scenario-badge" style="color: var(--accent); border-color: rgba(56,189,248,0.3)">PRIORITY</span>
           </div>
           <div class="scenario-desc">Injects critical priority order. Lower-priority pallet moves yield right-of-way.</div>
         </button>
 
-        <button class="btn-scenario" onclick="runScenario('BURST_10_TASKS')">
+        <button class="btn-scenario spotlight-card" onclick="playHapticClick('low'); runScenario('BURST_10_TASKS')">
           <div class="scenario-title">
             <span>[ BURST: 10 SIMULTANEOUS TASKS ]</span>
             <span class="scenario-badge">BATCH</span>
@@ -302,37 +360,37 @@
           <div class="scenario-desc">Simultaneous multi-criteria auction across all 12 AMRs. Demonstrates instant load balancing.</div>
         </button>
 
-        <div id="scenarioResultBox" style="display: none;" class="output-box"></div>
+        <div id="scenarioResultBox" style="display: none;" class="output-box scale-up-center"></div>
       </div>
     </div>
 
     <!-- TAB 2: ASK FLTX (OPERATIONS AGENT) -->
     <div id="tabAgent" style="display: none;">
-      <div class="card">
+      <div class="card spotlight-card">
         <div class="card-title">ASK FLTX — OPERATIONS INTELLIGENCE</div>
-        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.45;">
           Ask high-level operational questions. FLTX queries its SQLite Operational Memory to provide evidence-backed root cause answers and candidate actions.
         </p>
 
         <div>
-          <span class="query-chip" onclick="askQuestion('Why was productivity lower yesterday?')">"Why was productivity lower yesterday?"</span>
-          <span class="query-chip" onclick="askQuestion('Why did you reassign AMR-07?')">"Why did you reassign AMR-07?"</span>
-          <span class="query-chip" onclick="askQuestion('What happened in the last hour?')">"What happened in the last hour?"</span>
-          <span class="query-chip" onclick="askQuestion('What happens if AMR-07 is unavailable for 2 hours?')">"What if AMR-07 is unavailable for 2 hours?"</span>
+          <span class="query-chip" onclick="playHapticClick('high'); askQuestion('Why was productivity lower yesterday?')">"Why was productivity lower yesterday?"</span>
+          <span class="query-chip" onclick="playHapticClick('high'); askQuestion('Why did you reassign AMR-07?')">"Why did you reassign AMR-07?"</span>
+          <span class="query-chip" onclick="playHapticClick('high'); askQuestion('What happened in the last hour?')">"What happened in the last hour?"</span>
+          <span class="query-chip" onclick="playHapticClick('high'); askQuestion('What happens if AMR-07 is unavailable for 2 hours?')">"What if AMR-07 is unavailable for 2 hours?"</span>
         </div>
 
         <div class="input-row">
           <input type="text" id="agentInput" class="input-field" placeholder="Ask about fleet, bottlenecks, or what-if...">
-          <button class="btn-primary" onclick="submitCustomQuery()">Ask</button>
+          <button class="btn-primary" onclick="playHapticClick('high'); submitCustomQuery()">Ask</button>
         </div>
 
-        <div id="agentResultBox" style="display: none;" class="output-box"></div>
+        <div id="agentResultBox" style="display: none;" class="output-box scale-up-center"></div>
       </div>
     </div>
 
     <!-- TAB 3: DAILY OPERATIONS REPORT -->
     <div id="tabReport" style="display: none;">
-      <div class="card">
+      <div class="card spotlight-card">
         <div class="card-title">DAILY OPERATIONS BRIEF</div>
         <pre id="dailyReportPre" class="code-report">Loading report...</pre>
       </div>
@@ -340,7 +398,7 @@
 
     <!-- TAB 4: FLEET ROSTER -->
     <div id="tabFleet" style="display: none;">
-      <div class="card">
+      <div class="card spotlight-card">
         <div class="card-title">HETEROGENEOUS FLEET ROSTER (12 UNITS)</div>
         <div id="rosterList">Loading fleet...</div>
       </div>
@@ -349,6 +407,77 @@
   </div>
 
   <script>
+    /* Zero-asset Web Audio Synthesizer */
+    function playHapticClick(pitch = "high") {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const freq = (pitch === "high") ? 780 : 340;
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.024);
+        gain.gain.setValueAtTime(0.025, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0005, ctx.currentTime + 0.024);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.024);
+      } catch (e) {}
+    }
+
+    /* Kinetic Text Decryption Reveal */
+    function kineticDecryptText(element, finalText, speedMs = 12, maxDuration = 320) {
+      if (!element || !finalText) return;
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789%_/:->*#";
+      const length = finalText.length;
+      let iteration = 0;
+      element.classList.add("kinetic-decrypting");
+
+      if (element._decryptInterval) clearInterval(element._decryptInterval);
+
+      const totalIterations = Math.min(length, Math.ceil(maxDuration / speedMs));
+      const charsPerStep = Math.max(1, Math.ceil(length / Math.max(1, totalIterations)));
+
+      element._decryptInterval = setInterval(() => {
+        let output = "";
+        for (let i = 0; i < length; i++) {
+          if (i < iteration) {
+            output += finalText[i];
+          } else if (finalText[i] === ' ' || finalText[i] === '\n') {
+            output += finalText[i];
+          } else {
+            output += chars[Math.floor(Math.random() * chars.length)];
+          }
+        }
+        element.textContent = output;
+
+        if (iteration >= length) {
+          clearInterval(element._decryptInterval);
+          element._decryptInterval = null;
+          element.classList.remove("kinetic-decrypting");
+          element.textContent = finalText;
+        }
+        iteration += charsPerStep;
+      }, speedMs);
+    }
+
+    /* Global Mousemove Listener for Spotlight Cards */
+    document.addEventListener("mousemove", (e) => {
+      const cards = document.querySelectorAll(".spotlight-card");
+      cards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        if (x >= -60 && x <= rect.width + 60 && y >= -60 && y <= rect.height + 60) {
+          card.style.setProperty("--mouse-x", `${x}px`);
+          card.style.setProperty("--mouse-y", `${y}px`);
+        }
+      });
+    });
+
     function setTab(tab) {
       ['scenarios', 'agent', 'report', 'fleet'].forEach(t => {
         document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = (t === tab) ? 'block' : 'none';
@@ -363,7 +492,7 @@
     async function runScenario(scenarioId) {
       const box = document.getElementById('scenarioResultBox');
       box.style.display = 'block';
-      box.innerHTML = `<span style="color: var(--accent);">Executing scenario ${scenarioId}...</span>`;
+      box.innerHTML = `<span style="color: var(--accent); font-weight:600;">Executing scenario ${scenarioId}...</span>`;
 
       try {
         const res = await fetch(`/api/v1/demo/run-scenario/${scenarioId}`, { method: 'POST' });
@@ -371,7 +500,7 @@
         
         let stepsHtml = '';
         if (data.narrative) {
-          stepsHtml = data.narrative.map(step => `<li style="margin-left: 16px; margin-bottom: 4px;">${step}</li>`).join('');
+          stepsHtml = data.narrative.map(step => `<li style="margin-left: 16px; margin-bottom: 5px;">${step}</li>`).join('');
         }
 
         box.innerHTML = `
@@ -399,7 +528,7 @@
 
       const box = document.getElementById('agentResultBox');
       box.style.display = 'block';
-      box.innerHTML = `<span style="color: var(--accent);">Querying Operational Memory...</span>`;
+      box.innerHTML = `<span style="color: var(--accent); font-weight:600;">Querying Operational Memory Vector Space...</span>`;
 
       try {
         const res = await fetch('/api/v1/agent/query', {
@@ -411,18 +540,18 @@
 
         let content = '';
         if (data.headline) {
-          content += `<div style="font-size: 14px; font-weight: 600; color: var(--warning); margin-bottom: 8px;">${data.headline}</div>`;
+          content += `<div id="demoHeadlineDecrypted" style="font-size: 13px; font-weight: 700; color: var(--warning); margin-bottom: 8px;">${data.headline}</div>`;
         }
         if (data.contributing_factors) {
-          content += `<strong style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Contributing Factors:</strong>`;
+          content += `<strong style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Contributing Factors:</strong>`;
           content += `<ul style="margin: 6px 0 10px 18px;">` + data.contributing_factors.map(f => `<li><strong>${f.factor}:</strong> ${f.impact}</li>`).join('') + `</ul>`;
         }
         if (data.candidate_actions) {
-          content += `<strong style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Recommended Candidate Actions:</strong>`;
+          content += `<strong style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Recommended Candidate Actions:</strong>`;
           content += `<ul style="margin: 6px 0 10px 18px;">` + data.candidate_actions.map(a => `<li><span style="color: var(--accent); font-weight: 600;">${a.option}:</span> ${a.action} <em>(${a.expected_benefit})</em></li>`).join('') + `</ul>`;
         }
         if (data.decision_steps) {
-          content += `<strong style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Autonomy Decision Trace:</strong>`;
+          content += `<strong style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Autonomy Decision Trace:</strong>`;
           content += `<ul style="margin: 6px 0 10px 18px;">` + data.decision_steps.map(s => `<li><strong>${s.step}:</strong> ${s.detail}</li>`).join('') + `</ul>`;
         }
         if (data.simulated_throughput) {
@@ -440,6 +569,9 @@
         }
 
         box.innerHTML = content || `<pre style="font-size: 11px;">${JSON.stringify(data, null, 2)}</pre>`;
+        if (data.headline) {
+          kineticDecryptText(document.getElementById("demoHeadlineDecrypted"), data.headline, 10, 300);
+        }
       } catch (err) {
         box.innerHTML = `<span style="color: var(--danger);">Query error: ${err.message}</span>`;
       }
@@ -467,11 +599,11 @@
           <div class="roster-row">
             <div>
               <strong style="color: #fff;">${bot.robot_id}</strong>
-              <span style="color: var(--text-muted); font-size: 10px; margin-left: 6px;">${bot.payload_type}</span>
+              <span style="color: var(--text-muted); font-size: 10px; margin-left: 6px; text-transform:uppercase;">${bot.payload_type}</span>
             </div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <span style="font-size: 11px; color: ${bot.battery_pct < 60 ? 'var(--warning)' : 'var(--text)'};">${bot.battery_pct}%</span>
-              <span style="font-size: 10px; padding: 2px 6px; border-radius: 3px; background: rgba(255,255,255,0.06);">${bot.status}</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <span style="font-size: 11px; font-variant-numeric: tabular-nums; color: ${bot.battery_pct < 60 ? 'var(--warning)' : 'var(--text)'}; font-weight:600;">${bot.battery_pct}%</span>
+              <span style="font-size: 10px; padding: 2px 7px; border-radius: 3px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); font-weight:600;">${bot.status}</span>
             </div>
           </div>
         `).join('');

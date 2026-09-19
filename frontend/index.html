@@ -540,17 +540,17 @@
         <!-- Autonomy Loop Pipeline Strip -->
         <div class="autonomy-pipeline-strip" title="Click to inspect current Autonomy Loop decision state (HotKey: ?)" onclick="playHapticClick('high'); navigateTo('overview'); setPanelTab('autonomy');">
           <div class="pipeline-step" id="step-task"><div class="step-dot"></div><span>TASK</span></div>
-          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-arrow" id="arr-0">→</span>
           <div class="pipeline-step" id="step-decision"><div class="step-dot"></div><span>DECISION</span></div>
-          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-arrow" id="arr-1">→</span>
           <div class="pipeline-step" id="step-route"><div class="step-dot"></div><span>ROUTE</span></div>
-          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-arrow" id="arr-2">→</span>
           <div class="pipeline-step active" id="step-exec"><div class="step-dot"></div><span>EXECUTION</span></div>
-          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-arrow" id="arr-3">→</span>
           <div class="pipeline-step" id="step-conflict"><div class="step-dot"></div><span>CONFLICT</span></div>
-          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-arrow" id="arr-4">→</span>
           <div class="pipeline-step" id="step-recovery"><div class="step-dot"></div><span>RECOVERY</span></div>
-          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-arrow" id="arr-5">→</span>
           <div class="pipeline-step" id="step-verify"><div class="step-dot"></div><span>VERIFIED</span></div>
         </div>
       </div>
@@ -572,10 +572,12 @@
         <button class="synq-btn" style="background: rgba(88,166,255,0.12); color: #58a6ff; border-color: rgba(88,166,255,0.3);" onclick="playHapticClick('high'); openDemoQrModal();">
           <span>Judge Demo QR</span>
         </button>
-        <button class="synq-btn" onclick="playHapticClick('high'); navigateTo('overview'); openWhyFLTXDrawer();">
-          <span>Why Did FLTX Do This?</span>
-          <span class="kbd-chip" style="margin-left:4px;">?</span>
-        </button>
+        <div class="moving-border-btn" onclick="playHapticClick('high'); navigateTo('overview'); openWhyFLTXDrawer();" title="Inspect Autonomy Decision Reasoning (HotKey: ?)">
+          <button class="moving-border-btn-inner">
+            <span>Why Did FLTX Do This?</span>
+            <span class="kbd-chip" style="margin-left:4px;">?</span>
+          </button>
+        </div>
         <button class="synq-btn btn-danger" id="btnEstop" onclick="playHapticClick('low'); toggleGlobalEstop();">
           <span id="estopLabel">Emergency Stop (All)</span>
           <span class="kbd-chip" style="margin-left:4px; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.25); color:#fff;">E</span>
@@ -938,6 +940,44 @@
         osc.start();
         osc.stop(ctx.currentTime + 0.024);
       } catch (e) {}
+    }
+
+    /* ------------------------------------------------------------- */
+    /* KINETIC HACKER / TEXT DECRYPTION REVEAL ENGINE                */
+    /* ------------------------------------------------------------- */
+    function kineticDecryptText(element, finalText, speedMs = 12, maxDuration = 350) {
+      if (!element || !finalText) return;
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789%_/:->*#";
+      const length = finalText.length;
+      let iteration = 0;
+      element.classList.add("kinetic-decrypting");
+
+      if (element._decryptInterval) clearInterval(element._decryptInterval);
+
+      const totalIterations = Math.min(length, Math.ceil(maxDuration / speedMs));
+      const charsPerStep = Math.max(1, Math.ceil(length / Math.max(1, totalIterations)));
+
+      element._decryptInterval = setInterval(() => {
+        let output = "";
+        for (let i = 0; i < length; i++) {
+          if (i < iteration) {
+            output += finalText[i];
+          } else if (finalText[i] === ' ' || finalText[i] === '\n') {
+            output += finalText[i];
+          } else {
+            output += chars[Math.floor(Math.random() * chars.length)];
+          }
+        }
+        element.textContent = output;
+
+        if (iteration >= length) {
+          clearInterval(element._decryptInterval);
+          element._decryptInterval = null;
+          element.classList.remove("kinetic-decrypting");
+          element.textContent = finalText;
+        }
+        iteration += charsPerStep;
+      }, speedMs);
     }
 
     /* ------------------------------------------------------------- */
@@ -1748,6 +1788,9 @@
     }
 
     function setAutonomyPipelineStage(stage) {
+      if (AUTONOMY_REASONING.currentStage !== stage) {
+        playHapticClick('high');
+      }
       AUTONOMY_REASONING.currentStage = stage;
       const steps = ["task", "decision", "route", "exec", "conflict", "recovery", "verify"];
       steps.forEach(s => {
@@ -1756,17 +1799,26 @@
       });
 
       const mapStage = {
-        TASK: "step-task",
-        DECISION: "step-decision",
-        ROUTE: "step-route",
-        EXECUTION: "step-exec",
-        CONFLICT: "step-conflict",
-        RECOVERY: "step-recovery",
-        VERIFIED: "step-verify"
+        TASK: { id: "step-task", arrIndex: -1 },
+        DECISION: { id: "step-decision", arrIndex: 0 },
+        ROUTE: { id: "step-route", arrIndex: 1 },
+        EXECUTION: { id: "step-exec", arrIndex: 2 },
+        CONFLICT: { id: "step-conflict", arrIndex: 3 },
+        RECOVERY: { id: "step-recovery", arrIndex: 4 },
+        VERIFIED: { id: "step-verify", arrIndex: 5 }
       };
 
-      const activeEl = document.getElementById(mapStage[stage] || "step-exec");
+      const entry = mapStage[stage] || mapStage.EXECUTION;
+      const activeEl = document.getElementById(entry.id);
       if (activeEl) activeEl.classList.add("active");
+
+      // Energetic flow on incoming arrow
+      for (let i = 0; i < 6; i++) {
+        const arr = document.getElementById(`arr-${i}`);
+        if (arr) {
+          arr.classList.toggle("active-flow", i === entry.arrIndex);
+        }
+      }
     }
 
     function triggerCbsConflictScenario() {
@@ -1939,7 +1991,7 @@
 
         let html = "";
         if (data.headline) {
-          html += `<div style="font-weight:600; color:var(--color-warning); margin-bottom:6px;">${data.headline}</div>`;
+          html += `<div id="agentHeadlineDecrypted" style="font-weight:600; color:var(--color-warning); margin-bottom:6px;">${data.headline}</div>`;
         }
         if (data.contributing_factors) {
           html += `<strong style="color:var(--text-secondary); text-transform:uppercase; font-size:10px;">Contributing Factors:</strong>`;
@@ -1964,6 +2016,9 @@
           html += `<div>${data.highlight_event}</div>`;
         }
         box.innerHTML = html || `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        if (data.headline) {
+          kineticDecryptText(document.getElementById("agentHeadlineDecrypted"), data.headline, 10, 300);
+        }
       } catch (err) {
         box.innerHTML = `<span style="color: var(--color-danger);">Query failed: ${err.message}</span>`;
       }
@@ -1985,7 +2040,7 @@
           <div class="decision-callout-box">
             <div class="decision-summary-text">
               <strong>Why this robot was selected:</strong><br>
-              ${dec.rationale}
+              <span id="decRationaleText">${dec.rationale}</span>
             </div>
           </div>
 
@@ -2031,7 +2086,8 @@
           <div class="decision-callout-box cbs">
             <div class="decision-summary-text">
               <strong>Conflict Encountered:</strong> ${cbs.conflictDetected}<br>
-              <strong style="margin-top: 4px; display: block;">Resolution Rationale:</strong> ${cbs.whyChosen}
+              <strong style="margin-top: 4px; display: block;">Resolution Rationale:</strong>
+              <span id="cbsRationaleText">${cbs.whyChosen}</span>
             </div>
           </div>
 
@@ -2080,6 +2136,9 @@
           </div>
         </div>
       `;
+
+      kineticDecryptText(document.getElementById("decRationaleText"), dec.rationale, 10, 320);
+      kineticDecryptText(document.getElementById("cbsRationaleText"), cbs.whyChosen, 10, 320);
     }
 
     // B. ROBOT INSPECTOR TAB
@@ -2456,17 +2515,17 @@
   </script>
 
   <!-- JUDGE DEMO QR MODAL -->
-  <div id="demoQrModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.75); z-index:1000; align-items:center; justify-content:center;">
-    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px; max-width: 360px; text-align: center; color: #fff; box-shadow: 0 16px 32px rgba(0,0,0,0.5);">
-      <h3 style="margin-bottom: 6px; font-size: 15px; font-weight: 600;">FLTX Live Facility Demo Portal</h3>
-      <p style="font-size: 11px; color: #8b949e; margin-bottom: 16px; line-height: 1.4;">
+  <div id="demoQrModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:1000; align-items:center; justify-content:center;">
+    <div class="scale-up-center" style="background: var(--synq-bg-surface); border: 1px solid var(--synq-border-light); border-radius: 8px; padding: 24px; max-width: 380px; text-align: center; color: #fff; box-shadow: var(--synq-shadow-lg);">
+      <h3 style="margin-bottom: 6px; font-size: 15px; font-weight: 700; letter-spacing:-0.2px;">FLTX Live Facility Demo Portal</h3>
+      <p style="font-size: 11px; color: var(--synq-text-secondary); margin-bottom: 16px; line-height: 1.45;">
         Scan with your smartphone camera to access the live 12-AMR facility sandbox, run failure scenarios, and query Operational Memory.
       </p>
-      <div id="qrCodeContainer" style="background: #ffffff; padding: 12px; border-radius: 6px; display: inline-block; margin-bottom: 16px;"></div>
+      <div id="qrCodeContainer" style="background: #ffffff; padding: 12px; border-radius: 6px; display: inline-block; margin-bottom: 16px; box-shadow:0 4px 12px rgba(0,0,0,0.3);"></div>
       <div style="font-size: 11px; margin-bottom: 16px;">
-        <a href="/demo" target="_blank" style="color: #58a6ff; text-decoration: none;">Open Demo Portal in Browser →</a>
+        <a href="/demo" target="_blank" style="color: #58a6ff; text-decoration: none; font-weight:600;">Open Demo Portal in Browser →</a>
       </div>
-      <button onclick="document.getElementById('demoQrModal').style.display='none'" style="background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 7px 16px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">Close</button>
+      <button onclick="playHapticClick('high'); document.getElementById('demoQrModal').style.display='none'" class="synq-btn" style="padding: 7px 18px; font-size: 11px; font-weight: 600;">Close</button>
     </div>
   </div>
 </body>

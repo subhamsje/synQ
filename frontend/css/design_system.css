@@ -1232,4 +1232,184 @@ footer.synq-footer {
   }
 }
 
+/* ------------------------------------------------------------- */
+/* 7. ACETERNITY UI MOVING BORDER & ANIMISTA EXTENSIONS          */
+/* ------------------------------------------------------------- */
+
+/* Precision Dark Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--synq-border-default);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--synq-border-light);
+}
+
+/* Tabular Figures for All Numerals */
+.table-mono, .kpi-value, .robot-spec-val, .footer-segment strong, #legendCoords, #stripTime {
+  font-variant-numeric: tabular-nums;
+  -webkit-font-feature-settings: "tnum" 1;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Aceternity Moving Border Wrapper */
+.moving-border-btn {
+  position: relative;
+  border-radius: var(--synq-radius-sm);
+  padding: 1px;
+  overflow: hidden;
+  display: inline-flex;
+  background: transparent;
+}
+
+.moving-border-btn::before {
+  content: "";
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: conic-gradient(from 0deg, transparent 0 320deg, #38bdf8 345deg, #a371f7 360deg);
+  animation: synq-conic-spin 4s linear infinite;
+}
+
+@keyframes synq-conic-spin {
+  100% { transform: rotate(360deg); }
+}
+
+.moving-border-btn-inner {
+  position: relative;
+  background: var(--synq-bg-surface);
+  border-radius: inherit;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.moving-border-btn-inner:hover {
+  background: var(--synq-bg-elevated);
+}
+
+/* Animista Tracking Expand for Headers */
+.tracking-in-expand {
+  animation: synq-tracking-in 0.4s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+}
+
+@keyframes synq-tracking-in {
+  0% {
+    letter-spacing: -0.05em;
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Animista Modal Scale Up */
+.scale-up-center {
+  animation: synq-scale-up 0.22s cubic-bezier(0.390, 0.575, 0.565, 1.000) both;
+}
+
+@keyframes synq-scale-up {
+  0% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Active Autonomy Pipeline Step Glow & Energetic Rail */
+.pipeline-step.active {
+  color: #ffffff;
+  font-weight: 600;
+  background: rgba(56, 189, 248, 0.14);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.5), 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+.pipeline-step.active .step-dot {
+  background: #38bdf8 !important;
+  box-shadow: 0 0 8px #38bdf8, 0 0 14px rgba(56, 189, 248, 0.7);
+  animation: synq-pulse-glow 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes synq-pulse-glow {
+  0% { transform: scale(1); opacity: 0.85; filter: drop-shadow(0 0 2px #38bdf8); }
+  100% { transform: scale(1.35); opacity: 1; filter: drop-shadow(0 0 6px #38bdf8); }
+}
+
+.pipeline-arrow.active-flow {
+  color: #38bdf8;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+  animation: synq-flow-pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes synq-flow-pulse {
+  0% { opacity: 0.35; transform: translateX(-1px); }
+  100% { opacity: 1; transform: translateX(1px); }
+}
+
+/* Kinetic Hacker / Decryption Text Stream */
+.kinetic-decrypting {
+  position: relative;
+  font-family: var(--synq-font-mono), monospace !important;
+}
+
+.kinetic-decrypting::after {
+  content: "▋";
+  display: inline-block;
+  color: #38bdf8;
+  animation: synq-blink 0.6s infinite;
+  margin-left: 3px;
+  vertical-align: baseline;
+}
+
+@keyframes synq-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Spatial Toast Floating Alert */
+.spatial-toast {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(14, 17, 21, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 12px rgba(56, 189, 248, 0.15);
+  border-radius: var(--synq-radius-sm);
+  padding: 8px 14px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #f0f3f6;
+  z-index: 50;
+  animation: synq-scale-up 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+
 
