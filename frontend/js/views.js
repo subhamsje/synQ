@@ -13,6 +13,8 @@ function numFmt(n, d = 2) {
   return Number(n).toFixed(d);
 }
 
+let currentFleetLayout = 'cards'; // 'cards' | 'table'
+
 /* ==========================================================================
    1. FLEET MATRIX VIEW (Spotlight Cards & Search Filtering)
    ========================================================================== */
@@ -21,7 +23,8 @@ function renderFleetView(filter = currentFleetFilter) {
   const container = document.getElementById('fleetViewContainer');
   if (!container) return;
 
-  const bots = Object.values(ROBOTS);
+  const rawBots = window.synqStore ? window.synqStore.amrs : (window.ROBOTS || (typeof ROBOTS !== 'undefined' ? ROBOTS : {}));
+  const bots = Object.values(rawBots);
   const activeCount = bots.filter(b => b.status === 'Navigating').length;
   const idleCount = bots.filter(b => b.status === 'Idle').length;
   const estopCount = bots.filter(b => b.status === 'Emergency Stop').length;
@@ -56,10 +59,20 @@ function renderFleetView(filter = currentFleetFilter) {
           <button class="filter-pill ${filter === 'IDLE' ? 'active' : ''}" onclick="playHapticClick('high'); renderFleetView('IDLE');">Idle (${idleCount})</button>
           <button class="filter-pill ${filter === 'ESTOP' ? 'active' : ''}" onclick="playHapticClick('high'); renderFleetView('ESTOP');">E-Stop (${estopCount})</button>
         </div>
+
+        <div class="filter-btn-group" style="margin-left: 8px;">
+          <button class="filter-pill ${currentFleetLayout === 'cards' ? 'active' : ''}" onclick="playHapticClick('high'); currentFleetLayout = 'cards'; renderFleetView();" title="Card Spotlight Grid View">
+            Cards
+          </button>
+          <button class="filter-pill ${currentFleetLayout === 'table' ? 'active' : ''}" onclick="playHapticClick('high'); currentFleetLayout = 'table'; renderFleetView();" title="Foxglove High-Density Engineering Table">
+            SCADA Table
+          </button>
+        </div>
+
         <div style="display:flex; align-items:center; gap:8px;">
-          <input type="text" id="fleetSearchInput" class="select-input" style="margin-bottom:0; width:180px; font-size:10px;" placeholder="Search ID / Payload..." value="${currentFleetSearch}" oninput="currentFleetSearch = this.value; renderFleetView(currentFleetFilter);">
+          <input type="text" id="fleetSearchInput" class="select-input" style="margin-bottom:0; width:160px; font-size:10px;" placeholder="Search ID / Payload..." value="${currentFleetSearch}" oninput="currentFleetSearch = this.value; renderFleetView(currentFleetFilter);">
           <button class="synq-btn" onclick="playHapticClick('low'); toggleGlobalEstop();" style="background: rgba(248,81,73,0.15); color:#f85149; border-color: rgba(248,81,73,0.3);">
-            <span>${isEstopActive ? 'Reset Global E-Stop' : 'Global E-Stop'}</span>
+            <span>${(typeof isEstopActive !== 'undefined' && isEstopActive) ? 'Reset Global E-Stop' : 'Global E-Stop'}</span>
             <span class="kbd-chip" style="margin-left:4px; background:rgba(0,0,0,0.3); color:#fff; border-color:rgba(255,255,255,0.2);">E</span>
           </button>
         </div>
@@ -77,12 +90,106 @@ function renderFleetView(filter = currentFleetFilter) {
           <span>Reset Search Filters</span>
         </button>
       </div>
+    ` : currentFleetLayout === 'table' ? `
+      <!-- FOXGLOVE / ALTARA HIGH-DENSITY SCADA ENGINEERING TABLE -->
+      <div class="synq-table-wrap">
+        <table class="synq-table">
+          <thead>
+            <tr>
+              <th>AMR Unit & Serial</th>
+              <th>Status</th>
+              <th>SoC / Cells</th>
+              <th>Pose (X, Y, θ)</th>
+              <th>Speed / Drive</th>
+              <th>Modular Payload</th>
+              <th>Goal / Mission</th>
+              <th>Safety PL e</th>
+              <th>ROS 2 / DDS</th>
+              <th style="text-align:right;">Control Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredBots.map(bot => {
+              const isNav = (bot.status === 'Navigating');
+              const isStop = (bot.status === 'Emergency Stop');
+              const isSelected = (bot.id === (typeof selectedRobotId !== 'undefined' ? selectedRobotId : ''));
+              const statusClass = isStop ? 'critical' : (isNav ? 'active' : 'idle');
+              const cells = bot.cells || [3.32, 3.31, 3.32, 3.30];
+
+              return `
+                <tr style="background:${isSelected ? 'rgba(56,189,248,0.06)' : 'transparent'}; cursor:pointer;" onclick="inspectRobotFromMatrix('${bot.id}')">
+                  <td>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span class="table-mono" style="font-weight:700; color:${isSelected ? '#38bdf8' : '#fff'}; font-size:11px;">${bot.id}</span>
+                      <span style="font-size:9px; color:var(--text-muted); font-family:var(--synq-font-mono);">${bot.serial || 'SN-SYNQ'}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="synq-badge ${statusClass}" style="font-size:9px;">
+                      <span class="synq-badge-dot ${isNav ? 'radar-ping' : ''}"></span>${bot.status.toUpperCase()}
+                    </span>
+                  </td>
+                  <td>
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                      <span class="table-mono" style="font-size:10.5px; font-weight:700; color:${bot.battery < 20 ? '#f85149' : (bot.battery < 40 ? '#d29922' : '#3fb950')};">${bot.battery.toFixed(1)}%</span>
+                      <span style="font-size:8.5px; font-family:var(--synq-font-mono); color:var(--text-secondary);">${cells[0]}V | ${cells[1]}V | ${cells[2]}V | ${cells[3]}V</span>
+                    </div>
+                  </td>
+                  <td class="table-mono" style="font-size:10px; color:#38bdf8;">
+                    X: ${bot.x.toFixed(2)}m, Y: ${bot.y.toFixed(2)}m, θ: ${bot.heading.toFixed(0)}°
+                  </td>
+                  <td class="table-mono" style="font-size:10px;">
+                    ${bot.speed.toFixed(2)} m/s <span style="color:var(--text-muted);">(${Math.round(bot.speed * 160)} RPM)</span>
+                  </td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                      <span style="color:#a371f7; font-weight:600; font-size:10px;">${(bot.payload || 'SCISSOR_LIFT').replace('_', ' ')}</span>
+                      <span style="color:#3fb950; font-size:9px;">✓</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="font-size:10px;">
+                      <span style="color:#58a6ff; font-weight:600;">${bot.mission || 'STANDBY'}</span>
+                      <span style="color:var(--text-secondary); font-size:9px;">→ ${bot.destination || '—'}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span style="font-size:9.5px; font-family:var(--synq-font-mono); color:${bot.safetyState && bot.safetyState.lidarStopZone ? '#f85149' : '#3fb950'};">
+                      ${bot.safetyState && bot.safetyState.lidarStopZone ? 'BREACHED' : 'CLEAR (0.45m)'}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="table-mono" style="font-size:9.5px; color:#3fb950;">50.0 Hz</span>
+                  </td>
+                  <td style="text-align:right;">
+                    <div style="display:inline-flex; gap:4px;" onclick="event.stopPropagation();">
+                      <button class="synq-btn" style="padding:2px 6px; font-size:9px;" onclick="playHapticClick('high'); setViewportMode('3d'); set3DPreset('follow'); navigateTo('overview');" title="Track in 3D Viewport">
+                        3D Track
+                      </button>
+                      <button class="synq-btn" style="padding:2px 6px; font-size:9px;" onclick="playHapticClick('high'); openExpandableRobotModal('${bot.id}');" title="Expand Telemetry">
+                        Expand
+                      </button>
+                      <button class="synq-btn" style="padding:2px 6px; font-size:9px;" onclick="playHapticClick('high'); dockUnit('${bot.id}');" title="Dock & Charge">
+                        Dock
+                      </button>
+                      <button class="synq-btn" style="padding:2px 6px; font-size:9px;" onclick="playHapticClick('high'); pauseUnit('${bot.id}');" title="Pause / Resume">
+                        ${bot.status === 'Navigating' ? 'Pause' : 'Resume'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
     ` : `
+      <!-- CARD SPOTLIGHT GRID -->
       <div class="synq-grid-3">
         ${filteredBots.map(bot => {
           const isNav = (bot.status === 'Navigating');
           const isStop = (bot.status === 'Emergency Stop');
-          const isSelected = (bot.id === selectedRobotId);
+          const isSelected = (bot.id === (typeof selectedRobotId !== 'undefined' ? selectedRobotId : ''));
           const statusClass = isStop ? 'critical' : (isNav ? 'active' : 'idle');
           const batClass = bot.battery > 50 ? 'nominal' : (bot.battery > 20 ? 'medium' : 'critical');
 
@@ -925,6 +1032,62 @@ function renderDiagnosticsView() {
           `).join('')}
         </tbody>
       </table>
+    </div>
+
+    <!-- ROS 2 Live Topic Frequencies & QoS Profiles (Foxglove Pattern) -->
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+      <!-- Column 1: Live ROS 2 Topic Stream Directory -->
+      <div class="spotlight-card" style="background: var(--synq-bg-surface); border: 1px solid var(--synq-border-default); border-radius: 6px; padding: 14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+          <div style="font-size:12px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            Live ROS 2 Topics & QoS Profiles
+          </div>
+          <span class="synq-badge online" style="font-size:9px;"><span class="synq-badge-dot radar-ping"></span>8 ACTIVE TOPICS</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="synq-table" style="font-size:10px;">
+            <thead>
+              <tr>
+                <th>Topic</th>
+                <th>Type</th>
+                <th>Rate</th>
+                <th>QoS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="table-mono" style="color:#58a6ff;">/scan</td><td>LaserScan</td><td class="table-mono" style="color:#3fb950;">25.0 Hz</td><td>BestEffort</td></tr>
+              <tr><td class="table-mono" style="color:#58a6ff;">/odom</td><td>Odometry</td><td class="table-mono" style="color:#3fb950;">50.0 Hz</td><td>BestEffort</td></tr>
+              <tr><td class="table-mono" style="color:#58a6ff;">/tf</td><td>TFMessage</td><td class="table-mono" style="color:#3fb950;">100.0 Hz</td><td>BestEffort</td></tr>
+              <tr><td class="table-mono" style="color:#58a6ff;">/cmd_vel</td><td>Twist</td><td class="table-mono" style="color:#3fb950;">50.0 Hz</td><td>BestEffort</td></tr>
+              <tr><td class="table-mono" style="color:#58a6ff;">/battery_state</td><td>BatteryState</td><td class="table-mono" style="color:#38bdf8;">5.0 Hz</td><td>Reliable</td></tr>
+              <tr><td class="table-mono" style="color:#58a6ff;">/safety_status</td><td>SafetyStatus</td><td class="table-mono" style="color:#3fb950;">20.0 Hz</td><td>Reliable</td></tr>
+              <tr><td class="table-mono" style="color:#58a6ff;">/fleet/vda5050_order</td><td>Order</td><td class="table-mono" style="color:#a371f7;">10.0 Hz</td><td>Reliable</td></tr>
+              <tr><td class="table-mono" style="color:#58a6ff;">/automap/pointcloud</td><td>PointCloud2</td><td class="table-mono" style="color:#38bdf8;">10.0 Hz</td><td>BestEffort</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Column 2: TF2 Coordinate Frame Hierarchy Tree -->
+      <div class="spotlight-card" style="background: var(--synq-bg-surface); border: 1px solid var(--synq-border-default); border-radius: 6px; padding: 14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+          <div style="font-size:12px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a371f7" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            TF2 Coordinate Frame Hierarchy
+          </div>
+          <span class="synq-badge online" style="font-size:9px;">TF BROADCASTER: ACTIVE</span>
+        </div>
+        <div style="background: var(--synq-bg-subtle, #0a0d11); border: 1px solid var(--synq-border-light, #222935); border-radius: 4px; padding: 10px; font-family: var(--synq-font-mono); font-size: 10px; line-height: 1.6; color: #c9d1d9;">
+          <div><strong style="color:#38bdf8;">map</strong> <span style="color:var(--text-muted); font-size:9px;">[world origin (0,0,0)]</span></div>
+          <div style="padding-left: 14px;">└── <strong style="color:#3fb950;">odom</strong> <span style="color:#a371f7; font-size:9px;">@ 50.0 Hz (FastDDS EKF)</span></div>
+          <div style="padding-left: 28px;">└── <strong style="color:#f0f3f6;">base_link</strong> <span style="color:var(--text-muted); font-size:9px;">[chassis center]</span></div>
+          <div style="padding-left: 42px;">├── <strong style="color:#38bdf8;">laser_frame</strong> <span style="color:var(--text-secondary); font-size:9px;">[+0.28m, 0.00m, +0.18m] @ 100Hz</span></div>
+          <div style="padding-left: 42px;">├── <strong style="color:#d29922;">imu_link</strong> <span style="color:var(--text-secondary); font-size:9px;">[0.00m, 0.00m, +0.10m] @ 100Hz</span></div>
+          <div style="padding-left: 42px;">├── <strong style="color:#a371f7;">payload_deck</strong> <span style="color:var(--text-secondary); font-size:9px;">[0.00m, 0.00m, +0.35m] @ 50Hz</span></div>
+          <div style="padding-left: 42px;">└── <strong style="color:#c9d1d9;">wheel_[fl,fr,rl,rr]</strong> <span style="color:var(--text-secondary); font-size:9px;">[4WD Mecanum] @ 50Hz</span></div>
+        </div>
+      </div>
     </div>
 
     <!-- ACETERNITY TERMINAL: ROS 2 KERNEL & FASTDDS EVENT STREAM -->

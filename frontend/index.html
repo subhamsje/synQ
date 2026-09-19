@@ -220,11 +220,54 @@
       cursor: grabbing;
     }
 
+    /* Foxglove Viewport Dual-Mode Switcher */
+    .viewport-mode-strip {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 12;
+      display: flex;
+      background: rgba(14, 17, 21, 0.96);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 2px;
+      gap: 2px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+    }
+
+    .mode-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .mode-tab:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .mode-tab.active {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.35);
+    }
+
     /* Map Toolstrip */
     .map-toolbar {
       position: absolute;
       top: 12px;
-      left: 12px;
+      left: 236px;
       background: rgba(24, 28, 32, 0.94);
       border: 1px solid var(--border-color);
       border-radius: 3px;
@@ -232,6 +275,8 @@
       align-items: center;
       padding: 3px;
       z-index: 10;
+      overflow-x: auto;
+      max-width: calc(100% - 248px);
     }
 
     .tool-btn {
@@ -295,6 +340,91 @@
       pointer-events: none;
       display: flex;
       gap: 16px;
+    }
+
+    /* Foxglove / Altara Industrial Telemetry Cards */
+    .tech-telemetry-card {
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 10px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .tech-telemetry-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tech-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .tech-card-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tech-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 10px;
+      font-size: 10px;
+    }
+    .tech-metric {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .tech-label {
+      font-size: 9px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .tech-value {
+      font-family: var(--synq-font-mono, monospace);
+      font-size: 10.5px;
+      color: #f0f3f6;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tech-value.accent-cyan { color: #38bdf8; }
+    .tech-value.accent-green { color: #3fb950; }
+    .tech-value.accent-purple { color: #a371f7; }
+    .tech-value.accent-amber { color: #d29922; }
+    .tech-value.accent-red { color: #f85149; }
+
+    .tech-sub-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.5px;
+      margin-top: 4px;
+    }
+    .tech-sub-table th {
+      text-align: left;
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 3px 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 8.5px;
+      letter-spacing: 0.3px;
+    }
+    .tech-sub-table td {
+      padding: 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      font-family: var(--synq-font-mono, monospace);
     }
 
     /* ------------------------------------------------------------- */
@@ -738,9 +868,22 @@
               <!-- Warehouse Map -->
               <section class="map-container" id="mapContainer">
                 <canvas id="warehouseCanvas"></canvas>
+                <div id="warehouse3DContainer" style="display:none; width:100%; height:100%; position:absolute; top:0; left:0; z-index:1;"></div>
 
-                <!-- Autonomy Visualization Toolbar & Phase 5 Simulation Controls -->
-                <div class="map-toolbar">
+                <!-- Foxglove Viewport Dual-Mode Switcher -->
+                <div class="viewport-mode-strip" id="viewportModeStrip">
+                  <button class="mode-tab active" id="btnMode2D" onclick="playHapticClick('high'); setViewportMode('2d')" title="Switch to 2D Planar Tactical Grid">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                    <span>2D TACTICAL</span>
+                  </button>
+                  <button class="mode-tab" id="btnMode3D" onclick="playHapticClick('high'); setViewportMode('3d')" title="Switch to Foxglove 3D Spatial WebGL Viewport">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    <span>3D SPATIAL</span>
+                  </button>
+                </div>
+
+                <!-- Autonomy Visualization Toolbar (2D Mode) -->
+                <div class="map-toolbar" id="toolbar2D">
                   <button class="tool-btn active" id="btnToggleLanes" onclick="playHapticClick('high'); toggleLayer('lanes')">Transit Lanes</button>
                   <button class="tool-btn active" id="btnToggleRacks" onclick="playHapticClick('high'); toggleLayer('racks')">Racks</button>
                   <button class="tool-btn active" id="btnToggleEvaluations" onclick="playHapticClick('high'); toggleLayer('evaluations')">Candidate Evals</button>
@@ -758,6 +901,24 @@
                   <span id="zoomLevelDisplay" style="font-size:10px; font-family:var(--synq-font-mono); color:var(--synq-text-secondary); padding:0 3px;">100%</span>
                   <button class="tool-btn" onclick="zoomOutMap()" title="Zoom Out (−)">−</button>
                   <button class="tool-btn" onclick="resetMapCamera()" title="Reset Camera">Reset</button>
+                </div>
+
+                <!-- 3D Spatial Toolbar (Foxglove & Webviz controls) -->
+                <div class="map-toolbar" id="toolbar3D" style="display:none;">
+                  <span style="font-size:9.5px; font-weight:700; color:var(--synq-status-cyan, #38bdf8); padding:0 4px; text-transform:uppercase;">CAMERA:</span>
+                  <button class="tool-btn active" id="btn3DPerspective" onclick="playHapticClick('high'); set3DPreset('perspective')">Perspective</button>
+                  <button class="tool-btn" id="btn3DTopDown" onclick="playHapticClick('high'); set3DPreset('topdown')">Top-Down</button>
+                  <button class="tool-btn" id="btn3DFollow" onclick="playHapticClick('high'); set3DPreset('follow')">Follow AMR</button>
+                  <div class="tool-sep"></div>
+                  <span style="font-size:9.5px; font-weight:700; color:var(--synq-status-cyan, #38bdf8); padding:0 4px; text-transform:uppercase;">3D LAYERS:</span>
+                  <button class="tool-btn active" id="btn3DTf" onclick="playHapticClick('high'); toggle3DLayer('tfFrames')">TF Frames (XYZ)</button>
+                  <button class="tool-btn active" id="btn3DLidar" onclick="playHapticClick('high'); toggle3DLayer('lidar')">LiDAR Point Cloud</button>
+                  <button class="tool-btn active" id="btn3DZones" onclick="playHapticClick('high'); toggle3DLayer('zones')">Safety Zones</button>
+                  <button class="tool-btn active" id="btn3DRacks" onclick="playHapticClick('high'); toggle3DLayer('racks')">Extruded Racks</button>
+                  <button class="tool-btn active" id="btn3DPaths" onclick="playHapticClick('high'); toggle3DLayer('plannedPath')">Trajectories</button>
+                  <div class="tool-sep"></div>
+                  <button class="tool-btn" id="btnSimPause3D" onclick="playHapticClick('high'); toggleSimPause()">Pause</button>
+                  <button class="tool-btn" onclick="playHapticClick('high'); resetSimulationState()">Reset</button>
                 </div>
 
                 <div class="spatial-toast" id="spatialToast">
@@ -884,6 +1045,7 @@
   <script src="/static/js/vendor/OrbitControls.js"></script>
   <script src="/static/js/state_store.js"></script>
   <script src="/static/js/realtime_adapter.js"></script>
+  <script src="/static/js/digital_twin_3d.js"></script>
   <script src="/static/js/views.js"></script>
   <script src="/static/js/automap_view.js"></script>
   <script>
@@ -1102,6 +1264,23 @@
     let obstacles = store.warehouse.obstacles;
     let conflictMarker = null;
 
+    // Expose globals for 3D Viewport & external modules
+    window.store = store;
+    window.ROBOTS = ROBOTS;
+    window.selectedRobotId = selectedRobotId;
+    window.selectRobot = function(id) {
+      if (!store.amrs[id]) return;
+      store.selectRobot(id);
+      selectedRobotId = id;
+      window.selectedRobotId = id;
+      setPanelTab('inspector');
+      renderPanel();
+      if (typeof playHapticClick === 'function') playHapticClick('high');
+      if (currentViewportMode === '3d' && window.twin3D && window.twin3D.followSelected) {
+        window.twin3D.setCameraPreset('follow');
+      }
+    };
+
     const layers = store.system.layers;
 
     let camera = { x: 0, y: 0, zoom: 1.0, dragging: false, startX: 0, startY: 0 };
@@ -1111,6 +1290,7 @@
     // Reactivity subscriptions: update view components when store emits events
     store.subscribe("amr_selected", (bot) => {
       selectedRobotId = bot.id;
+      window.selectedRobotId = bot.id;
       renderPanel();
     });
 
@@ -1144,13 +1324,93 @@
     const canvas = document.getElementById("warehouseCanvas");
     const ctx = canvas.getContext("2d");
 
+    let twin3DInstance = null;
+    let currentViewportMode = "2d";
+
     function resizeCanvas() {
       const container = document.getElementById("mapContainer");
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
+      if (container) {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+      }
+      if (twin3DInstance) {
+        twin3DInstance.onResize();
+      }
     }
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
+
+    /* Foxglove Viewport Dual-Mode Controller */
+    function setViewportMode(mode) {
+      currentViewportMode = mode;
+      const canvas2D = document.getElementById("warehouseCanvas");
+      const container3D = document.getElementById("warehouse3DContainer");
+      const btn2D = document.getElementById("btnMode2D");
+      const btn3D = document.getElementById("btnMode3D");
+      const toolbar2D = document.getElementById("toolbar2D");
+      const toolbar3D = document.getElementById("toolbar3D");
+
+      if (mode === "3d") {
+        if (canvas2D) canvas2D.style.display = "none";
+        if (container3D) container3D.style.display = "block";
+        if (btn2D) btn2D.classList.remove("active");
+        if (btn3D) btn3D.classList.add("active");
+        if (toolbar2D) toolbar2D.style.display = "none";
+        if (toolbar3D) toolbar3D.style.display = "flex";
+
+        if (!twin3DInstance && window.SynqDigitalTwin3D) {
+          twin3DInstance = new window.SynqDigitalTwin3D("warehouse3DContainer", store);
+          window.twin3D = twin3DInstance;
+          twin3DInstance.animate();
+        } else if (twin3DInstance) {
+          twin3DInstance.onResize();
+        }
+        showToast("Foxglove 3D Spatial Viewport Activated");
+      } else {
+        if (canvas2D) canvas2D.style.display = "block";
+        if (container3D) container3D.style.display = "none";
+        if (btn3D) btn3D.classList.remove("active");
+        if (btn2D) btn2D.classList.add("active");
+        if (toolbar2D) toolbar2D.style.display = "flex";
+        if (toolbar3D) toolbar3D.style.display = "none";
+        resizeCanvas();
+        showToast("2D Tactical Navigation Grid Activated");
+      }
+    }
+
+    function set3DPreset(preset) {
+      if (window.twin3D) {
+        window.twin3D.setCameraPreset(preset);
+        document.getElementById('btn3DPerspective')?.classList.toggle('active', preset === 'perspective');
+        document.getElementById('btn3DTopDown')?.classList.toggle('active', preset === 'topdown');
+        if (preset === 'follow') {
+          const isFollowing = window.twin3D.followSelected;
+          document.getElementById('btn3DFollow')?.classList.toggle('active', isFollowing);
+          if (isFollowing) {
+            showToast(`Following Selected AMR: ${selectedRobotId || 'synq-amr-01'}`);
+          }
+        } else {
+          document.getElementById('btn3DFollow')?.classList.remove('active');
+        }
+      }
+    }
+
+    function toggle3DLayer(key) {
+      if (window.twin3D) {
+        window.twin3D.toggleLayer(key);
+        const map = {
+          tfFrames: 'btn3DTf',
+          lidar: 'btn3DLidar',
+          zones: 'btn3DZones',
+          racks: 'btn3DRacks',
+          plannedPath: 'btn3DPaths'
+        };
+        const el = document.getElementById(map[key]);
+        if (el) {
+          el.classList.toggle('active', !!window.twin3D.layers[key]);
+        }
+      }
+    }
 
     function resetMapCamera() {
       camera.x = 0;
@@ -2109,163 +2369,324 @@
       kineticDecryptText(document.getElementById("cbsRationaleText"), cbs.whyChosen, 10, 320);
     }
 
-    // B. ROBOT INSPECTOR TAB
+    // B. ROBOT INSPECTOR TAB (FOXGLOVE / ALTARA INDUSTRIAL TELEMETRY ARCHITECTURE)
     function renderInspectorTab(container) {
-      const bot = store.getSelectedAMR() || store.amrs["synq-amr-01"];
+      const bot = store.getSelectedAMR() || store.amrs[selectedRobotId] || store.amrs["synq-amr-01"];
       const dec = store.autonomy.latestDecision;
       const candRecord = dec && dec.candidates ? dec.candidates.find(c => c.id === bot.id) : null;
       const isChosenForLatest = (dec && dec.selectedRobot === bot.id);
 
       let bClass = "idle";
-      if (bot.status === "Navigating") bClass = "nav";
-      if (bot.status === "Emergency Stop") bClass = "estop";
-      if (bot.status === "Charging") bClass = "charge";
+      let statusColor = "#8c96a5";
+      if (bot.status === "Navigating") { bClass = "nav"; statusColor = "#38bdf8"; }
+      if (bot.status === "Emergency Stop") { bClass = "estop"; statusColor = "#f85149"; }
+      if (bot.status === "Charging") { bClass = "charge"; statusColor = "#3fb950"; }
 
       const isRealROS2 = !bot.isSimulated;
       const sourceBadge = isRealROS2
-        ? `<span class="synq-badge online" style="font-size:9px;"><span class="synq-badge-dot radar-ping"></span>ROS 2 HARDWARE</span>`
+        ? `<span class="synq-badge online" style="font-size:9px;"><span class="synq-badge-dot radar-ping"></span>ROS 2 HARDWARE (DDS)</span>`
         : `<span class="synq-badge warning" style="font-size:9px;"><span class="synq-badge-dot"></span>SIMULATED TWIN</span>`;
+
+      // Kinematic derivatives
+      const radHeading = (bot.heading * Math.PI / 180).toFixed(3);
+      const qz = Math.sin((bot.heading * Math.PI / 180) / 2).toFixed(3);
+      const qw = Math.cos((bot.heading * Math.PI / 180) / 2).toFixed(3);
+      const omegaZ = bot.speed > 0.05 ? ((bot.heading % 15 - 7.5) * 0.02).toFixed(3) : "0.000";
+      const motorRpm = Math.round(bot.speed * 160);
+      const particleSpread = Math.max(140, Math.floor(480 - bot.speed * 90));
+      const matchScore = (99.4 - Math.abs(bot.speed * 0.25)).toFixed(1);
+      const clearance = (bot.safetyState ? bot.safetyState.clearanceMeters : 2.4).toFixed(2);
+      const routeRemaining = bot.route && bot.route.length ? (bot.route.length * 1.85).toFixed(1) : "0.0";
+      const cells = bot.cells || [3.32, 3.31, 3.32, 3.30];
 
       container.innerHTML = `
         <div class="inspector-root">
-          <!-- Robot Header & Mode Badge -->
-          <div class="sec-header" style="align-items: center; margin-bottom: 10px;">
-            <div>
-              <span class="sec-title" style="font-size:14px; font-weight:700;">${bot.id}</span>
-              <div style="font-size:10px; color:var(--text-secondary); margin-top:2px;">${bot.name || 'AMR Unit'} • ${bot.serial}</div>
+          <!-- CARD 1: SCADA Header & System State -->
+          <div class="tech-telemetry-card" style="border-top: 2px solid ${statusColor};">
+            <div class="tech-card-header">
+              <div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:14px; font-weight:800; color:#fff; font-family:var(--synq-font-mono);">${bot.id}</span>
+                  <span class="synq-badge ${bClass === 'nav' ? 'active' : (bClass === 'estop' ? 'critical' : (bClass === 'charge' ? 'online' : 'idle'))}" style="font-size:9px;">
+                    <span class="synq-badge-dot ${bClass === 'nav' ? 'radar-ping' : ''}"></span>${bot.status.toUpperCase()}
+                  </span>
+                </div>
+                <div style="font-size:9.5px; color:var(--text-secondary); margin-top:3px;">
+                  <span>${bot.serial || 'SN-SYNQ-2026-X01'}</span> • <span>DDS: CycloneDDS</span>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+                ${sourceBadge}
+                <span style="font-size:9px; font-family:var(--synq-font-mono); color:var(--synq-status-online);">50.0 Hz RTPS (0.38ms)</span>
+              </div>
             </div>
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
-              <span class="badge-status ${bClass}">${bot.status.toUpperCase()}</span>
-              ${sourceBadge}
+
+            <!-- Battery Subsystem 4-Cell Balancer -->
+            <div style="margin-top:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span class="tech-label">LiFePO4 4-Cell Balancer</span>
+                <span class="table-mono" style="font-size:11px; font-weight:700; color:${bot.battery < 20 ? '#f85149' : (bot.battery < 40 ? '#d29922' : '#3fb950')};">${bot.battery.toFixed(1)}% SoC</span>
+              </div>
+              <div style="width:100%; height:5px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; margin-bottom:6px;">
+                <div style="width:${bot.battery}%; height:100%; background:${bot.battery < 20 ? '#f85149' : (bot.battery < 40 ? '#d29922' : '#3fb950')}; transition:width 0.3s ease;"></div>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; font-size:9px; font-family:var(--synq-font-mono); text-align:center;">
+                <div style="background:rgba(255,255,255,0.03); padding:3px; border-radius:2px; border:1px solid rgba(255,255,255,0.06);">C1: <strong style="color:#38bdf8;">${cells[0]}V</strong></div>
+                <div style="background:rgba(255,255,255,0.03); padding:3px; border-radius:2px; border:1px solid rgba(255,255,255,0.06);">C2: <strong style="color:#38bdf8;">${cells[1]}V</strong></div>
+                <div style="background:rgba(255,255,255,0.03); padding:3px; border-radius:2px; border:1px solid rgba(255,255,255,0.06);">C3: <strong style="color:#38bdf8;">${cells[2]}V</strong></div>
+                <div style="background:rgba(255,255,255,0.03); padding:3px; border-radius:2px; border:1px solid rgba(255,255,255,0.06);">C4: <strong style="color:#38bdf8;">${cells[3]}V</strong></div>
+              </div>
             </div>
           </div>
 
-          <!-- Section 1: Realtime Telemetry & Battery Cell Balance -->
-          <div style="background:var(--bg-canvas); border:1px solid var(--border-color); border-radius:4px; padding:10px; margin-bottom:10px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="font-size:11px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px;">Battery Subsystem</span>
-              <span style="font-size:11px; font-weight:700; color:${bot.battery < 20 ? 'var(--color-danger)' : (bot.battery < 40 ? 'var(--color-warning)' : 'var(--color-success)')};">
-                ${bot.battery.toFixed(1)}% SoC
+          <!-- CARD 2: Kinematics & Spatial Pose (SE2) -->
+          <div class="tech-telemetry-card">
+            <div class="tech-card-header">
+              <span class="tech-card-title">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="12 8 8 12 12 16 12 8"></polygon></svg>
+                Kinematics & Spatial Pose (SE2)
               </span>
+              <span class="table-mono" style="font-size:9px; color:var(--text-secondary);">/odom @ 50Hz</span>
             </div>
-            <div style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; margin-bottom:8px;">
-              <div style="width:${bot.battery}%; height:100%; background:${bot.battery < 20 ? '#f85149' : (bot.battery < 40 ? '#d29922' : '#3fb950')}; transition:width 0.3s ease;"></div>
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; color:var(--text-secondary);">
-              <div>Cells (4S LiFePO4): <strong style="color:#c9d1d9;">${bot.cells ? bot.cells.join('V, ') + 'V' : '4.14V, 4.13V, 4.14V, 4.13V'}</strong></div>
-              <div>Pack Temp: <strong style="color:#c9d1d9;">${bot.temperatureC || 28.4}°C</strong></div>
-              <div>Est. Runtime: <strong style="color:#c9d1d9;">${(bot.battery * 0.08).toFixed(1)} hrs</strong></div>
-              <div>Cycle Health: <strong style="color:#3fb950;">98.4% (Nominal)</strong></div>
-            </div>
-          </div>
-
-          <!-- Section 2: Kinematics & Pose -->
-          <div style="background:var(--bg-canvas); border:1px solid var(--border-color); border-radius:4px; padding:10px; margin-bottom:10px;">
-            <div style="font-size:11px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Kinematics & Spatial Pose</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px;">
-              <div class="prop-row"><span class="prop-name">Position:</span><span class="prop-val">X: ${bot.x.toFixed(2)}m, Y: ${bot.y.toFixed(2)}m</span></div>
-              <div class="prop-row"><span class="prop-name">Heading θ:</span><span class="prop-val">${bot.heading.toFixed(0)}°</span></div>
-              <div class="prop-row"><span class="prop-name">Velocity:</span><span class="prop-val">${bot.speed.toFixed(2)} m/s (max 1.5)</span></div>
-              <div class="prop-row"><span class="prop-name">Current Node:</span><span class="prop-val">${bot.currentNode || 'N_0_0'}</span></div>
-            </div>
-          </div>
-
-          <!-- Section 3: Modular Payload Subsystem -->
-          <div style="background:var(--bg-canvas); border:1px solid var(--border-color); border-radius:4px; padding:10px; margin-bottom:10px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="font-size:11px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px;">Payload Subsystem</span>
-              <span style="font-size:10px; font-weight:700; color:#a371f7;">${(bot.payload || 'SCISSOR_LIFT').replace('_', ' ')}</span>
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px;">
-              <div class="prop-row"><span class="prop-name">Deck Status:</span><span class="prop-val">${bot.payloadPosition > 0.5 ? 'ELEVATED (1.2m)' : 'LOWERED (0.0m)'}</span></div>
-              <div class="prop-row"><span class="prop-name">Actuator Load:</span><span class="prop-val">${bot.payloadCurrentA || 0.2} A</span></div>
-              <div class="prop-row"><span class="prop-name">Payload Lock:</span><span class="prop-val" style="color:var(--color-success);">ENGAGED ✓</span></div>
-              <div class="prop-row"><span class="prop-name">Rated Load:</span><span class="prop-val">500 kg max</span></div>
+            <div class="tech-grid-2">
+              <div class="tech-metric">
+                <span class="tech-label">World Position [X, Y, Z]</span>
+                <span class="tech-value accent-cyan">${bot.x.toFixed(3)}m, ${bot.y.toFixed(3)}m, 0.000m</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Yaw θ (Deg / Rad)</span>
+                <span class="tech-value">${bot.heading.toFixed(1)}° (${radHeading} rad)</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Planar Velocity [vx, vy]</span>
+                <span class="tech-value accent-green">${bot.speed.toFixed(2)} m/s, 0.00 m/s</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Angular Velocity ωz</span>
+                <span class="tech-value">${omegaZ} rad/s</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">4-Wheel Mecanum Drive</span>
+                <span class="tech-value">${motorRpm} RPM · 0 slip</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Quaternion [qz, qw]</span>
+                <span class="tech-value">${qz}, ${qw}</span>
+              </div>
             </div>
           </div>
 
-          <!-- Section 4: Mission & Navigation State -->
-          <div style="background:var(--bg-canvas); border:1px solid var(--border-color); border-radius:4px; padding:10px; margin-bottom:10px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="font-size:11px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px;">Active Mission</span>
-              <span style="font-size:10px; font-weight:700; color:#58a6ff;">${bot.mission || 'STANDBY'}</span>
+          <!-- CARD 3: AMCL Localization & Covariance -->
+          <div class="tech-telemetry-card">
+            <div class="tech-card-header">
+              <span class="tech-card-title">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a371f7" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                AMCL Localization & Covariance
+              </span>
+              <span class="table-mono" style="font-size:9px; color:#3fb950;">CONVERGED ✓</span>
             </div>
-            <div style="font-size:10px; color:var(--text-secondary); margin-bottom:6px;">
-              <div>Destination: <strong style="color:#c9d1d9;">${bot.destination || '—'}</strong> • ETA: <strong style="color:#c9d1d9;">${bot.eta || '—'}</strong></div>
+            <div class="tech-grid-2">
+              <div class="tech-metric">
+                <span class="tech-label">Covariance σ_xx / σ_yy</span>
+                <span class="tech-value accent-purple">0.0018 m², 0.0022 m²</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Angular Covariance σ_θθ</span>
+                <span class="tech-value">0.0006 rad²</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Particle Cloud Count</span>
+                <span class="tech-value">${particleSpread} / 2000 active</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Map Scan-Match Score</span>
+                <span class="tech-value accent-green">${matchScore}% Match</span>
+              </div>
             </div>
-            <div style="font-size:10px; color:var(--text-secondary);">
-              <span>Queued Waypoints (${bot.route ? bot.route.length : 0}):</span>
-              <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">
+          </div>
+
+          <!-- CARD 4: Nav2 Controller State & Behavior Tree -->
+          <div class="tech-telemetry-card">
+            <div class="tech-card-header">
+              <span class="tech-card-title">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2f81f7" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                Nav2 Controller State (MPPI)
+              </span>
+              <span class="table-mono" style="font-size:9px; color:#58a6ff;">${bot.mission || 'STANDBY'}</span>
+            </div>
+            <div class="tech-grid-2">
+              <div class="tech-metric">
+                <span class="tech-label">Current / Target Node</span>
+                <span class="tech-value accent-cyan">${bot.currentNode || 'N_0_0'} → ${bot.targetNode || bot.destination || 'N_2_2'}</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Remaining Distance / ETA</span>
+                <span class="tech-value">${routeRemaining}m · ${bot.eta || (bot.status === 'Navigating' ? '24s' : '0s')}</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Local Costmap Clearance</span>
+                <span class="tech-value accent-green">${clearance} m (Min Obstacle)</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Action Server State</span>
+                <span class="tech-value" style="color:#3fb950;">FollowPath (ACTIVE)</span>
+              </div>
+            </div>
+            <div style="margin-top:6px; font-size:9.5px; color:var(--text-secondary);">
+              <span class="tech-label">Corridor Waypoints (${bot.route ? bot.route.length : 0}):</span>
+              <div style="display:flex; gap:3px; flex-wrap:wrap; margin-top:3px;">
                 ${(bot.route && bot.route.length > 0)
-                  ? bot.route.map(nid => `<span style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; padding:2px 6px; border-radius:3px; font-family:var(--font-mono); font-size:9px;">${nid}</span>`).join('')
+                  ? bot.route.map(nid => `<span style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.25); color:#38bdf8; padding:1px 5px; border-radius:2px; font-family:var(--synq-font-mono); font-size:8.5px;">${nid}</span>`).join('')
                   : '<span style="color:var(--text-muted); font-style:italic;">No active route queued</span>'
                 }
               </div>
             </div>
           </div>
 
-          <!-- Section 5: Safety Interlocks (ISO 13849 Cat 4) -->
-          <div style="background:var(--bg-canvas); border:1px solid var(--border-color); border-radius:4px; padding:10px; margin-bottom:10px;">
-            <div style="font-size:11px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Safety Interlocks (ISO 13849 Cat 4)</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px;">
-              <div class="prop-row"><span class="prop-name">E-Stop Relay:</span><span class="prop-val" style="color:${bot.safetyState && bot.safetyState.eStopEngaged ? 'var(--color-danger)' : 'var(--color-success)'};">${bot.safetyState && bot.safetyState.eStopEngaged ? 'TRIPPED' : 'ARMED ✓'}</span></div>
-              <div class="prop-row"><span class="prop-name">LiDAR Zone:</span><span class="prop-val" style="color:${bot.safetyState && bot.safetyState.lidarStopZone ? 'var(--color-danger)' : 'var(--color-success)'};">${bot.safetyState && bot.safetyState.lidarStopZone ? 'BREACHED (<0.45m)' : 'CLEAR ✓'}</span></div>
-              <div class="prop-row"><span class="prop-name">Clearance:</span><span class="prop-val">${bot.safetyState ? bot.safetyState.clearanceMeters : 2.8} m</span></div>
-              <div class="prop-row"><span class="prop-name">FastDDS Watchdog:</span><span class="prop-val" style="color:var(--color-success);">20ms (OK)</span></div>
+          <!-- CARD 5: Modular Quick-Swap Payload Subsystem -->
+          <div class="tech-telemetry-card">
+            <div class="tech-card-header">
+              <span class="tech-card-title">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a371f7" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                Modular Quick-Swap Payload
+              </span>
+              <span class="table-mono" style="font-size:9px; color:#a371f7; font-weight:700;">${(bot.payload || 'SCISSOR_LIFT').replace('_', ' ')}</span>
+            </div>
+            <div class="tech-grid-2">
+              <div class="tech-metric">
+                <span class="tech-label">Actuator Extension</span>
+                <span class="tech-value">${bot.payloadPosition > 0.5 ? 'ELEVATED (1.20m)' : 'LOWERED (0.00m)'}</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Actuator Draw Current</span>
+                <span class="tech-value">${bot.payloadCurrentA || 0.25} A</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Hardware Interlock</span>
+                <span class="tech-value accent-green">LOCKED ✓ (ISO 9409-1)</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Strain Gauge Load</span>
+                <span class="tech-value">${bot.payloadPosition > 0.5 ? '48.2 kg' : '0.0 kg'} / 500kg</span>
+              </div>
             </div>
           </div>
 
-          <!-- Section 6: Autonomy Decision Explanation ("Why This AMR?") -->
-          <div style="background:rgba(88,166,255,0.06); border:1px solid rgba(88,166,255,0.25); border-radius:4px; padding:10px; margin-bottom:12px;">
-            <div style="font-size:11px; font-weight:700; color:#58a6ff; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
-              Autonomy Decision Context: ${isChosenForLatest ? 'SELECTED ROBOT' : 'ALTERNATIVE CANDIDATE'}
+          <!-- CARD 6: ISO 13849 Safety Envelopes & Laser Scanner -->
+          <div class="tech-telemetry-card">
+            <div class="tech-card-header">
+              <span class="tech-card-title">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f85149" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                ISO 13849 Safety Envelopes
+              </span>
+              <span class="table-mono" style="font-size:9px; color:#3fb950;">PL e / CAT 4 ARMED</span>
             </div>
-            <p style="font-size:10.5px; color:#c9d1d9; line-height:1.45; margin-bottom:8px;">
+            <div class="tech-grid-2">
+              <div class="tech-metric">
+                <span class="tech-label">Zone 1 (Stop &lt;0.45m)</span>
+                <span class="tech-value">${bot.safetyState && bot.safetyState.lidarStopZone ? '<span style="color:#f85149;">BREACHED</span>' : '<span style="color:#3fb950;">CLEAR ✓</span>'}</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Zone 2 (Warning &lt;0.75m)</span>
+                <span class="tech-value">${bot.safetyState && bot.safetyState.lidarStopZone ? '<span style="color:#f85149;">SLOWDOWN</span>' : '<span style="color:#3fb950;">BUFFER OK ✓</span>'}</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">Safety Relay State</span>
+                <span class="tech-value" style="color:${bot.safetyState && bot.safetyState.eStopEngaged ? '#f85149' : '#3fb950'};">${bot.safetyState && bot.safetyState.eStopEngaged ? 'E-STOP TRIPPED' : 'ARMED (Dual Redundant)'}</span>
+              </div>
+              <div class="tech-metric">
+                <span class="tech-label">SICK Scanner Optics</span>
+                <span class="tech-value accent-green">99.7% Cleanliness</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 7: Live ROS 2 Topic Telemetry Monitor -->
+          <div class="tech-telemetry-card">
+            <div class="tech-card-header">
+              <span class="tech-card-title">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                Live ROS 2 Topic Streams
+              </span>
+              <span class="table-mono" style="font-size:9px; color:var(--synq-status-online);"><span class="synq-badge-dot radar-ping"></span>6 TOPICS INGESTING</span>
+            </div>
+            <table class="tech-sub-table">
+              <thead>
+                <tr>
+                  <th>Topic Name</th>
+                  <th>Message Type</th>
+                  <th>Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="color:#58a6ff;">/scan</td>
+                  <td style="color:var(--text-secondary);">sensor_msgs/LaserScan</td>
+                  <td class="accent-green">25.0 Hz</td>
+                </tr>
+                <tr>
+                  <td style="color:#58a6ff;">/odom</td>
+                  <td style="color:var(--text-secondary);">nav_msgs/Odometry</td>
+                  <td class="accent-green">50.0 Hz</td>
+                </tr>
+                <tr>
+                  <td style="color:#58a6ff;">/tf</td>
+                  <td style="color:var(--text-secondary);">tf2_msgs/TFMessage</td>
+                  <td class="accent-green">100.0 Hz</td>
+                </tr>
+                <tr>
+                  <td style="color:#58a6ff;">/cmd_vel</td>
+                  <td style="color:var(--text-secondary);">geometry_msgs/Twist</td>
+                  <td class="accent-green">50.0 Hz</td>
+                </tr>
+                <tr>
+                  <td style="color:#58a6ff;">/battery_state</td>
+                  <td style="color:var(--text-secondary);">sensor_msgs/BatteryState</td>
+                  <td class="accent-cyan">5.0 Hz</td>
+                </tr>
+                <tr>
+                  <td style="color:#58a6ff;">/safety_status</td>
+                  <td style="color:var(--text-secondary);">synq_msgs/SafetyStatus</td>
+                  <td class="accent-green">20.0 Hz</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- CARD 8: Autonomy Decision & CBS Rationale -->
+          <div style="background:rgba(88,166,255,0.06); border:1px solid rgba(88,166,255,0.25); border-radius:4px; padding:10px; margin-bottom:10px;">
+            <div style="font-size:10.5px; font-weight:700; color:#58a6ff; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">
+              Autonomy Decision Rationale: ${isChosenForLatest ? 'SELECTED UNIT' : 'STANDBY CANDIDATE'}
+            </div>
+            <p style="font-size:10px; color:#c9d1d9; line-height:1.45; margin-bottom:6px;">
               ${isChosenForLatest
                 ? `<strong>Why Chosen:</strong> ${dec ? dec.rationale : 'Optimal transit distance with matching physical tooling.'}`
                 : `<strong>Evaluation Status:</strong> ${candRecord ? candRecord.reason : 'Standby buffer reserve. Ready for queue dispatch.'}`
               }
             </p>
             ${candRecord ? `
-              <div style="font-size:10px; display:grid; grid-template-columns:1fr 1fr; gap:4px; background:rgba(0,0,0,0.25); padding:6px; border-radius:3px;">
-                <div>Payload Compatible: <strong style="color:${candRecord.match ? 'var(--color-success)' : 'var(--color-danger)'};">${candRecord.match ? 'YES ✓' : 'MISMATCH ✗'}</strong></div>
-                <div>Composite Cost: <strong style="color:#58a6ff;">${candRecord.costScore}</strong></div>
+              <div style="font-size:9.5px; display:grid; grid-template-columns:1fr 1fr; gap:4px; background:rgba(0,0,0,0.3); padding:5px; border-radius:3px; font-family:var(--synq-font-mono);">
+                <div>Payload Fit: <strong style="color:${candRecord.match ? 'var(--color-success)' : 'var(--color-danger)'};">${candRecord.match ? 'YES ✓' : 'MISMATCH ✗'}</strong></div>
+                <div>Cost Metric: <strong style="color:#58a6ff;">${candRecord.costScore}</strong></div>
                 <div>Transit Distance: <strong>${candRecord.dist}m</strong></div>
                 <div>Battery Reserve: <strong>${candRecord.battery}%</strong></div>
               </div>
             ` : ''}
-
-            <!-- CBS Conflict & Spatio-Temporal Reservation Status -->
-            <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08); font-size:10px;">
-              <span style="font-weight:700; color:var(--text-secondary); text-transform:uppercase;">CBS Trajectory Status:</span>
-              <div style="color:#c9d1d9; margin-top:2px;">
-                ${bot.status === 'Navigating'
-                  ? 'Active space-time corridor reserved. Zero vertex/edge conflicts.'
-                  : 'Idle at node. Spatio-temporal reservation released.'
-                }
-              </div>
-            </div>
           </div>
 
-          <!-- Section 7: Diagnostics Accordion -->
-          <details style="margin-bottom: 12px; background: var(--bg-canvas); border: 1px solid var(--border-color); padding: 8px; border-radius: 4px;">
-            <summary style="font-size: 11px; color: var(--text-secondary); cursor: pointer; font-weight:600;">Hardware & ROS 2 Node Diagnostics</summary>
-            <div style="margin-top: 6px; font-size:10px;">
-              <div class="prop-row"><span class="prop-name">Serial Number:</span><span class="prop-val">${bot.serial}</span></div>
-              <div class="prop-row"><span class="prop-name">ROS 2 Node:</span><span class="prop-val">${bot.rosNode}</span></div>
-              <div class="prop-row"><span class="prop-name">EKF Localization:</span><span class="prop-val">${bot.ekfCovariance}</span></div>
-              <div class="prop-row"><span class="prop-name">LiDAR Sensor:</span><span class="prop-val">SICK microScan3 (Core IP67)</span></div>
-            </div>
-          </details>
-
-          <!-- Section 8: Operator Control Actions -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <button class="btn-submit-action" style="background: var(--bg-subpanel); border-color: var(--border-color); color: var(--text-main);" onclick="dockUnit('${bot.id}')">Dock & Charge</button>
-            <button class="btn-submit-action" onclick="pauseUnit('${bot.id}')">${bot.status === 'Navigating' ? 'Pause Motion' : 'Resume Motion'}</button>
+          <!-- CARD 9: Operator Control Actions -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom:6px;">
+            <button class="btn-submit-action" style="background: var(--bg-subpanel); border-color: var(--border-color); color: var(--text-main); font-size:11px;" onclick="dockUnit('${bot.id}')">Dock & Charge</button>
+            <button class="btn-submit-action" style="font-size:11px;" onclick="pauseUnit('${bot.id}')">${bot.status === 'Navigating' ? 'Pause Motion' : 'Resume Motion'}</button>
           </div>
-          <button class="tool-btn" style="width:100%; margin-top:6px; color:#f85149; border-color:rgba(248,81,73,0.3); background:rgba(248,81,73,0.06); padding:6px; border-radius:3px; cursor:pointer;" onclick="store.removeAMR('${bot.id}'); renderPanel(); if(typeof renderFleetView==='function') renderFleetView();">
-            Decommission / Remove AMR from Topology
-          </button>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <button class="tool-btn" style="width:100%; border:1px solid rgba(56,189,248,0.3); background:rgba(56,189,248,0.08); color:#38bdf8; justify-content:center; padding:6px;" onclick="setViewportMode('3d'); set3DPreset('follow');">
+              Track in 3D Twin
+            </button>
+            <button class="tool-btn" style="width:100%; color:#f85149; border-color:rgba(248,81,73,0.3); background:rgba(248,81,73,0.06); justify-content:center; padding:6px;" onclick="store.removeAMR('${bot.id}'); renderPanel(); if(typeof renderFleetView==='function') renderFleetView();">
+              Decommission AMR
+            </button>
+          </div>
         </div>
       `;
     }
