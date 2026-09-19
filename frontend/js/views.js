@@ -633,6 +633,19 @@ function renderSimulationView() {
       </div>
     </div>
 
+    <!-- Realtime Simulation Controls Ribbon (Phase 5) -->
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:16px; padding:10px 14px; background:var(--synq-bg-panel); border:1px solid var(--synq-border-subtle); border-radius:6px;">
+      <span style="font-size:11px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px; margin-right:6px;">Autonomous Simulation Controls:</span>
+      <button class="synq-btn" onclick="playHapticClick('high'); promptSpawnAMR(); renderSimulationView();"><span>+ Spawn AMR</span></button>
+      <button class="synq-btn" onclick="playHapticClick('low'); promptRemoveAMR(); renderSimulationView();"><span>− Remove AMR</span></button>
+      <button class="synq-btn" onclick="playHapticClick('high'); navigateTo('overview'); toggleObstaclePlacement();"><span>Inject Obstacle</span></button>
+      <button class="synq-btn" onclick="playHapticClick('high'); navigateTo('overview'); triggerCbsConflictScenario();"><span>Simulate CBS Crossing</span></button>
+      <button class="synq-btn" id="simViewPauseBtn" onclick="playHapticClick('high'); toggleSimPause(); const b=document.getElementById('simViewPauseBtn'); if(b) b.querySelector('span').textContent = (window.synqStore && window.synqStore.system.isPaused) ? 'Resume Sim' : 'Pause Sim';">
+        <span>${(window.synqStore && window.synqStore.system.isPaused) ? 'Resume Sim' : 'Pause Sim'}</span>
+      </button>
+      <button class="synq-btn" onclick="playHapticClick('high'); resetSimulationState(); renderSimulationView();"><span>Reset Simulation</span></button>
+    </div>
+
     <!-- Scenarios Grid with Spotlight Cards -->
     <div class="synq-grid-3">
       ${scenarios.map(s => `

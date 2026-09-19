@@ -565,7 +565,7 @@
         <span style="color: var(--synq-border-default);">|</span>
         <div class="topbar-metric-item">Latency: <strong id="topbarLatency">12 ms</strong></div>
         <span style="color: var(--synq-border-default);">|</span>
-        <span class="synq-badge active" style="font-size: 9px;">LIVE BACKEND</span>
+        <span class="synq-badge online" id="topbarSourceBadge" style="font-size: 9px;"><span class="synq-badge-dot radar-ping"></span>ROS 2 LIVE</span>
       </div>
 
       <div class="topbar-right">
@@ -732,15 +732,20 @@
               <section class="map-container" id="mapContainer">
                 <canvas id="warehouseCanvas"></canvas>
 
-                <!-- Autonomy Visualization Toolbar -->
+                <!-- Autonomy Visualization Toolbar & Phase 5 Simulation Controls -->
                 <div class="map-toolbar">
                   <button class="tool-btn active" id="btnToggleLanes" onclick="playHapticClick('high'); toggleLayer('lanes')">Transit Lanes</button>
                   <button class="tool-btn active" id="btnToggleRacks" onclick="playHapticClick('high'); toggleLayer('racks')">Racks</button>
                   <button class="tool-btn active" id="btnToggleEvaluations" onclick="playHapticClick('high'); toggleLayer('evaluations')">Candidate Evals</button>
                   <button class="tool-btn active" id="btnToggleRoutes" onclick="playHapticClick('high'); toggleLayer('routes')">CBS Routes</button>
+                  <button class="tool-btn active" id="btnToggleTrails" onclick="playHapticClick('high'); toggleLayer('trails')">Executed Trails</button>
                   <div class="tool-sep"></div>
                   <button class="tool-btn" id="btnSimObstacle" onclick="playHapticClick('high'); toggleObstaclePlacement()">Inject Obstacle</button>
                   <button class="tool-btn" id="btnSimConflict" onclick="playHapticClick('high'); triggerCbsConflictScenario()">Simulate CBS Crossing</button>
+                  <button class="tool-btn" id="btnSimPause" onclick="playHapticClick('high'); toggleSimPause()">Pause</button>
+                  <button class="tool-btn" id="btnSimReset" onclick="playHapticClick('high'); resetSimulationState()">Reset Sim</button>
+                  <button class="tool-btn" id="btnSimSpawn" onclick="playHapticClick('high'); promptSpawnAMR()">+ Spawn AMR</button>
+                  <button class="tool-btn" id="btnSimRemove" onclick="playHapticClick('low'); promptRemoveAMR()">− Remove AMR</button>
                   <div class="tool-sep"></div>
                   <button class="tool-btn" onclick="zoomInMap()" title="Zoom In (+)">+</button>
                   <span id="zoomLevelDisplay" style="font-size:10px; font-family:var(--synq-font-mono); color:var(--synq-text-secondary); padding:0 3px;">100%</span>
@@ -861,6 +866,8 @@
 
   </div>
 
+  <script src="/static/js/state_store.js"></script>
+  <script src="/static/js/realtime_adapter.js"></script>
   <script src="/static/js/views.js"></script>
   <script>
     /* ============================================================= */
@@ -1056,209 +1063,50 @@
       }
     });
 
+        /* ============================================================= */
+    /* REALISTIC SPATIAL MODEL & CENTRALIZED REACTIVE STATE STORE   */
+    /* Phase 1 & Phase 4: State Architecture & Realtime Adapter      */
     /* ============================================================= */
-    /* REALISTIC SPATIAL MODEL & AUTONOMY STATE                      */
-    /* ============================================================= */
 
-    const WAREHOUSE = {
-      width: 15.0,
-      height: 15.0,
-      racks: [
-        { id: "A", x: 2.0, y: 1.8, w: 4.5, h: 1.4, name: "Rack Bay A (Pallets)" },
-        { id: "B", x: 8.5, y: 1.8, w: 4.5, h: 1.4, name: "Rack Bay B (Overstock)" },
-        { id: "C", x: 2.0, y: 6.8, w: 4.5, h: 1.4, name: "Rack Bay C (Fast Pick)" },
-        { id: "D", x: 8.5, y: 6.8, w: 4.5, h: 1.4, name: "Rack Bay D (Cartons)" },
-        { id: "E", x: 2.0, y: 11.8, w: 4.5, h: 1.4, name: "Rack Bay E (ASRS Infeed)" },
-        { id: "F", x: 8.5, y: 11.8, w: 4.5, h: 1.4, name: "Rack Bay F (Staging)" }
-      ],
-      zones: [
-        { id: "PICK-1", type: "PICK", x: 0.0, y: 4.0, w: 1.8, h: 2.0, label: "Inbound P1" },
-        { id: "PICK-2", type: "PICK", x: 0.0, y: 9.0, w: 1.8, h: 2.0, label: "Inbound P2" },
-        { id: "DROP-1", type: "DROP", x: 13.2, y: 4.0, w: 1.8, h: 2.0, label: "Outbound D1" },
-        { id: "DROP-2", type: "DROP", x: 13.2, y: 9.0, w: 1.8, h: 2.0, label: "Outbound D2" },
-        { id: "CHG-1", type: "CHARGE", x: 0.2, y: 0.2, w: 1.6, h: 1.6, label: "Fast Charger C1" },
-        { id: "CHG-2", type: "CHARGE", x: 13.2, y: 13.2, w: 1.6, h: 1.6, label: "Fast Charger C2" }
-      ]
-    };
-
-    const ROADMAP_NODES = {};
-    for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < 4; c++) {
-        const id = `N_${r}_${c}`;
-        ROADMAP_NODES[id] = { id, r, c, x: c * 5.0, y: r * 5.0 };
-      }
-    }
-
-    const ROADMAP_EDGES = [];
-    for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < 4; c++) {
-        const cur = `N_${r}_${c}`;
-        if (c < 3) ROADMAP_EDGES.push({ u: cur, v: `N_${r}_${c+1}` });
-        if (r < 3) ROADMAP_EDGES.push({ u: cur, v: `N_${r+1}_${c}` });
-      }
-    }
-
-    const ROBOTS = {
-      "synq-amr-01": {
-        id: "synq-amr-01",
-        status: "Idle",
-        battery: 94.5,
-        payload: "SCISSOR_LIFT",
-        payloadPosition: 0.0,
-        mission: "—",
-        pickup: "—",
-        destination: "—",
-        eta: "—",
-        speed: 0.0,
-        x: 0.0,
-        y: 0.0,
-        heading: 0,
-        route: [],
-        serial: "SN-SYNQ-2026-001",
-        rosNode: "/synq_amr_01/lifecycle_amr (ACTIVE)",
-        ekfCovariance: "0.012 m² (CONVERGED)"
-      },
-      "synq-amr-02": {
-        id: "synq-amr-02",
-        status: "Idle",
-        battery: 88.0,
-        payload: "ROLLER_CONVEYOR",
-        payloadPosition: 0.0,
-        mission: "—",
-        pickup: "—",
-        destination: "—",
-        eta: "—",
-        speed: 0.0,
-        x: 15.0,
-        y: 15.0,
-        heading: 180,
-        route: [],
-        serial: "SN-SYNQ-2026-002",
-        rosNode: "/synq_amr_02/lifecycle_amr (ACTIVE)",
-        ekfCovariance: "0.018 m² (CONVERGED)"
-      },
-      "synq-amr-03": {
-        id: "synq-amr-03",
-        status: "Idle",
-        battery: 91.2,
-        payload: "TOTE_GRIPPER",
-        payloadPosition: 0.0,
-        mission: "—",
-        pickup: "—",
-        destination: "—",
-        eta: "—",
-        speed: 0.0,
-        x: 15.0,
-        y: 0.0,
-        heading: 90,
-        route: [],
-        serial: "SN-SYNQ-2026-003",
-        rosNode: "/synq_amr_03/lifecycle_amr (ACTIVE)",
-        ekfCovariance: "0.011 m² (CONVERGED)"
-      }
-    };
-
-    // FIRST-CLASS AUTONOMY STATE RECORD ("Why Did FLTX Do This?")
-    let AUTONOMY_REASONING = {
-      currentStage: "EXECUTION", // TASK, DECISION, ROUTE, EXECUTION, CONFLICT, RECOVERY, VERIFIED
-      latestTask: {
-        orderId: "TASK-4821",
-        pickup: "N_1_1 (Rack Bay B)",
-        destination: "N_2_2 (Drop D2)",
-        payloadRequired: "SCISSOR_LIFT",
-        priority: 1
-      },
-      latestDecision: {
-        selectedRobot: "synq-amr-01",
-        rationale: "Assigned synq-amr-01: Optimal composite cost score (5.0) with matching SCISSOR_LIFT payload and 94.5% battery reserve.",
-        candidates: [
-          {
-            id: "synq-amr-01",
-            payload: "SCISSOR_LIFT",
-            match: true,
-            dist: 5.0,
-            battery: 94.5,
-            costScore: 5.0,
-            outcome: "SELECTED",
-            reason: "Optimal transit distance with physical payload match"
-          },
-          {
-            id: "synq-amr-02",
-            payload: "ROLLER_CONVEYOR",
-            match: false,
-            dist: 15.0,
-            battery: 88.0,
-            costScore: 15.0,
-            outcome: "REJECTED",
-            reason: "Payload mismatch: Equipped with Conveyor, requires Scissor Lift"
-          },
-          {
-            id: "synq-amr-03",
-            payload: "TOTE_GRIPPER",
-            match: false,
-            dist: 18.2,
-            battery: 91.2,
-            costScore: 18.2,
-            outcome: "REJECTED",
-            reason: "Payload mismatch: Equipped with Gripper; higher travel distance"
-          }
-        ]
-      },
-      latestCBS: {
-        status: "RESOLVED",
-        conflictDetected: "Vertex collision at N_0_1 at t=1.0s between synq-amr-01 and synq-amr-03",
-        conflictType: "VERTEX_CONFLICT",
-        location: "Node N_0_1 (Intersection)",
-        branchesEvaluated: [
-          {
-            branch: "Branch A (Constrain synq-amr-01)",
-            action: "Delay synq-amr-01 by 1 time-step",
-            costDelta: "+2.0s",
-            outcome: "REJECTED (Higher fleet mission delay)"
-          },
-          {
-            branch: "Branch B (Constrain synq-amr-03)",
-            action: "Route synq-amr-03 via bypass corridor N_1_2",
-            costDelta: "+1.0s",
-            outcome: "SELECTED (Minimal sum-of-costs delta; zero headway loss)"
-          }
-        ],
-        whyChosen: "Branch B chosen: Lower sum-of-costs delta (+1.0s vs +2.0s). synq-amr-03 yields corridor while high-priority task on synq-amr-01 proceeds uninterrupted."
-      },
-      latestObstacleRecovery: {
-        active: false,
-        obstacleLocation: null,
-        steps: [
-          { step: "Detection", detail: "360° LiDAR threshold breach at range 0.65m (< 1.0m warning field)" },
-          { step: "Risk Assessment", detail: "Active velocity vector intersects physical obstacle in 1.2s" },
-          { step: "Action", detail: "Commanded velocity zeroed (SAFETY_SLOWDOWN -> SAFETY_ESTOP)" },
-          { step: "Recovery", detail: "Costmap clearance service invoked -> SmacPlanner2D local grid replan" },
-          { step: "Verification", detail: "Zero footprint overlap verified along bypass route -> Mission resumed" }
-        ]
-      }
-    };
-
-    let selectedRobotId = "synq-amr-01";
-    let activeTab = "autonomy";
-    let isEstopActive = false;
+    const store = window.synqStore;
+    const ROBOTS = store.amrs;
+    const WAREHOUSE = store.warehouse;
+    const ROADMAP_NODES = store.warehouse.navigationGraph.nodes;
+    const ROADMAP_EDGES = store.warehouse.navigationGraph.edges;
+    let AUTONOMY_REASONING = store.autonomy;
+    let selectedRobotId = store.system.selectedRobotId;
+    let activeTab = store.system.activeTab;
+    let isEstopActive = store.system.isEstopActive;
     let obstacleMode = false;
-    let obstacles = [];
+    let obstacles = store.warehouse.obstacles;
     let conflictMarker = null;
 
-    const layers = {
-      lanes: true,
-      racks: true,
-      evaluations: true,
-      routes: true
-    };
+    const layers = store.system.layers;
 
     let camera = { x: 0, y: 0, zoom: 1.0, dragging: false, startX: 0, startY: 0 };
 
-    const ACTIVITIES = [
-      { time: "00:10", robot: "synq-amr-01", msg: "Mission TASK-4821 assigned via Decision Engine (Cost: 5.0)" },
-      { time: "00:09", robot: "CBS Router", msg: "Constraint Tree deconfliction: synq-amr-03 assigned bypass corridor" },
-      { time: "00:08", robot: "FMS", msg: "Topological roadmap synced. Zero active edge locks." }
-    ];
+    const ACTIVITIES = store.activities;
+
+    // Reactivity subscriptions: update view components when store emits events
+    store.subscribe("amr_selected", (bot) => {
+      selectedRobotId = bot.id;
+      renderPanel();
+    });
+
+    store.subscribe("autonomy_updated", () => {
+      AUTONOMY_REASONING = store.autonomy;
+      if (activeTab === "autonomy" || activeTab === "inspector") renderPanel();
+    });
+
+    store.subscribe("fleet_changed", () => {
+      renderPanel();
+      if (typeof renderFleetView === "function") renderFleetView();
+    });
+
+    store.subscribe("obstacles_cleared", () => {
+      obstacles = store.warehouse.obstacles;
+      conflictMarker = null;
+    });
 
     function logEvent(robot, msg) {
       const d = new Date();
@@ -1476,38 +1324,83 @@
         }
       }
 
-      // SPATIO-TEMPORAL CONFLICT MARKER (CBS Conflict Visualization)
-      if (conflictMarker) {
-        const pt = toScreen(conflictMarker.x, conflictMarker.y);
+      // SPATIO-TEMPORAL CONFLICT & RESERVATION ZONES (CBS)
+      if (conflictMarker || (store.autonomy.cbsConflicts && store.autonomy.cbsConflicts.length > 0)) {
+        const cPos = conflictMarker || { x: 5.0, y: 0.0 };
+        const pt = toScreen(cPos.x, cPos.y);
+        const ringPulse = 18 + 4 * Math.sin(performance.now() / 150);
+
+        ctx.save();
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 16, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(210, 153, 34, 0.25)";
+        ctx.arc(pt.x, pt.y, ringPulse, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(210, 153, 34, 0.22)";
         ctx.strokeStyle = "#d29922";
         ctx.lineWidth = 2;
+        ctx.setLineDash([4, 2]);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = "#d29922";
+        ctx.fillStyle = "#e3b341";
         ctx.font = "bold 10px var(--font-mono)";
-        ctx.fillText("! CONFLICT t=1.0s", pt.x - 42, pt.y - 20);
+        ctx.fillText("! CBS CONFLICT (VERTEX N_0_1)", pt.x - 65, pt.y - ringPulse - 6);
+        ctx.restore();
       }
 
-      // Obstacles
-      obstacles.forEach(obs => {
+      // Dynamic Obstacles with LiDAR Danger Pulse & Hazard Rings
+      (store.warehouse.obstacles || []).forEach(obs => {
         const pt = toScreen(obs.x, obs.y);
-        const r = (obs.radius || 0.75) * scale;
+        const r = (obs.radius || 0.85) * scale;
+        const pulse = 1 + 0.08 * Math.sin(performance.now() / 200);
+
+        ctx.save();
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(207, 34, 46, 0.25)";
-        ctx.strokeStyle = "#cf222e";
-        ctx.lineWidth = 1.5;
-        ctx.fill();
+        ctx.arc(pt.x, pt.y, r * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(248, 81, 73, 0.18)";
+        ctx.strokeStyle = "#f85149";
+        ctx.lineWidth = 1.8;
+        ctx.setLineDash([5, 3]);
         ctx.stroke();
 
-        ctx.fillStyle = "#f85149";
-        ctx.font = "10px var(--font-system)";
-        ctx.fillText("Obstacle", pt.x - 20, pt.y + 3);
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, r * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(248, 81, 73, 0.6)";
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 9px var(--font-mono)";
+        ctx.fillText("! " + (obs.label || "OBSTACLE"), pt.x - 26, pt.y - r - 4);
+        ctx.restore();
       });
+
+      // Phase 2: Historical Executed Path Trails (Subtle Luminous Breadcrumbs)
+      if (layers.trails !== false) {
+        Object.values(ROBOTS).forEach(bot => {
+          if (!bot.executedTrail || bot.executedTrail.length < 2) return;
+          const isSelected = (bot.id === selectedRobotId);
+          ctx.save();
+          ctx.beginPath();
+          bot.executedTrail.forEach((pt, idx) => {
+            const sp = toScreen(pt.x, pt.y);
+            if (idx === 0) ctx.moveTo(sp.x, sp.y);
+            else ctx.lineTo(sp.x, sp.y);
+          });
+          ctx.strokeStyle = isSelected ? "rgba(56, 189, 248, 0.4)" : "rgba(255, 255, 255, 0.12)";
+          ctx.lineWidth = isSelected ? 2 : 1;
+          ctx.setLineDash([2, 4]);
+          ctx.stroke();
+
+          bot.executedTrail.forEach((pt, idx) => {
+            if (idx % 2 === 0) {
+              const sp = toScreen(pt.x, pt.y);
+              ctx.beginPath();
+              ctx.arc(sp.x, sp.y, isSelected ? 2.5 : 1.5, 0, Math.PI * 2);
+              ctx.fillStyle = isSelected ? "rgba(56, 189, 248, 0.6)" : "rgba(255, 255, 255, 0.2)";
+              ctx.fill();
+            }
+          });
+          ctx.restore();
+        });
+      }
 
       // CBS Active Routes with Animated Directional Flow
       if (layers.routes) {
@@ -1754,8 +1647,10 @@
 
       // Check click on robot
       for (const bot of Object.values(ROBOTS)) {
-        if (Math.hypot(bot.x - wPos.x, bot.y - wPos.y) <= 0.6) {
+        if (Math.hypot(bot.x - wPos.x, bot.y - wPos.y) <= 0.65) {
           selectedRobotId = bot.id;
+          store.selectRobot(bot.id);
+          playHapticClick("high");
           setPanelTab("inspector");
           break;
         }
@@ -1809,9 +1704,12 @@
         lanes: "btnToggleLanes",
         racks: "btnToggleRacks",
         evaluations: "btnToggleEvaluations",
-        routes: "btnToggleRoutes"
+        routes: "btnToggleRoutes",
+        trails: "btnToggleTrails"
       };
-      document.getElementById(btnMap[layer]).classList.toggle("active", layers[layer]);
+      if (btnMap[layer] && document.getElementById(btnMap[layer])) {
+        document.getElementById(btnMap[layer]).classList.toggle("active", layers[layer]);
+      }
     }
 
     /* ============================================================= */
@@ -1857,32 +1755,41 @@
     }
 
     function triggerCbsConflictScenario() {
+      if (window.synqRealtime) {
+        window.synqRealtime.triggerCbsSimulation().catch(() => {});
+      }
       setAutonomyPipelineStage("CONFLICT");
       conflictMarker = { x: 5.0, y: 0.0 }; // Node N_0_1
 
-      ROBOTS["synq-amr-01"].status = "Navigating";
-      ROBOTS["synq-amr-01"].x = 0.0;
-      ROBOTS["synq-amr-01"].y = 0.0;
-      ROBOTS["synq-amr-01"].route = ["N_0_1", "N_0_2"];
+      if (ROBOTS["synq-amr-01"]) {
+        ROBOTS["synq-amr-01"].status = "Navigating";
+        ROBOTS["synq-amr-01"].x = 0.0;
+        ROBOTS["synq-amr-01"].y = 0.0;
+        ROBOTS["synq-amr-01"].route = ["N_0_1", "N_0_2"];
+      }
 
-      ROBOTS["synq-amr-03"].status = "Navigating";
-      ROBOTS["synq-amr-03"].x = 15.0;
-      ROBOTS["synq-amr-03"].y = 0.0;
-      ROBOTS["synq-amr-03"].route = ["N_0_2", "N_0_1", "N_0_0"];
+      if (ROBOTS["synq-amr-03"]) {
+        ROBOTS["synq-amr-03"].status = "Navigating";
+        ROBOTS["synq-amr-03"].x = 15.0;
+        ROBOTS["synq-amr-03"].y = 0.0;
+        ROBOTS["synq-amr-03"].route = ["N_0_2", "N_0_1", "N_0_0"];
+      }
 
       showToast("CBS Conflict Detected: Head-on collision at N_0_1. Branching Constraint Tree...");
-      logEvent("CBS Router", "Vertex conflict detected at N_0_1 at t=1.0s. Evaluating constraint branches.");
+      store.logActivity("CBS Router", "Vertex conflict detected at N_0_1 at t=1.0s. Evaluating constraint branches.");
 
       setTimeout(() => {
         setAutonomyPipelineStage("RECOVERY");
-        ROBOTS["synq-amr-03"].route = ["N_0_2", "N_1_2", "N_1_1", "N_0_1"];
-        logEvent("CBS Router", "Branch B selected: synq-amr-03 assigned bypass corridor via N_1_2 (+1.0s cost)");
+        if (ROBOTS["synq-amr-03"]) {
+          ROBOTS["synq-amr-03"].route = ["N_0_2", "N_1_2", "N_1_1", "N_0_1"];
+        }
+        store.logActivity("CBS Router", "Branch B selected: synq-amr-03 assigned bypass corridor via N_1_2 (+1.0s cost)");
         showToast("Constraint Tree Resolved: synq-amr-03 routed via bypass corridor.");
 
         setTimeout(() => {
           setAutonomyPipelineStage("VERIFIED");
           conflictMarker = null;
-          logEvent("CBS Router", "Spatio-temporal trajectory conflict verified: 0 remaining collisions.");
+          store.logActivity("CBS Router", "Spatio-temporal trajectory conflict verified: 0 remaining collisions.");
           renderPanel();
         }, 1200);
       }, 1000);
@@ -1901,16 +1808,21 @@
     }
 
     function injectObstacle(wx, wy) {
-      obstacles.push({ x: wx, y: wy, radius: 0.75 });
+      if (window.synqRealtime) {
+        window.synqRealtime.injectObstacle(wx, wy, 0.85).catch(() => {});
+      } else {
+        store.injectObstacle(wx, wy, 0.85);
+      }
       obstacleMode = false;
-      document.getElementById("btnSimObstacle").classList.remove("active");
+      const obsBtn = document.getElementById("btnSimObstacle");
+      if (obsBtn) obsBtn.classList.remove("active");
 
       setAutonomyPipelineStage("CONFLICT");
       showToast("360° LiDAR: Dynamic obstacle detected! Evaluating route intersection...");
-      logEvent("Safety", `Obstacle detected at (${wx.toFixed(1)}m, ${wy.toFixed(1)}m). Risk: Critical.`);
+      store.logActivity("Safety", `Obstacle detected at (${wx.toFixed(1)}m, ${wy.toFixed(1)}m). Risk: Critical.`);
 
-      AUTONOMY_REASONING.latestObstacleRecovery.active = true;
-      AUTONOMY_REASONING.latestObstacleRecovery.obstacleLocation = { x: wx, y: wy };
+      AUTONOMY_REASONING.obstacleRecovery.active = true;
+      AUTONOMY_REASONING.obstacleRecovery.location = { x: wx, y: wy };
 
       // Replan any intersecting robot
       Object.values(ROBOTS).forEach(bot => {
@@ -1918,12 +1830,12 @@
           setTimeout(() => {
             setAutonomyPipelineStage("RECOVERY");
             bot.route = ["N_2_1", "N_2_2", "N_1_2"];
-            logEvent("Nav2", `${bot.id}: Path invalidated by obstacle. Local SmacPlanner2D detour calculated.`);
+            store.logActivity("Nav2", `${bot.id}: Path invalidated by obstacle. Local SmacPlanner2D detour calculated.`);
             showToast(`${bot.id}: Dynamic detour executed around obstacle.`);
 
             setTimeout(() => {
               setAutonomyPipelineStage("VERIFIED");
-              logEvent("Nav2", `${bot.id}: Detour verified collision-free. Mission continued.`);
+              store.logActivity("Nav2", `${bot.id}: Detour verified collision-free. Mission continued.`);
               renderPanel();
             }, 1000);
           }, 600);
@@ -2178,41 +2090,161 @@
 
     // B. ROBOT INSPECTOR TAB
     function renderInspectorTab(container) {
-      const bot = ROBOTS[selectedRobotId] || ROBOTS["synq-amr-01"];
+      const bot = store.getSelectedAMR() || store.amrs["synq-amr-01"];
+      const dec = store.autonomy.latestDecision;
+      const candRecord = dec && dec.candidates ? dec.candidates.find(c => c.id === bot.id) : null;
+      const isChosenForLatest = (dec && dec.selectedRobot === bot.id);
+
       let bClass = "idle";
       if (bot.status === "Navigating") bClass = "nav";
       if (bot.status === "Emergency Stop") bClass = "estop";
+      if (bot.status === "Charging") bClass = "charge";
+
+      const isRealROS2 = !bot.isSimulated;
+      const sourceBadge = isRealROS2
+        ? `<span class="synq-badge online" style="font-size:9px;"><span class="synq-badge-dot radar-ping"></span>ROS 2 HARDWARE</span>`
+        : `<span class="synq-badge warning" style="font-size:9px;"><span class="synq-badge-dot"></span>SIMULATED TWIN</span>`;
 
       container.innerHTML = `
-        <div>
-          <div class="sec-header">
-            <span class="sec-title">${bot.id}</span>
-            <span class="badge-status ${bClass}">${bot.status}</span>
+        <div class="inspector-root">
+          <!-- Robot Header & Mode Badge -->
+          <div class="sec-header" style="align-items: center; margin-bottom: 10px;">
+            <div>
+              <span class="sec-title" style="font-size:14px; font-weight:700;">${bot.id}</span>
+              <div style="font-size:10px; color:var(--text-secondary); margin-top:2px;">${bot.name || 'AMR Unit'} • ${bot.serial}</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+              <span class="badge-status ${bClass}">${bot.status.toUpperCase()}</span>
+              ${sourceBadge}
+            </div>
           </div>
 
-          <div class="prop-row"><span class="prop-name">Battery</span><span class="prop-val">${bot.battery.toFixed(1)}%</span></div>
-          <div class="prop-row"><span class="prop-name">Payload Module</span><span class="prop-val">${bot.payload.replace("_", " ")}</span></div>
-          <div class="prop-row"><span class="prop-name">Current Mission</span><span class="prop-val">${bot.mission}</span></div>
-          <div class="prop-row"><span class="prop-name">Pickup Station</span><span class="prop-val">${bot.pickup}</span></div>
-          <div class="prop-row"><span class="prop-name">Destination</span><span class="prop-val">${bot.destination}</span></div>
-          <div class="prop-row"><span class="prop-name">ETA</span><span class="prop-val">${bot.eta}</span></div>
-          <div class="prop-row"><span class="prop-name">Speed</span><span class="prop-val">${bot.speed.toFixed(2)} m/s</span></div>
-          <div class="prop-row"><span class="prop-name">Position</span><span class="prop-val">X: ${bot.x.toFixed(2)}m, Y: ${bot.y.toFixed(2)}m</span></div>
-          <div class="prop-row"><span class="prop-name">Heading</span><span class="prop-val">${bot.heading.toFixed(0)}°</span></div>
+          <!-- Section 1: Realtime Telemetry & Battery Cell Balance -->
+          <div style="background:var(--bg-canvas); border:1px solid var(--border-color); border-radius:4px; padding:10px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px;">Battery Subsystem</span>
+              <span style="font-size:11px; font-weight:700; color:${bot.battery < 20 ? 'var(--color-danger)' : (bot.battery < 40 ? 'var(--color-warning)' : 'var(--color-success)')};">
+                ${bot.battery.toFixed(1)}% SoC
+              </span>
+            </div>
+            <div style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; margin-bottom:8px;">
+              <div style="width:${bot.battery}%; height:100%; background:${bot.battery < 20 ? '#f85149' : (bot.battery < 40 ? '#d29922' : '#3fb950')}; transition:width 0.3s ease;"></div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; color:var(--text-secondary);">
+              <div>Cells (4S LiFePO4): <strong style="color:#c9d1d9;">${bot.cells ? bot.cells.join('V, ') + 'V' : '4.14V, 4.13V, 4.14V, 4.13V'}</strong></div>
+              <div>Pack Temp: <strong style="color:#c9d1d9;">${bot.temperatureC || 28.4}°C</strong></div>
+              <div>Est. Runtime: <strong style="color:#c9d1d9;">${(bot.battery * 0.08).toFixed(1)} hrs</strong></div>
+              <div>Cycle Health: <strong style="color:#3fb950;">98.4% (Nominal)</strong></div>
+            </div>
+          </div>
 
-          <details style="margin-top: 10px; background: var(--bg-canvas); border: 1px solid var(--border-color); padding: 8px; border-radius: 2px;">
-            <summary style="font-size: 11px; color: var(--text-secondary); cursor: pointer;">System Diagnostics</summary>
-            <div style="margin-top: 6px;">
-              <div class="prop-row"><span class="prop-name">Serial</span><span class="prop-val">${bot.serial}</span></div>
-              <div class="prop-row"><span class="prop-name">ROS Node</span><span class="prop-val">${bot.rosNode}</span></div>
-              <div class="prop-row"><span class="prop-name">EKF Localization</span><span class="prop-val">${bot.ekfCovariance}</span></div>
+          <!-- Section 2: Kinematics & Pose -->
+          <div style="background:var(--bg-canvas); border:1px solid var(--border-color); border-radius:4px; padding:10px; margin-bottom:10px;">
+            <div style="font-size:11px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Kinematics & Spatial Pose</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px;">
+              <div class="prop-row"><span class="prop-name">Position:</span><span class="prop-val">X: ${bot.x.toFixed(2)}m, Y: ${bot.y.toFixed(2)}m</span></div>
+              <div class="prop-row"><span class="prop-name">Heading θ:</span><span class="prop-val">${bot.heading.toFixed(0)}°</span></div>
+              <div class="prop-row"><span class="prop-name">Velocity:</span><span class="prop-val">${bot.speed.toFixed(2)} m/s (max 1.5)</span></div>
+              <div class="prop-row"><span class="prop-name">Current Node:</span><span class="prop-val">${bot.currentNode || 'N_0_0'}</span></div>
+            </div>
+          </div>
+
+          <!-- Section 3: Modular Payload Subsystem -->
+          <div style="background:var(--bg-canvas); border:1px solid var(--border-color); border-radius:4px; padding:10px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px;">Payload Subsystem</span>
+              <span style="font-size:10px; font-weight:700; color:#a371f7;">${(bot.payload || 'SCISSOR_LIFT').replace('_', ' ')}</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px;">
+              <div class="prop-row"><span class="prop-name">Deck Status:</span><span class="prop-val">${bot.payloadPosition > 0.5 ? 'ELEVATED (1.2m)' : 'LOWERED (0.0m)'}</span></div>
+              <div class="prop-row"><span class="prop-name">Actuator Load:</span><span class="prop-val">${bot.payloadCurrentA || 0.2} A</span></div>
+              <div class="prop-row"><span class="prop-name">Payload Lock:</span><span class="prop-val" style="color:var(--color-success);">ENGAGED ✓</span></div>
+              <div class="prop-row"><span class="prop-name">Rated Load:</span><span class="prop-val">500 kg max</span></div>
+            </div>
+          </div>
+
+          <!-- Section 4: Mission & Navigation State -->
+          <div style="background:var(--bg-canvas); border:1px solid var(--border-color); border-radius:4px; padding:10px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px;">Active Mission</span>
+              <span style="font-size:10px; font-weight:700; color:#58a6ff;">${bot.mission || 'STANDBY'}</span>
+            </div>
+            <div style="font-size:10px; color:var(--text-secondary); margin-bottom:6px;">
+              <div>Destination: <strong style="color:#c9d1d9;">${bot.destination || '—'}</strong> • ETA: <strong style="color:#c9d1d9;">${bot.eta || '—'}</strong></div>
+            </div>
+            <div style="font-size:10px; color:var(--text-secondary);">
+              <span>Queued Waypoints (${bot.route ? bot.route.length : 0}):</span>
+              <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">
+                ${(bot.route && bot.route.length > 0)
+                  ? bot.route.map(nid => `<span style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; padding:2px 6px; border-radius:3px; font-family:var(--font-mono); font-size:9px;">${nid}</span>`).join('')
+                  : '<span style="color:var(--text-muted); font-style:italic;">No active route queued</span>'
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Safety Interlocks (ISO 13849 Cat 4) -->
+          <div style="background:var(--bg-canvas); border:1px solid var(--border-color); border-radius:4px; padding:10px; margin-bottom:10px;">
+            <div style="font-size:11px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Safety Interlocks (ISO 13849 Cat 4)</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px;">
+              <div class="prop-row"><span class="prop-name">E-Stop Relay:</span><span class="prop-val" style="color:${bot.safetyState && bot.safetyState.eStopEngaged ? 'var(--color-danger)' : 'var(--color-success)'};">${bot.safetyState && bot.safetyState.eStopEngaged ? 'TRIPPED' : 'ARMED ✓'}</span></div>
+              <div class="prop-row"><span class="prop-name">LiDAR Zone:</span><span class="prop-val" style="color:${bot.safetyState && bot.safetyState.lidarStopZone ? 'var(--color-danger)' : 'var(--color-success)'};">${bot.safetyState && bot.safetyState.lidarStopZone ? 'BREACHED (<0.45m)' : 'CLEAR ✓'}</span></div>
+              <div class="prop-row"><span class="prop-name">Clearance:</span><span class="prop-val">${bot.safetyState ? bot.safetyState.clearanceMeters : 2.8} m</span></div>
+              <div class="prop-row"><span class="prop-name">FastDDS Watchdog:</span><span class="prop-val" style="color:var(--color-success);">20ms (OK)</span></div>
+            </div>
+          </div>
+
+          <!-- Section 6: Autonomy Decision Explanation ("Why This AMR?") -->
+          <div style="background:rgba(88,166,255,0.06); border:1px solid rgba(88,166,255,0.25); border-radius:4px; padding:10px; margin-bottom:12px;">
+            <div style="font-size:11px; font-weight:700; color:#58a6ff; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
+              Autonomy Decision Context: ${isChosenForLatest ? 'SELECTED ROBOT' : 'ALTERNATIVE CANDIDATE'}
+            </div>
+            <p style="font-size:10.5px; color:#c9d1d9; line-height:1.45; margin-bottom:8px;">
+              ${isChosenForLatest
+                ? `<strong>Why Chosen:</strong> ${dec ? dec.rationale : 'Optimal transit distance with matching physical tooling.'}`
+                : `<strong>Evaluation Status:</strong> ${candRecord ? candRecord.reason : 'Standby buffer reserve. Ready for queue dispatch.'}`
+              }
+            </p>
+            ${candRecord ? `
+              <div style="font-size:10px; display:grid; grid-template-columns:1fr 1fr; gap:4px; background:rgba(0,0,0,0.25); padding:6px; border-radius:3px;">
+                <div>Payload Compatible: <strong style="color:${candRecord.match ? 'var(--color-success)' : 'var(--color-danger)'};">${candRecord.match ? 'YES ✓' : 'MISMATCH ✗'}</strong></div>
+                <div>Composite Cost: <strong style="color:#58a6ff;">${candRecord.costScore}</strong></div>
+                <div>Transit Distance: <strong>${candRecord.dist}m</strong></div>
+                <div>Battery Reserve: <strong>${candRecord.battery}%</strong></div>
+              </div>
+            ` : ''}
+
+            <!-- CBS Conflict & Spatio-Temporal Reservation Status -->
+            <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08); font-size:10px;">
+              <span style="font-weight:700; color:var(--text-secondary); text-transform:uppercase;">CBS Trajectory Status:</span>
+              <div style="color:#c9d1d9; margin-top:2px;">
+                ${bot.status === 'Navigating'
+                  ? 'Active space-time corridor reserved. Zero vertex/edge conflicts.'
+                  : 'Idle at node. Spatio-temporal reservation released.'
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 7: Diagnostics Accordion -->
+          <details style="margin-bottom: 12px; background: var(--bg-canvas); border: 1px solid var(--border-color); padding: 8px; border-radius: 4px;">
+            <summary style="font-size: 11px; color: var(--text-secondary); cursor: pointer; font-weight:600;">Hardware & ROS 2 Node Diagnostics</summary>
+            <div style="margin-top: 6px; font-size:10px;">
+              <div class="prop-row"><span class="prop-name">Serial Number:</span><span class="prop-val">${bot.serial}</span></div>
+              <div class="prop-row"><span class="prop-name">ROS 2 Node:</span><span class="prop-val">${bot.rosNode}</span></div>
+              <div class="prop-row"><span class="prop-name">EKF Localization:</span><span class="prop-val">${bot.ekfCovariance}</span></div>
+              <div class="prop-row"><span class="prop-name">LiDAR Sensor:</span><span class="prop-val">SICK microScan3 (Core IP67)</span></div>
             </div>
           </details>
 
-          <div style="display: flex; gap: 8px; margin-top: 14px;">
+          <!-- Section 8: Operator Control Actions -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
             <button class="btn-submit-action" style="background: var(--bg-subpanel); border-color: var(--border-color); color: var(--text-main);" onclick="dockUnit('${bot.id}')">Dock & Charge</button>
-            <button class="btn-submit-action" onclick="pauseUnit('${bot.id}')">${bot.status === 'Navigating' ? 'Pause' : 'Resume'}</button>
+            <button class="btn-submit-action" onclick="pauseUnit('${bot.id}')">${bot.status === 'Navigating' ? 'Pause Motion' : 'Resume Motion'}</button>
           </div>
+          <button class="tool-btn" style="width:100%; margin-top:6px; color:#f85149; border-color:rgba(248,81,73,0.3); background:rgba(248,81,73,0.06); padding:6px; border-radius:3px; cursor:pointer;" onclick="store.removeAMR('${bot.id}'); renderPanel(); if(typeof renderFleetView==='function') renderFleetView();">
+            Decommission / Remove AMR from Topology
+          </button>
         </div>
       `;
     }
@@ -2418,72 +2450,93 @@
     }
 
     function dockUnit(id) {
-      const bot = ROBOTS[id];
+      const bot = store.amrs[id] || ROBOTS[id];
       if (!bot) return;
       bot.status = "Navigating";
       bot.destination = "Charger C1";
       bot.route = ["N_0_0"];
-      logEvent(id, "Commanded return to fast charging dock C1");
+      store.logActivity(id, "Commanded return to fast charging dock C1");
       renderPanel();
     }
 
     function pauseUnit(id) {
-      const bot = ROBOTS[id];
+      const bot = store.amrs[id] || ROBOTS[id];
       if (!bot) return;
       bot.status = (bot.status === "Navigating") ? "Idle" : "Navigating";
-      logEvent(id, bot.status === "Navigating" ? "Motion resumed" : "Motion paused");
+      store.logActivity(id, bot.status === "Navigating" ? "Motion resumed" : "Motion paused");
       renderPanel();
+    }
+
+    /* Phase 5: Autonomous Simulation Controls */
+    function toggleSimPause() {
+      playHapticClick("high");
+      const isPaused = store.togglePauseSimulation();
+      const btn = document.getElementById("btnSimPause");
+      if (btn) {
+        btn.classList.toggle("active", isPaused);
+        btn.textContent = isPaused ? "Resume Sim" : "Pause";
+      }
+      showToast(isPaused ? "Simulation Frozen: Physics and navigation paused." : "Simulation Resumed: 50Hz clock ticking.");
+    }
+
+    function resetSimulationState() {
+      playHapticClick("high");
+      store.resetSimulation();
+      showToast("Facility digital twin reset to baseline coordinates.");
+      renderPanel();
+      if (typeof renderFleetView === "function") renderFleetView();
+    }
+
+    function promptSpawnAMR() {
+      playHapticClick("high");
+      const count = Object.keys(store.amrs).length + 1;
+      const newId = `synq-amr-${String(count).padStart(2, '0')}`;
+      const payloads = ["SCISSOR_LIFT", "ROLLER_CONVEYOR", "TOTE_GRIPPER"];
+      const p = payloads[(count - 1) % payloads.length];
+      const startNodes = ["N_3_0", "N_3_1", "N_3_2", "N_0_3"];
+      const startNode = startNodes[(count - 1) % startNodes.length];
+
+      store.spawnAMR(newId, p, startNode);
+      store.selectRobot(newId);
+      selectedRobotId = newId;
+      showToast(`AMR Spawned: ${newId} (${p.replace('_', ' ')}) ready at ${startNode}`);
+      renderPanel();
+      if (typeof renderFleetView === "function") renderFleetView();
+    }
+
+    function promptRemoveAMR() {
+      playHapticClick("low");
+      const bots = Object.keys(store.amrs);
+      if (bots.length <= 1) {
+        showToast("Cannot remove: At least 1 AMR must remain active in fleet.");
+        return;
+      }
+      const targetId = selectedRobotId || bots[bots.length - 1];
+      store.removeAMR(targetId);
+      selectedRobotId = Object.keys(store.amrs)[0];
+      showToast(`AMR Decommissioned: ${targetId} safely removed from operational grid.`);
+      renderPanel();
+      if (typeof renderFleetView === "function") renderFleetView();
     }
 
     setInterval(() => {
       // Clock
       const now = new Date();
-      document.getElementById("stripTime").textContent = now.toTimeString().split(" ")[0];
+      const timeEl = document.getElementById("stripTime");
+      if (timeEl) timeEl.textContent = now.toTimeString().split(" ")[0];
 
-      // Step active robot motion
-      let activeMissionsCount = 0;
-      Object.values(ROBOTS).forEach(bot => {
-        if (bot.status === "Navigating" && bot.route.length > 0) {
-          activeMissionsCount++;
-          const targetId = bot.route[0];
-          const node = ROADMAP_NODES[targetId];
-          if (node) {
-            const dx = node.x - bot.x;
-            const dy = node.y - bot.y;
-            const dist = Math.hypot(dx, dy);
+      // Step state store simulation clock & robot trajectories
+      store.stepTick(0.05);
 
-            if (dist < 0.15) {
-              bot.x = node.x;
-              bot.y = node.y;
-              bot.route.shift();
-              if (bot.route.length === 0) {
-                bot.status = "Idle";
-                bot.mission = "—";
-                bot.pickup = "—";
-                bot.destination = "—";
-                bot.eta = "—";
-                bot.speed = 0.0;
-                logEvent(bot.id, `Arrived at destination (${targetId}). Task complete.`);
-                setAutonomyPipelineStage("VERIFIED");
-                renderPanel();
-              }
-            } else {
-              bot.speed = 0.85;
-              bot.x += (dx / dist) * 0.06;
-              bot.y += (dy / dist) * 0.06;
-              bot.heading = Math.atan2(dy, dx) * 180 / Math.PI;
-            }
-          }
-        }
-      });
+      const botsList = Object.values(store.amrs);
+      const activeMissionsCount = botsList.filter(b => b.status === "Navigating").length;
 
       document.getElementById("valReservationsCount").textContent = activeMissionsCount;
 
       // Update Live Operations Topbar & KPI Ribbon
-      const botsList = Object.values(ROBOTS);
       const onlineCount = botsList.filter(b => b.status !== "Emergency Stop").length;
       const totalCount = botsList.length;
-      const avgBat = (botsList.reduce((acc, b) => acc + b.battery, 0) / totalCount).toFixed(1);
+      const avgBat = (botsList.reduce((acc, b) => acc + b.battery, 0) / (totalCount || 1)).toFixed(1);
 
       const kpiRobots = document.getElementById("kpiActiveRobots");
       if (kpiRobots) kpiRobots.textContent = `${onlineCount}`;

@@ -12,6 +12,10 @@ from fms.traffic.cbs_router import AgentPlan
 from fms.fleet.fleet_manager import FleetManager, RobotAgent, WarehouseOrder
 from fms.vda5050.vda5050_serializer import VDA5050Serializer, VDA5050State, VDA5050Header
 
+# Centralized State Management
+from backend.agent.robot_state import robot_state, get_robot_state_dict
+from backend.agent.domain_bridge import sync_fms_to_central_state, get_robot_payload_from_state
+
 # Operational Intelligence Modules
 from backend.persistence.db import db
 from backend.persistence.seed_data import seed_operational_memory
