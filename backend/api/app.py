@@ -485,6 +485,10 @@ async def websocket_telemetry_stream(websocket: WebSocket):
 
 frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend'))
 
+from fastapi.staticfiles import StaticFiles
+if os.path.exists(frontend_path):
+    app.mount("/static", StaticFiles(directory=frontend_path), name="static")
+
 @app.get("/demo")
 def serve_demo_portal():
     demo_file = os.path.join(frontend_path, "demo.html")

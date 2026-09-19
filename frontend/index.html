@@ -4,37 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>synQ — Autonomous Operations Center</title>
+  <link rel="stylesheet" href="/static/css/design_system.css">
   <style>
     :root {
-      /* Industrial Command System Palette */
-      --bg-canvas: #121518;
-      --bg-header: #181c20;
-      --bg-panel: #1e2227;
-      --bg-subpanel: #262b32;
-      --bg-map: #14171a;
+      /* Alias to synQ Design System Core Tokens */
+      --bg-canvas: var(--synq-bg-canvas);
+      --bg-header: var(--synq-bg-header);
+      --bg-panel: var(--synq-bg-surface);
+      --bg-subpanel: var(--synq-bg-elevated);
+      --bg-map: var(--synq-bg-map);
 
-      --border-color: #2c323a;
-      --border-light: #38404a;
+      --border-color: var(--synq-border-default);
+      --border-light: var(--synq-border-light);
 
-      --text-main: #e6edf3;
-      --text-secondary: #8b949e;
-      --text-muted: #6e7681;
+      --text-main: var(--synq-text-primary);
+      --text-secondary: var(--synq-text-secondary);
+      --text-muted: var(--synq-text-muted);
 
       /* Semantic Operational Colors */
-      --color-primary: #1f6feb;       /* Corporate blue: active selection & paths */
-      --color-success: #2ea043;       /* Green: healthy/available/resolved */
-      --color-warning: #d29922;       /* Amber: conflict/evaluating/caution */
-      --color-danger: #cf222e;        /* Red: obstacle/e-stop/safety block */
-      --color-cbs: #a371f7;          /* Purple: CBS constraint tree */
+      --color-primary: var(--synq-status-active);
+      --color-success: var(--synq-status-online);
+      --color-warning: var(--synq-status-warning);
+      --color-danger: var(--synq-status-critical);
+      --color-cbs: var(--synq-status-cbs);
 
       /* Physical Floorplan Surfaces */
-      --color-rack: #252b33;
-      --color-rack-border: #353e4a;
-      --color-lane: rgba(255, 255, 255, 0.04);
-      --color-lane-center: rgba(255, 255, 255, 0.10);
+      --color-rack: var(--synq-rack-surface);
+      --color-rack-border: var(--synq-rack-border);
+      --color-lane: var(--synq-lane-surface);
+      --color-lane-center: var(--synq-lane-centerline);
 
-      --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      --font-mono: "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+      --font-system: var(--synq-font-sans);
+      --font-mono: var(--synq-font-mono);
     }
 
     * {
@@ -522,107 +523,385 @@
   </style>
 </head>
 <body>
+  <div id="synqAppRoot">
 
-  <!-- 1. TOP OPERATIONAL HEADER -->
-  <header class="app-header">
-    <div class="header-left">
-      <span class="brand-title">synQ</span>
-      <span class="brand-sub">Autonomous Operations Center</span>
+    <!-- 1. TOP OPERATIONAL HEADER -->
+    <header class="synq-topbar">
+      <div class="topbar-left">
+        <button class="sidebar-toggle-btn" title="Toggle Sidebar" onclick="toggleSidebar()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <div class="brand-block">
+          <span class="brand-logo-text">synQ</span>
+          <span class="brand-env-badge">v3.0-RC</span>
+        </div>
+        <span class="synq-badge online" id="topbarStatusPill"><span class="synq-badge-dot"></span>SYSTEM OPERATIONAL</span>
 
-      <!-- 7-Stage Autonomy Loop Tracker -->
-      <div class="autonomy-pipeline-strip" title="Click to inspect current Autonomy Loop decision state" onclick="setPanelTab('autonomy')">
-        <div class="pipeline-step" id="step-task"><div class="step-dot"></div><span>TASK</span></div>
-        <span class="pipeline-arrow">→</span>
-        <div class="pipeline-step" id="step-decision"><div class="step-dot"></div><span>DECISION</span></div>
-        <span class="pipeline-arrow">→</span>
-        <div class="pipeline-step" id="step-route"><div class="step-dot"></div><span>ROUTE</span></div>
-        <span class="pipeline-arrow">→</span>
-        <div class="pipeline-step active" id="step-exec"><div class="step-dot"></div><span>EXECUTION</span></div>
-        <span class="pipeline-arrow">→</span>
-        <div class="pipeline-step" id="step-conflict"><div class="step-dot"></div><span>CONFLICT</span></div>
-        <span class="pipeline-arrow">→</span>
-        <div class="pipeline-step" id="step-recovery"><div class="step-dot"></div><span>RECOVERY</span></div>
-        <span class="pipeline-arrow">→</span>
-        <div class="pipeline-step" id="step-verify"><div class="step-dot"></div><span>VERIFIED</span></div>
+        <!-- Autonomy Loop Pipeline Strip -->
+        <div class="autonomy-pipeline-strip" title="Click to inspect current Autonomy Loop decision state" onclick="navigateTo('overview'); setPanelTab('autonomy');">
+          <div class="pipeline-step" id="step-task"><div class="step-dot"></div><span>TASK</span></div>
+          <span class="pipeline-arrow">→</span>
+          <div class="pipeline-step" id="step-decision"><div class="step-dot"></div><span>DECISION</span></div>
+          <span class="pipeline-arrow">→</span>
+          <div class="pipeline-step" id="step-route"><div class="step-dot"></div><span>ROUTE</span></div>
+          <span class="pipeline-arrow">→</span>
+          <div class="pipeline-step active" id="step-exec"><div class="step-dot"></div><span>EXECUTION</span></div>
+          <span class="pipeline-arrow">→</span>
+          <div class="pipeline-step" id="step-conflict"><div class="step-dot"></div><span>CONFLICT</span></div>
+          <span class="pipeline-arrow">→</span>
+          <div class="pipeline-step" id="step-recovery"><div class="step-dot"></div><span>RECOVERY</span></div>
+          <span class="pipeline-arrow">→</span>
+          <div class="pipeline-step" id="step-verify"><div class="step-dot"></div><span>VERIFIED</span></div>
+        </div>
       </div>
+
+      <!-- Topbar Telemetry Strip -->
+      <div class="topbar-telemetry-strip">
+        <div class="topbar-metric-item">Fleet: <strong id="topbarFleetStatus">3 / 3 ONLINE</strong></div>
+        <span style="color: var(--synq-border-default);">|</span>
+        <div class="topbar-metric-item">Missions: <strong id="topbarActiveMissions">01 ACTIVE</strong></div>
+        <span style="color: var(--synq-border-default);">|</span>
+        <div class="topbar-metric-item">Warnings: <strong id="topbarWarnings" style="color: var(--synq-status-online);">00</strong></div>
+        <span style="color: var(--synq-border-default);">|</span>
+        <div class="topbar-metric-item">Latency: <strong id="topbarLatency">12 ms</strong></div>
+        <span style="color: var(--synq-border-default);">|</span>
+        <span class="synq-badge active" style="font-size: 9px;">LIVE BACKEND</span>
+      </div>
+
+      <div class="topbar-right">
+        <button class="synq-btn" style="background: rgba(88,166,255,0.12); color: #58a6ff; border-color: rgba(88,166,255,0.3);" onclick="openDemoQrModal()">
+          <span>Judge Demo QR</span>
+        </button>
+        <button class="synq-btn" onclick="navigateTo('overview'); openWhyFLTXDrawer();">
+          <span>Why Did FLTX Do This?</span>
+        </button>
+        <button class="synq-btn btn-danger" id="btnEstop" onclick="toggleGlobalEstop()">
+          <span id="estopLabel">Emergency Stop (All)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 2. MAIN WORKSPACE WITH COLLAPSIBLE SIDEBAR -->
+    <div class="synq-body-container">
+
+      <!-- Navigation Sidebar -->
+      <aside class="synq-sidebar" id="appSidebar">
+        <div class="sidebar-nav-section">
+          <div class="sidebar-nav-header">Command & Control</div>
+          <a class="nav-item active" data-route="overview" onclick="navigateTo('overview')">
+            <span class="nav-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </span>
+            <span class="nav-label">Overview</span>
+          </a>
+          <a class="nav-item" data-route="fleet" onclick="navigateTo('fleet')">
+            <span class="nav-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
+            </span>
+            <span class="nav-label">Fleet</span>
+          </a>
+          <a class="nav-item" data-route="missions" onclick="navigateTo('missions')">
+            <span class="nav-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+            </span>
+            <span class="nav-label">Missions</span>
+          </a>
+          <a class="nav-item" data-route="warehouse" onclick="navigateTo('warehouse')">
+            <span class="nav-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+            </span>
+            <span class="nav-label">Warehouse</span>
+          </a>
+          <a class="nav-item" data-route="payloads" onclick="navigateTo('payloads')">
+            <span class="nav-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+            </span>
+            <span class="nav-label">Payloads</span>
+          </a>
+
+          <div class="sidebar-nav-header" style="margin-top: 8px;">Intelligence & Diagnostics</div>
+          <a class="nav-item" data-route="simulation" onclick="navigateTo('simulation')">
+            <span class="nav-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            </span>
+            <span class="nav-label">Simulation Sandbox</span>
+          </a>
+          <a class="nav-item" data-route="telemetry" onclick="navigateTo('telemetry')">
+            <span class="nav-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg>
+            </span>
+            <span class="nav-label">Telemetry</span>
+          </a>
+          <a class="nav-item" data-route="diagnostics" onclick="navigateTo('diagnostics')">
+            <span class="nav-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+            </span>
+            <span class="nav-label">Diagnostics</span>
+          </a>
+          <a class="nav-item" data-route="safety" onclick="navigateTo('safety')">
+            <span class="nav-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </span>
+            <span class="nav-label">Safety</span>
+          </a>
+          <a class="nav-item" data-route="settings" onclick="navigateTo('settings')">
+            <span class="nav-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </span>
+            <span class="nav-label">System</span>
+          </a>
+        </div>
+
+        <div class="sidebar-footer">
+          <div style="width: 6px; height: 6px; border-radius: 50%; background: var(--synq-status-online);"></div>
+          <span class="nav-label">Austin Hub #01</span>
+        </div>
+      </aside>
+
+      <!-- 3. MULTI-VIEW MAIN CONTAINER -->
+      <main class="synq-main-view">
+
+        <!-- VIEW 1: OVERVIEW (HERO DIGITAL TWIN + KPI RIBBON + CONTEXT PANEL) -->
+        <div class="view-page active" id="view-overview">
+          <div class="view-overview-layout">
+
+            <!-- KPI Ribbon -->
+            <div class="overview-top-kpis">
+              <div class="kpi-tile">
+                <span class="kpi-label">Active AMRs</span>
+                <div class="kpi-value-row">
+                  <span class="kpi-value" id="kpiActiveRobots">3</span>
+                  <span class="kpi-delta pos">100% ONLINE</span>
+                </div>
+              </div>
+              <div class="kpi-tile">
+                <span class="kpi-label">Active Missions</span>
+                <div class="kpi-value-row">
+                  <span class="kpi-value" id="kpiActiveMissions">1</span>
+                  <span class="kpi-delta neu" id="kpiTaskName">TASK-4821</span>
+                </div>
+              </div>
+              <div class="kpi-tile">
+                <span class="kpi-label">Completed Tasks</span>
+                <div class="kpi-value-row">
+                  <span class="kpi-value" id="kpiCompletedTasks">148</span>
+                  <span class="kpi-delta pos">+12 TODAY</span>
+                </div>
+              </div>
+              <div class="kpi-tile">
+                <span class="kpi-label">Fleet Utilization</span>
+                <div class="kpi-value-row">
+                  <span class="kpi-value" id="kpiUtilization">81.4%</span>
+                  <span class="kpi-delta pos">+4.2%</span>
+                </div>
+              </div>
+              <div class="kpi-tile">
+                <span class="kpi-label">Average SoC</span>
+                <div class="kpi-value-row">
+                  <span class="kpi-value" id="kpiAvgBattery">91.2%</span>
+                  <span class="kpi-delta pos">NOMINAL</span>
+                </div>
+              </div>
+              <div class="kpi-tile">
+                <span class="kpi-label">Active Warnings</span>
+                <div class="kpi-value-row">
+                  <span class="kpi-value" id="kpiWarnings">0</span>
+                  <span class="kpi-delta pos">0 CRITICAL</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Central Hero Map & Right Panel Workspace -->
+            <div class="overview-workspace">
+
+              <!-- Warehouse Map -->
+              <section class="map-container" id="mapContainer">
+                <canvas id="warehouseCanvas"></canvas>
+
+                <!-- Autonomy Visualization Toolbar -->
+                <div class="map-toolbar">
+                  <button class="tool-btn active" id="btnToggleLanes" onclick="toggleLayer('lanes')">Transit Lanes</button>
+                  <button class="tool-btn active" id="btnToggleRacks" onclick="toggleLayer('racks')">Racks</button>
+                  <button class="tool-btn active" id="btnToggleEvaluations" onclick="toggleLayer('evaluations')">Candidate Evals</button>
+                  <button class="tool-btn active" id="btnToggleRoutes" onclick="toggleLayer('routes')">CBS Routes</button>
+                  <div class="tool-sep"></div>
+                  <button class="tool-btn" id="btnSimObstacle" onclick="toggleObstaclePlacement()">Inject Obstacle</button>
+                  <button class="tool-btn" id="btnSimConflict" onclick="triggerCbsConflictScenario()">Simulate CBS Crossing</button>
+                  <div class="tool-sep"></div>
+                  <button class="tool-btn" onclick="resetMapCamera()">Reset View</button>
+                </div>
+
+                <div class="spatial-toast" id="spatialToast">
+                  <span id="spatialToastMsg">Autonomy Event</span>
+                </div>
+
+                <div class="map-footer-hud">
+                  <span>Warehouse: <strong>15m × 15m Hub</strong></span>
+                  <span id="legendCoords">X: 0.00m, Y: 0.00m</span>
+                  <span>Active CBS Reservations: <strong id="valReservationsCount">0</strong></span>
+                </div>
+              </section>
+
+              <!-- Contextual Right Panel -->
+              <aside class="operations-panel">
+                <div class="panel-tabs">
+                  <button class="tab-btn active" id="tabBtnAutonomy" onclick="setPanelTab('autonomy')">Autonomy Loop</button>
+                  <button class="tab-btn" id="tabBtnAgent" onclick="setPanelTab('agent')">Ask FLTX</button>
+                  <button class="tab-btn" id="tabBtnInspector" onclick="setPanelTab('inspector')">Inspector</button>
+                  <button class="tab-btn" id="tabBtnDispatch" onclick="setPanelTab('dispatch')">Dispatch</button>
+                  <button class="tab-btn" id="tabBtnFleet" onclick="setPanelTab('fleet')">Fleet</button>
+                  <button class="tab-btn" id="tabBtnTimeline" onclick="setPanelTab('timeline')">Activity</button>
+                </div>
+
+                <div class="panel-body" id="panelBody">
+                  <!-- Dynamically rendered -->
+                </div>
+              </aside>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 2: FLEET MATRIX VIEW -->
+        <div class="view-page" id="view-fleet">
+          <div class="synq-view-container" id="fleetViewContainer">
+            <!-- Dynamically populated in renderFleetView() -->
+          </div>
+        </div>
+
+        <!-- VIEW 3: MISSIONS BOARD VIEW -->
+        <div class="view-page" id="view-missions">
+          <div class="synq-view-container" id="missionsViewContainer">
+            <!-- Dynamically populated in renderMissionsView() -->
+          </div>
+        </div>
+
+        <!-- VIEW 4: WAREHOUSE TOPOLOGY VIEW -->
+        <div class="view-page" id="view-warehouse">
+          <div class="synq-view-container" id="warehouseViewContainer">
+            <!-- Dynamically populated in renderWarehouseView() -->
+          </div>
+        </div>
+
+        <!-- VIEW 5: PAYLOAD SPECIFICATIONS VIEW -->
+        <div class="view-page" id="view-payloads">
+          <div class="synq-view-container" id="payloadsViewContainer">
+            <!-- Dynamically populated in renderPayloadsView() -->
+          </div>
+        </div>
+
+        <!-- VIEW 6: SIMULATION & WHAT-IF VIEW -->
+        <div class="view-page" id="view-simulation">
+          <div class="synq-view-container" id="simulationViewContainer">
+            <!-- Dynamically populated in renderSimulationView() -->
+          </div>
+        </div>
+
+        <!-- VIEW 7: TELEMETRY CHARTS VIEW -->
+        <div class="view-page" id="view-telemetry">
+          <div class="synq-view-container" id="telemetryViewContainer">
+            <!-- Dynamically populated in renderTelemetryView() -->
+          </div>
+        </div>
+
+        <!-- VIEW 8: DIAGNOSTICS & SYSTEM LOGS VIEW -->
+        <div class="view-page" id="view-diagnostics">
+          <div class="synq-view-container" id="diagnosticsViewContainer">
+            <!-- Dynamically populated in renderDiagnosticsView() -->
+          </div>
+        </div>
+
+        <!-- VIEW 9: SAFETY & HARDWARE INTERLOCKS VIEW -->
+        <div class="view-page" id="view-safety">
+          <div class="synq-view-container" id="safetyViewContainer">
+            <!-- Dynamically populated in renderSafetyView() -->
+          </div>
+        </div>
+
+        <!-- VIEW 10: SETTINGS & GATEWAY VIEW -->
+        <div class="view-page" id="view-settings">
+          <div class="synq-view-container" id="settingsViewContainer">
+            <!-- Dynamically populated in renderSettingsView() -->
+          </div>
+        </div>
+
+      </main>
     </div>
 
-    <div class="header-right">
-      <button class="tool-btn" style="background: rgba(88,166,255,0.15); color: #58a6ff; border: 1px solid rgba(88,166,255,0.35); font-weight: 600; padding: 5px 12px; border-radius: 4px; cursor: pointer;" onclick="openDemoQrModal()">
-        <span>Judge Demo QR</span>
-      </button>
-      <button class="btn-why-fltx" onclick="openWhyFLTXDrawer()">
-        <span>Why Did FLTX Do This?</span>
-      </button>
-      <button class="btn-estop" id="btnEstop" onclick="toggleGlobalEstop()">
-        <span id="estopLabel">Emergency Stop (All)</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- 2. MAIN WORKSPACE -->
-  <main class="main-workspace">
-
-    <!-- Warehouse Map -->
-    <section class="map-container" id="mapContainer">
-      <canvas id="warehouseCanvas"></canvas>
-
-      <!-- Autonomy Visualization Toolbar -->
-      <div class="map-toolbar">
-        <button class="tool-btn active" id="btnToggleLanes" onclick="toggleLayer('lanes')">Transit Lanes</button>
-        <button class="tool-btn active" id="btnToggleRacks" onclick="toggleLayer('racks')">Racks</button>
-        <button class="tool-btn active" id="btnToggleEvaluations" onclick="toggleLayer('evaluations')">Candidate Evals</button>
-        <button class="tool-btn active" id="btnToggleRoutes" onclick="toggleLayer('routes')">CBS Routes</button>
-        <div class="tool-sep"></div>
-        <button class="tool-btn" id="btnSimObstacle" onclick="toggleObstaclePlacement()">Inject Obstacle</button>
-        <button class="tool-btn" id="btnSimConflict" onclick="triggerCbsConflictScenario()">Simulate CBS Crossing</button>
-        <div class="tool-sep"></div>
-        <button class="tool-btn" onclick="resetMapCamera()">Reset View</button>
+    <!-- 4. BOTTOM STRIP -->
+    <footer class="synq-footer">
+      <div class="footer-segment">
+        <span>ROS 2: <strong>Active</strong></span>
+        <span>Nav2: <strong>MPPI 50Hz</strong></span>
+        <span>CBS Router: <strong>Space-Time Tree Ready</strong></span>
+        <span>VDA 5050: <strong>v3.0 Ingest</strong></span>
       </div>
-
-      <div class="spatial-toast" id="spatialToast">
-        <span id="spatialToastMsg">Autonomy Event</span>
+      <div class="footer-segment">
+        <span>Digital Twin: <strong>Synced (50ms tick)</strong></span>
+        <span>Time: <strong id="stripTime">00:00:00</strong></span>
       </div>
+    </footer>
 
-      <div class="map-footer-hud">
-        <span>Warehouse: <strong>15m × 15m Hub</strong></span>
-        <span id="legendCoords">X: 0.00m, Y: 0.00m</span>
-        <span>Active CBS Reservations: <strong id="valReservationsCount">0</strong></span>
-      </div>
-    </section>
+  </div>
 
-    <!-- Contextual Right Panel -->
-    <aside class="operations-panel">
-      <div class="panel-tabs">
-        <button class="tab-btn active" id="tabBtnAutonomy" onclick="setPanelTab('autonomy')">Autonomy Loop</button>
-        <button class="tab-btn" id="tabBtnAgent" onclick="setPanelTab('agent')">Ask FLTX</button>
-        <button class="tab-btn" id="tabBtnInspector" onclick="setPanelTab('inspector')">Inspector</button>
-        <button class="tab-btn" id="tabBtnDispatch" onclick="setPanelTab('dispatch')">Dispatch</button>
-        <button class="tab-btn" id="tabBtnFleet" onclick="setPanelTab('fleet')">Fleet</button>
-        <button class="tab-btn" id="tabBtnTimeline" onclick="setPanelTab('timeline')">Activity</button>
-      </div>
-
-      <div class="panel-body" id="panelBody">
-        <!-- Dynamically rendered -->
-      </div>
-    </aside>
-  </main>
-
-  <!-- 3. BOTTOM STRIP -->
-  <footer class="app-footer">
-    <div style="display: flex; gap: 16px;">
-      <span>ROS 2: <strong style="color: #ffffff;">Active</strong></span>
-      <span>Nav2 MPPI: <strong style="color: #ffffff;">50Hz Holonomic</strong></span>
-      <span>CBS Router: <strong style="color: #ffffff;">Constraint Tree Ready</strong></span>
-      <span>VDA 5050: <strong style="color: #ffffff;">MQTT v2.0.0</strong></span>
-    </div>
-    <div style="display: flex; gap: 16px;">
-      <span>Digital Twin: <strong style="color: #ffffff;">Synced</strong></span>
-      <span id="stripTime">00:00:00</span>
-    </div>
-  </footer>
-
+  <script src="/static/js/views.js"></script>
   <script>
+    /* ============================================================= */
+    /* 0. APPLICATION ROUTER & VIEW CONTROLLER                       */
+    /* ============================================================= */
+
+    let currentRoute = "overview";
+
+    function toggleSidebar() {
+      const sb = document.getElementById("appSidebar");
+      if (sb) {
+        sb.classList.toggle("collapsed");
+        setTimeout(resizeCanvas, 220);
+      }
+    }
+
+    function navigateTo(route) {
+      currentRoute = route;
+
+      // Update sidebar active state
+      document.querySelectorAll(".nav-item").forEach(item => {
+        item.classList.toggle("active", item.getAttribute("data-route") === route);
+      });
+
+      // Update active view page
+      document.querySelectorAll(".view-page").forEach(page => {
+        page.classList.remove("active");
+      });
+
+      const targetPage = document.getElementById(`view-${route}`);
+      if (targetPage) {
+        targetPage.classList.add("active");
+      }
+
+      // Trigger view renderers
+      if (route === "overview") {
+        setTimeout(resizeCanvas, 50);
+      } else if (route === "fleet" && typeof renderFleetView === "function") {
+        renderFleetView();
+      } else if (route === "missions" && typeof renderMissionsView === "function") {
+        renderMissionsView();
+      } else if (route === "warehouse" && typeof renderWarehouseView === "function") {
+        renderWarehouseView();
+      } else if (route === "payloads" && typeof renderPayloadsView === "function") {
+        renderPayloadsView();
+      } else if (route === "simulation" && typeof renderSimulationView === "function") {
+        renderSimulationView();
+      } else if (route === "telemetry" && typeof renderTelemetryView === "function") {
+        renderTelemetryView();
+      } else if (route === "diagnostics" && typeof renderDiagnosticsView === "function") {
+        renderDiagnosticsView();
+      } else if (route === "safety" && typeof renderSafetyView === "function") {
+        renderSafetyView();
+      } else if (route === "settings" && typeof renderSettingsView === "function") {
+        renderSettingsView();
+      }
+    }
+
     /* ============================================================= */
     /* REALISTIC SPATIAL MODEL & AUTONOMY STATE                      */
     /* ============================================================= */
@@ -1088,60 +1367,182 @@
         });
       }
 
-      // Top-Down AMRs (Physical 0.7m x 0.5m footprint)
+      // Top-Down High-Precision Industrial AMRs (Physical 0.70m x 0.50m footprint)
       Object.values(ROBOTS).forEach(bot => {
         const p = toScreen(bot.x, bot.y);
         const isSelected = (bot.id === selectedRobotId);
         const lengthPx = 0.70 * scale;
         const widthPx = 0.50 * scale;
+        const isMoving = bot.speed > 0.05;
+        const isEstop = (bot.status === "Emergency Stop");
 
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(bot.heading * Math.PI / 180);
 
-        // Safety Radius
-        if (isSelected) {
+        // 1. Concentric LiDAR Safety Clearance Halos
+        // Warning Field (0.75m radius)
+        ctx.beginPath();
+        ctx.arc(0, 0, 0.75 * scale, 0, Math.PI * 2);
+        ctx.strokeStyle = isEstop ? "rgba(248, 81, 73, 0.4)" : (isSelected ? "rgba(56, 189, 248, 0.25)" : "rgba(255, 255, 255, 0.06)");
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Emergency Stop Field (0.45m radius)
+        if (isSelected || isEstop) {
           ctx.beginPath();
-          ctx.arc(0, 0, (lengthPx / 2) * 1.35, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(31, 111, 235, 0.35)";
-          ctx.lineWidth = 1;
+          ctx.arc(0, 0, 0.45 * scale, 0, Math.PI * 2);
+          ctx.fillStyle = isEstop ? "rgba(248, 81, 73, 0.15)" : "rgba(47, 129, 247, 0.08)";
+          ctx.strokeStyle = isEstop ? "#f85149" : "rgba(47, 129, 247, 0.4)";
+          ctx.lineWidth = 1.2;
+          ctx.fill();
           ctx.stroke();
         }
 
-        // Chassis
-        ctx.fillStyle = isSelected ? "#27303f" : "#22272e";
-        ctx.strokeStyle = isSelected ? "#388bfd" : "#444c56";
-        ctx.lineWidth = 1.5;
-        ctx.fillRect(-lengthPx / 2, -widthPx / 2, lengthPx, widthPx);
-        ctx.strokeRect(-lengthPx / 2, -widthPx / 2, lengthPx, widthPx);
+        // 2. Headlight / LiDAR Cone (Forward 30° projection)
+        const coneGrad = ctx.createRadialGradient(lengthPx / 2, 0, 2, lengthPx / 2 + 1.2 * scale, 0, 1.2 * scale);
+        coneGrad.addColorStop(0, "rgba(56, 189, 248, 0.15)");
+        coneGrad.addColorStop(1, "rgba(56, 189, 248, 0.0)");
+        ctx.fillStyle = coneGrad;
+        ctx.beginPath();
+        ctx.moveTo(lengthPx / 2, 0);
+        ctx.arc(lengthPx / 2, 0, 1.2 * scale, -Math.PI / 7, Math.PI / 7);
+        ctx.closePath();
+        ctx.fill();
 
-        // Wheels
-        ctx.fillStyle = "#1b1f24";
-        const wL = lengthPx * 0.25;
-        const wW = 3;
-        ctx.fillRect(-lengthPx / 2, -widthPx / 2 - wW, wL, wW);
-        ctx.fillRect(lengthPx / 2 - wL, -widthPx / 2 - wW, wL, wW);
-        ctx.fillRect(-lengthPx / 2, widthPx / 2, wL, wW);
-        ctx.fillRect(lengthPx / 2 - wL, widthPx / 2, wL, wW);
+        // 3. Mecanum Wheels (4 Omnidirectional Drive Units with 45° roller treads)
+        const wL = lengthPx * 0.28;
+        const wW = 5;
+        const wheelCoords = [
+          [-lengthPx / 2 + 2, -widthPx / 2 - wW + 1],
+          [lengthPx / 2 - wL - 2, -widthPx / 2 - wW + 1],
+          [-lengthPx / 2 + 2, widthPx / 2 - 1],
+          [lengthPx / 2 - wL - 2, widthPx / 2 - 1]
+        ];
 
-        // Direction Indicator
+        ctx.fillStyle = "#161b22";
+        ctx.strokeStyle = "#30363d";
+        ctx.lineWidth = 1;
+        wheelCoords.forEach(([wx, wy], wIdx) => {
+          ctx.fillRect(wx, wy, wL, wW);
+          ctx.strokeRect(wx, wy, wL, wW);
+
+          // Mecanum 45° angled roller treads
+          ctx.strokeStyle = "#484f58";
+          ctx.lineWidth = 0.8;
+          for (let rx = wx + 3; rx < wx + wL - 2; rx += 4) {
+            ctx.beginPath();
+            if (wIdx % 2 === 0) {
+              ctx.moveTo(rx - 2, wy + 1);
+              ctx.lineTo(rx + 2, wy + wW - 1);
+            } else {
+              ctx.moveTo(rx + 2, wy + 1);
+              ctx.lineTo(rx - 2, wy + wW - 1);
+            }
+            ctx.stroke();
+          }
+        });
+
+        // 4. Heavy Industrial AMR Chassis Body
+        ctx.fillStyle = isSelected ? "#1c2333" : "#16191f";
+        ctx.strokeStyle = isEstop ? "#f85149" : (isSelected ? "#388bfd" : "#30363d");
+        ctx.lineWidth = isSelected ? 1.8 : 1.2;
+        ctx.beginPath();
+        ctx.roundRect(-lengthPx / 2, -widthPx / 2, lengthPx, widthPx, 4);
+        ctx.fill();
+        ctx.stroke();
+
+        // 5. Modular Payload Top-Deck Graphical Indicator
+        ctx.save();
+        if (bot.payload === "SCISSOR_LIFT") {
+          // Scissor Pantograph Graphic
+          ctx.strokeStyle = "rgba(163, 113, 247, 0.7)";
+          ctx.lineWidth = 1.2;
+          ctx.strokeRect(-lengthPx * 0.3, -widthPx * 0.35, lengthPx * 0.6, widthPx * 0.7);
+          ctx.beginPath();
+          ctx.moveTo(-lengthPx * 0.3, -widthPx * 0.35);
+          ctx.lineTo(lengthPx * 0.3, widthPx * 0.35);
+          ctx.moveTo(-lengthPx * 0.3, widthPx * 0.35);
+          ctx.lineTo(lengthPx * 0.3, -widthPx * 0.35);
+          ctx.stroke();
+        } else if (bot.payload === "ROLLER_CONVEYOR") {
+          // Conveyor Slats Graphic
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.6)";
+          ctx.lineWidth = 1;
+          for (let sx = -lengthPx * 0.3; sx <= lengthPx * 0.3; sx += 5) {
+            ctx.beginPath();
+            ctx.moveTo(sx, -widthPx * 0.35);
+            ctx.lineTo(sx, widthPx * 0.35);
+            ctx.stroke();
+          }
+        } else if (bot.payload === "TOTE_GRIPPER") {
+          // Parallel Gripper Jaws Graphic
+          ctx.strokeStyle = "rgba(46, 160, 67, 0.7)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(-lengthPx * 0.25, -widthPx * 0.38);
+          ctx.lineTo(-lengthPx * 0.25, -widthPx * 0.2);
+          ctx.lineTo(lengthPx * 0.25, -widthPx * 0.2);
+          ctx.lineTo(lengthPx * 0.25, -widthPx * 0.38);
+          ctx.moveTo(-lengthPx * 0.25, widthPx * 0.38);
+          ctx.lineTo(-lengthPx * 0.25, widthPx * 0.2);
+          ctx.lineTo(lengthPx * 0.25, widthPx * 0.2);
+          ctx.lineTo(lengthPx * 0.25, widthPx * 0.38);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // 6. Center Status Beacon LED
+        ctx.beginPath();
+        ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = isEstop ? "#f85149" : (bot.status === "Navigating" ? "#2ea043" : "#388bfd");
+        ctx.fill();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        // 7. Direction Heading Arrow
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.moveTo(0, 0);
+        ctx.moveTo(lengthPx * 0.2, 0);
         ctx.lineTo(lengthPx / 2 + 3, 0);
         ctx.stroke();
 
+        // 8. Dynamic Velocity Vector (Forward projection if moving)
+        if (isMoving) {
+          const vecLen = bot.speed * 30 * (scale / 40);
+          ctx.strokeStyle = "#38bdf8";
+          ctx.lineWidth = 1.8;
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.moveTo(lengthPx / 2 + 3, 0);
+          ctx.lineTo(lengthPx / 2 + 3 + vecLen, 0);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
         ctx.restore();
 
-        // Labels
-        ctx.fillStyle = isSelected ? "#ffffff" : "#adb5bd";
-        ctx.font = "11px var(--font-system)";
-        ctx.fillText(bot.id, p.x - 22, p.y - widthPx / 2 - 6);
+        // 9. Floating Text Overlay (ID, Speed, Battery, Heading)
+        ctx.fillStyle = isSelected ? "#ffffff" : "#c9d1d9";
+        ctx.font = "bold 10px var(--font-mono)";
+        ctx.fillText(bot.id, p.x - 24, p.y - widthPx / 2 - 8);
 
-        ctx.fillStyle = bot.battery < 20 ? "#f85149" : (bot.battery < 40 ? "#d29922" : "#3fb950");
-        ctx.font = "10px var(--font-mono)";
-        ctx.fillText(`${bot.battery.toFixed(0)}%`, p.x + 16, p.y - widthPx / 2 - 6);
+        // Battery Badge
+        const batColor = bot.battery < 20 ? "#f85149" : (bot.battery < 40 ? "#d29922" : "#3fb950");
+        ctx.fillStyle = batColor;
+        ctx.font = "bold 9px var(--font-mono)";
+        ctx.fillText(`${bot.battery.toFixed(0)}%`, p.x + 20, p.y - widthPx / 2 - 8);
+
+        // Speed tag if moving
+        if (isMoving) {
+          ctx.fillStyle = "#38bdf8";
+          ctx.font = "9px var(--font-mono)";
+          ctx.fillText(`${bot.speed.toFixed(2)} m/s`, p.x - 18, p.y + widthPx / 2 + 12);
+        }
       });
 
       requestAnimationFrame(renderMap);
@@ -1845,6 +2246,38 @@
       });
 
       document.getElementById("valReservationsCount").textContent = activeMissionsCount;
+
+      // Update Live Operations Topbar & KPI Ribbon
+      const botsList = Object.values(ROBOTS);
+      const onlineCount = botsList.filter(b => b.status !== "Emergency Stop").length;
+      const totalCount = botsList.length;
+      const avgBat = (botsList.reduce((acc, b) => acc + b.battery, 0) / totalCount).toFixed(1);
+
+      const kpiRobots = document.getElementById("kpiActiveRobots");
+      if (kpiRobots) kpiRobots.textContent = `${onlineCount}`;
+
+      const kpiMissions = document.getElementById("kpiActiveMissions");
+      if (kpiMissions) kpiMissions.textContent = `${activeMissionsCount}`;
+
+      const kpiBattery = document.getElementById("kpiAvgBattery");
+      if (kpiBattery) kpiBattery.textContent = `${avgBat}%`;
+
+      const topFleet = document.getElementById("topbarFleetStatus");
+      if (topFleet) topFleet.textContent = `${onlineCount} / ${totalCount} ONLINE`;
+
+      const topMissions = document.getElementById("topbarActiveMissions");
+      if (topMissions) topMissions.textContent = `${String(activeMissionsCount).padStart(2, '0')} ACTIVE`;
+
+      const topStatus = document.getElementById("topbarStatusPill");
+      if (topStatus) {
+        if (isEstopActive) {
+          topStatus.className = "synq-badge critical";
+          topStatus.innerHTML = '<span class="synq-badge-dot"></span>EMERGENCY STOP ENGAGED';
+        } else {
+          topStatus.className = "synq-badge online";
+          topStatus.innerHTML = '<span class="synq-badge-dot"></span>SYSTEM OPERATIONAL';
+        }
+      }
     }, 50);
 
     // JUDGE DEMO QR CODE MODAL
